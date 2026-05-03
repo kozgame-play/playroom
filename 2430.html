@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2430 - Mobile Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
+        /* カスタムスクロールバー (極細) */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: popIn 0.15s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 h-screen flex flex-col overflow-hidden select-none relative">
+
+    <!-- アプリケーションのルート -->
+    <div id="app" class="flex-1 flex flex-col h-full relative"></div>
+
+    <!-- ルールブック モーダル -->
+    <div id="rule-modal" class="hidden fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-600 rounded-xl max-w-md w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center p-3 border-b border-slate-700">
+                <h3 class="text-base font-bold text-cyan-400">ルールブック</h3>
+                <button onclick="document.getElementById('rule-modal').classList.add('hidden')" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-4 overflow-y-auto custom-scrollbar text-sm text-slate-300 flex flex-col gap-4">
+                <div><strong class="text-white text-base text-yellow-400">◆ 勝利条件</strong><br>ゲーム終了時、ルートの計算結果が最も大きいプレイヤーの勝利。（最大理論値：2430）</div>
+                <div><strong class="text-white text-base">◆ ターンの進行</strong><br>ターン開始時に山札から1枚ドロー（手札0枚時も補充）。<br>その後、手札から「計算カードの配置」「イベントの発動」「パス」のいずれかを実行。</div>
+                <div><strong class="text-white text-base">◆ 配置ルール</strong><br>1つのルートに最大5枚まで繋げられる。<br>※割り算(÷)は割り切れない場合でも<span class="text-orange-300 font-bold">端数切り捨て</span>で配置可能。<br>※<span class="text-red-300 font-bold">配置できる計算カードがある場合は「パス」することはできません。</span></div>
+                <div><strong class="text-white text-base">◆ 終了条件</strong><br>全員のルートが確定（5枚配置、イコール使用、手札と山札が尽きる）するか、山札がなくなると終了。</div>
+                <div><strong class="text-white text-base">◆ イベント一覧（1ターンに1回まで）</strong>
+                    <ul class="list-disc pl-4 mt-2 space-y-1.5 text-xs">
+                        <li><strong class="text-purple-300">ハリケーン:</strong> 対象者の最後尾カードを回収しシャッフル。対象者だけで順番に裏向きのカードを1枚ずつ引いてルートに繋げる。</li>
+                        <li><strong class="text-purple-300">ショート:</strong> 指定した相手のルートの最後尾カードを1枚破棄。</li>
+                        <li><strong class="text-purple-300">ドロー:</strong> 山札から2枚引く。</li>
+                        <li><strong class="text-purple-300">スナッチ:</strong> 他人の最後尾を奪い、自分のルート末尾に付ける。</li>
+                        <li><strong class="text-purple-300">シールド:</strong> 展開しておくと、他プレイヤーからの妨害(破棄・奪取・アタック・ハリケーン)を1度だけ自動で防いで消滅。</li>
+                        <li><strong class="text-purple-300">イコール:</strong> 自分のルートを即座に確定(終了)させる。</li>
+                        <li><strong class="text-purple-300">アタック:</strong> 手札の計算カードを1枚、相手のルート末尾に置く。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- イベントカード説明定義 ---
+    const eventDescriptions = {
+        'ハリケーン': '最後尾を全て回収しシャッフル。順番に1枚ずつ引く。',
+        'ショート': '指定した相手のルートの最後尾を1枚破棄する。',
+        'ドロー': '山札から2枚引き、手札に加える。',
+        'スナッチ': '他人の最後尾を奪い、自分の末尾に付ける。',
+        'シールド': '他プレイヤーからの妨害を1度だけ防いで消滅する。',
+        'イコール': '自分のルートを即座に確定させる。',
+        'アタック': '手札の計算カードを1枚、相手の末尾に置く。'
+    };
+
+    // --- プレイヤーカラー定義 ---
+    const colorMap = {
+        0: { text: 'text-cyan-400', border: 'border-cyan-500', ring: 'ring-cyan-500', bg: 'bg-cyan-600' },
+        1: { text: 'text-orange-400', border: 'border-orange-500', ring: 'ring-orange-500', bg: 'bg-orange-600' },
+        2: { text: 'text-red-400', border: 'border-red-500', ring: 'ring-red-500', bg: 'bg-red-600' },
+        3: { text: 'text-purple-400', border: 'border-purple-500', ring: 'ring-purple-500', bg: 'bg-purple-600' }
+    };
+
+    // --- 状態管理 ---
+    let state = { phase: 'start', isPicking: false };
+
+    // --- ユーティリティ ---
+    function generateId() { return Math.random().toString(36).substr(2, 9); }
+    
+    function addLog(msg) {
+        state.log.unshift(msg);
+        if (state.log.length > 50) state.log.pop();
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('error-msg');
+        const textEl = document.getElementById('error-text');
+        if(el && textEl) {
+            textEl.innerText = msg;
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+            setTimeout(() => {
+                el.classList.remove('flex');
+                el.classList.add('hidden');
+            }, 2500);
+        }
+    }
+
+    // イベント通知用モーダル
+    function showEventModal(title, message, callback) {
+        state.eventModal = {
+            visible: true,
+            title: title,
+            message: message,
+            callback: callback
+        };
+        render();
+    }
+
+    function closeEventModal() {
+        if (state.eventModal && state.eventModal.visible) {
+            let cb = state.eventModal.callback;
+            state.eventModal.visible = false;
+            state.eventModal.callback = null;
+            render();
+            if (cb) cb();
+        }
+    }
+
+    // 確認用モーダル (タイトルへ戻る用)
+    function showConfirmModal(title, message, onConfirm) {
+        state.confirmModal = {
+            visible: true,
+            title: title,
+            message: message,
+            onConfirm: onConfirm
+        };
+        render();
+    }
+
+    function closeConfirmModal(result) {
+        if (state.confirmModal && state.confirmModal.visible) {
+            let cb = state.confirmModal.onConfirm;
+            state.confirmModal.visible = false;
+            state.confirmModal.onConfirm = null;
+            render();
+            if (result && cb) cb();
+        }
+    }
+
+    function formatCard(c) {
+        if (!c) return '';
+        if (c.type === 'calc') return `[${c.op}${c.val < 0 ? '('+c.val+')' : c.val}]`;
+        if (c.type === 'event') return `【${c.name}】`;
+        return '';
+    }
+
+    function calcRouteVal(start, route) {
+        let current = start;
+        for (let r of route) {
+            if (r.card.type === 'calc') {
+                if (r.card.op === '+') current += r.card.val;
+                if (r.card.op === '-') current -= r.card.val;
+                if (r.card.op === '×') current *= r.card.val;
+                if (r.card.op === '÷') current = Math.trunc(current / r.card.val);
+            }
+        }
+        return current;
+    }
+
+    function checkHandEmptyAndDraw(player) {
+        if (player.hand.length === 0 && state.deck.length > 0) {
+            player.hand.push(state.deck.pop());
+            addLog(`${player.name}: 手札0枚のため1枚補充`);
+        }
+    }
+
+    // --- ゲームの初期化 ---
+    function initGame() {
+        let deck = [];
+        
+        ['+', '-'].forEach(op => {
+            [1, 2, 3].forEach(val => {
+                for(let i=0; i<4; i++) deck.push({ id: generateId(), type: 'calc', op, val });
+            });
+        });
+        [1, 2, 3].forEach(val => {
+            for(let i=0; i<3; i++) deck.push({ id: generateId(), type: 'calc', op: '×', val });
+        });
+        [-1, -2, -3].forEach(val => {
+            for(let i=0; i<3; i++) deck.push({ id: generateId(), type: 'calc', op: '×', val });
+        });
+        [1, 2, 3].forEach(val => {
+            for(let i=0; i<3; i++) deck.push({ id: generateId(), type: 'calc', op: '÷', val });
+        });
+        
+        const eventCounts = {
+            'ハリケーン': 1, 'ショート': 2, 'ドロー': 2,
+            'スナッチ': 1, 'シールド': 2, 'イコール': 1, 'アタック': 2
+        };
+        Object.entries(eventCounts).forEach(([ev, count]) => {
+            for(let i=0; i<count; i++) deck.push({ id: generateId(), type: 'event', name: ev });
+        });
+        
+        deck.sort(() => Math.random() - 0.5);
+
+        const startValue = Math.floor(Math.random() * 10) + 1;
+        const centerCard = { id: generateId(), type: 'start', value: startValue };
+
+        let playerConfigs = [
+            { id: 0, name: 'YOU', route: [], hand: deck.splice(0, 4), locked: false, hasShield: false, isHuman: true },
+            { id: 1, name: 'AI 1', route: [], hand: deck.splice(0, 4), locked: false, hasShield: false, isHuman: false },
+            { id: 2, name: 'AI 2', route: [], hand: deck.splice(0, 4), locked: false, hasShield: false, isHuman: false },
+            { id: 3, name: 'AI 3', route: [], hand: deck.splice(0, 4), locked: false, hasShield: false, isHuman: false }
+        ];
+
+        let startTurnIdx = Math.floor(Math.random() * 4); // スタートプレイヤーをランダム決定
+
+        state = {
+            phase: 'playing',
+            turnIdx: startTurnIdx,
+            deck,
+            centerCard,
+            log: [],
+            players: playerConfigs,
+            actionMode: 'IDLE',
+            selectedHandIndex: null,
+            pendingEventIndex: null,
+            pendingTargetIdx: null,
+            eventUsedThisTurn: false,
+            eventModal: { visible: false, title: '', message: '', callback: null },
+            confirmModal: { visible: false, title: '', message: '', onConfirm: null },
+            isPicking: false
+        };
+        
+        addLog(`ゲーム開始！ ${state.players[startTurnIdx].name} からスタートします。`);
+        
+        showEventModal('【ゲーム開始】', `最初のターンは <span class="text-sm text-yellow-400 font-black">${state.players[startTurnIdx].name}</span> からです！`, () => {
+            startTurn();
+        });
+    }
+
+    // --- ターンのフロー制御 ---
+    function startTurn() {
+        state.eventUsedThisTurn = false;
+        
+        let current = state.players[state.turnIdx];
+        if (state.deck.length > 0) {
+            current.hand.push(state.deck.pop());
+            if (state.turnIdx === 0) {
+                addLog(`YOU のターン。1枚引きました。`);
+            } else {
+                addLog(`${current.name} のターン。`);
+            }
+        } else {
+            if (state.turnIdx === 0) {
+                addLog(`YOU のターン。（ドローなし）`);
+            } else {
+                addLog(`${current.name} のターン。（ドローなし）`);
+            }
+        }
+        
+        render();
+        if (state.turnIdx !== 0 && state.phase === 'playing') {
+            setTimeout(processAiTurn, 800);
+        }
+    }
+
+    function endTurn() {
+        state.actionMode = 'IDLE';
+        state.selectedHandIndex = null;
+        state.pendingEventIndex = null;
+        state.pendingTargetIdx = null;
+
+        state.players.forEach(p => {
+            if (p.route.length >= 5) p.locked = true;
+            if (p.hand.length === 0 && state.deck.length === 0) {
+                p.locked = true;
+            }
+        });
+
+        if (state.players.every(p => p.locked) || state.deck.length === 0) {
+            state.phase = 'gameover';
+            addLog(`ゲーム終了！`);
+            showEventModal('【ゲーム終了】', 'すべてのターンが終了しました！<br>盤面を確認したら、タップして結果発表へ進んでください。', () => {
+                state.phase = 'end';
+                render();
+            });
+            return;
+        }
+
+        do {
+            state.turnIdx = (state.turnIdx + 1) % 4;
+        } while (state.players[state.turnIdx].locked && !state.players.every(p => p.locked));
+
+        startTurn();
+    }
+
+    // --- アクション制御 (Player) ---
+    function cancelAction() {
+        state.actionMode = 'IDLE';
+        state.selectedHandIndex = null;
+        state.pendingEventIndex = null;
+        state.pendingTargetIdx = null;
+        render();
+    }
+
+    // 手札のクリック
+    function handleCardClick(owner, index) {
+        if (state.turnIdx !== 0 || state.phase !== 'playing') return;
+
+        if (state.actionMode === 'ATTACK_SELECT_CALC' && owner === 'player_hand') {
+            const card = state.players[0].hand[index];
+            if (card.type !== 'calc') return showError('計算カードを選んでください');
+            
+            let me = state.players[0];
+            let tgt = state.players[state.pendingTargetIdx];
+            
+            state.eventUsedThisTurn = true;
+            let indices = [state.pendingEventIndex, index].sort((a,b)=>b-a);
+            indices.forEach(idx => me.hand.splice(idx, 1));
+            
+            state.selectedHandIndex = null;
+            state.actionMode = 'IDLE';
+            state.pendingEventIndex = null;
+            state.pendingTargetIdx = null;
+            
+            let msg = '';
+            if (tgt.hasShield) { 
+                tgt.hasShield = false; 
+                msg = `${me.name} のアタック！<br>${tgt.name}のシールドで相殺された！`; 
+            } else { 
+                tgt.route.push({ card }); 
+                msg = `${me.name} のアタック！<br>${tgt.name}に ${formatCard(card)} を送りつけた！`; 
+            }
+            
+            addLog(`YOU: アタック発動`);
+            showEventModal('【アタック】', msg, () => {
+                checkHandEmptyAndDraw(me);
+                render(); 
+            });
+            return;
+        }
+
+        if (state.actionMode === 'IDLE' && owner === 'player_hand') {
+            state.selectedHandIndex = state.selectedHandIndex === index ? null : index;
+            render();
+        }
+    }
+
+    // プレイヤーエリア(盤面)のクリック
+    function handleAreaClick(targetIdx) {
+        if (state.turnIdx !== 0 || state.phase !== 'playing') return;
+        if (state.actionMode === 'ATTACK_SELECT_CALC') return; 
+        if (state.selectedHandIndex === null) return;
+        if (!canBeTarget(targetIdx)) return; 
+        
+        let me = state.players[0];
+        let selCard = me.hand[state.selectedHandIndex];
+        
+        if (selCard.type === 'calc') {
+            const placed = me.hand.splice(state.selectedHandIndex, 1)[0];
+            state.selectedHandIndex = null;
+            me.route.push({ card: placed });
+            addLog(`YOU: ${formatCard(placed)} を配置`);
+            endTurn();
+        } else if (selCard.type === 'event') {
+            let evName = selCard.name;
+            if (['ドロー', 'イコール', 'シールド', 'ハリケーン'].includes(evName)) {
+                executeNoTargetEvent(evName);
+            } else if (evName === 'ショート' || evName === 'スナッチ') {
+                executeTargetedEventDirect(targetIdx, evName);
+            } else if (evName === 'アタック') {
+                state.pendingEventIndex = state.selectedHandIndex;
+                state.pendingTargetIdx = targetIdx;
+                state.actionMode = 'ATTACK_SELECT_CALC';
+                render();
+            }
+        }
+    }
+
+    function executeNoTargetEvent(evName) {
+        let me = state.players[0];
+        state.eventUsedThisTurn = true;
+        me.hand.splice(state.selectedHandIndex, 1);
+        state.selectedHandIndex = null;
+        
+        let isEndTurn = false;
+        let msg = '';
+        
+        if (evName === 'ハリケーン') {
+            startHurricanePhase(me, () => {
+                checkHandEmptyAndDraw(me);
+                state.actionMode = 'IDLE';
+                render();
+            });
+            return;
+        }
+
+        if (evName === 'ドロー') {
+            for(let i=0; i<2; i++) if(state.deck.length > 0) me.hand.push(state.deck.pop());
+            msg = `${me.name} は山札から2枚カードを引いた！`;
+        } else if (evName === 'イコール') {
+            me.locked = true; 
+            msg = `${me.name} は自分のルートを確定させた！`;
+            isEndTurn = true;
+        } else if (evName === 'シールド') {
+            me.hasShield = true;
+            msg = `${me.name} はシールドを展開した！<br>他プレイヤーからの妨害を一度だけ防ぐことができます。`;
+        }
+        
+        addLog(`YOU: ${evName}発動`);
+        showEventModal(`【${evName}】`, msg, () => {
+            if (isEndTurn) endTurn();
+            else {
+                checkHandEmptyAndDraw(me);
+                state.actionMode = 'IDLE';
+                render();
+            }
+        });
+    }
+
+    function executeTargetedEventDirect(targetIdx, evName) {
+        let me = state.players[0];
+        let tgt = state.players[targetIdx];
+        
+        state.eventUsedThisTurn = true;
+        me.hand.splice(state.selectedHandIndex, 1);
+        state.selectedHandIndex = null;
+        let msg = '';
+
+        if (evName === 'ショート') {
+            if (tgt.hasShield) { 
+                tgt.hasShield = false; 
+                msg = `${me.name} のショート！<br>${tgt.name}のシールドで相殺された！`; 
+            } else { 
+                let dropped = tgt.route.pop(); 
+                msg = `${me.name} のショート！<br>${tgt.name}の ${formatCard(dropped.card)} を破壊した！`; 
+            }
+        } else if (evName === 'スナッチ') {
+            if (tgt.hasShield) { 
+                tgt.hasShield = false; 
+                msg = `${me.name} のスナッチ！<br>${tgt.name}のシールドで相殺された！`; 
+            } else { 
+                let snatched = tgt.route.pop();
+                me.route.push(snatched); 
+                msg = `${me.name} のスナッチ！<br>${tgt.name}から ${formatCard(snatched.card)} を奪い取った！`; 
+            }
+        }
+        
+        addLog(`YOU: ${evName}発動`);
+        showEventModal(`【${evName}】`, msg, () => {
+            checkHandEmptyAndDraw(me);
+            state.actionMode = 'IDLE';
+            render();
+        });
+    }
+
+    function handleDiscardCard() {
+        if (state.phase !== 'playing') return;
+        let me = state.players[0];
+        let canPlaceAnyCalc = !me.locked && me.route.length < 5 && me.hand.some(c => c.type === 'calc');
+        if (canPlaceAnyCalc) {
+            return showError('配置可能な計算カードがあるため捨てられません');
+        }
+
+        if (state.selectedHandIndex === null) return;
+        const discarded = me.hand.splice(state.selectedHandIndex, 1)[0];
+        addLog(`YOU: ${formatCard(discarded)} を破棄`);
+        endTurn();
+    }
+
+    function handlePass() {
+        if (state.phase !== 'playing') return;
+        let me = state.players[0];
+        let canPlaceAnyCalc = !me.locked && me.route.length < 5 && me.hand.some(c => c.type === 'calc');
+        if (canPlaceAnyCalc) {
+            return showError('配置可能な計算カードがあるためパスできません');
+        }
+        addLog(`YOU: パスした`);
+        endTurn();
+    }
+
+    function canBeTarget(idx) {
+        if (state.turnIdx !== 0 || state.phase !== 'playing') return false;
+        if (state.actionMode === 'ATTACK_SELECT_CALC') return false; 
+        if (state.selectedHandIndex === null) return false;
+        
+        let me = state.players[0];
+        let selCard = me.hand[state.selectedHandIndex];
+        let tgt = state.players[idx];
+        
+        if (selCard.type === 'calc') {
+            return idx === 0 && !me.locked && me.route.length < 5;
+        }
+        
+        if (selCard.type === 'event') {
+            if (state.eventUsedThisTurn) return false;
+            let evName = selCard.name;
+            if (evName === 'シールド' && me.hasShield) return false;
+            if (evName === 'アタック' && !me.hand.some((c, i) => i !== state.selectedHandIndex && c.type === 'calc')) return false;
+
+            if (['ドロー', 'イコール', 'シールド', 'ハリケーン'].includes(evName)) {
+                return idx === 0; 
+            }
+            if (evName === 'ショート') {
+                return idx !== 0 && !tgt.locked && tgt.route.length > 0;
+            }
+            if (evName === 'スナッチ') {
+                return idx !== 0 && !tgt.locked && tgt.route.length > 0 && me.route.length < 5;
+            }
+            if (evName === 'アタック') {
+                return idx !== 0 && !tgt.locked && tgt.route.length < 5;
+            }
+        }
+        return false;
+    }
+
+    // --- ハリケーンのランダムピックロジック ---
+    function startHurricanePhase(user, callback) {
+        let pool = [];
+        let detailLogs = [];
+        let participants = [];
+        
+        for(let i=0; i<4; i++) {
+            let p = state.players[i];
+            if (p.locked) continue;
+            
+            // 発動者自身はシールドを持っていても自分のハリケーンを回避しない
+            if (p.hasShield && p.id !== user.id) {
+                p.hasShield = false;
+                detailLogs.push(`${p.name} はシールドで回避！`);
+                continue;
+            }
+            
+            if (p.route.length > 0) {
+                pool.push(p.route.pop().card); 
+                participants.push(i);
+            }
+        }
+        
+        if (pool.length === 0) {
+            let msg = `対象がいない、または全員が回避したため不発に終わった...`;
+            let fullMsg = `${user.name} がハリケーンを発動！<br>` + 
+                          (detailLogs.length > 0 ? detailLogs.join('<br>') + '<br>' : '') + msg;
+            addLog(`${user.name}: ハリケーン発動(不発)`);
+            showEventModal('【ハリケーン】', fullMsg, callback);
+            return;
+        }
+
+        // シャッフル
+        pool.sort(() => Math.random() - 0.5);
+
+        // 引く順番を決定
+        let order = [];
+        let idx = user.id;
+        let maxPicks = pool.length;
+        
+        let loopCount = 0;
+        while (order.length < maxPicks && loopCount < 20) {
+            loopCount++;
+            let p = state.players[idx];
+            let alreadyAssigned = order.filter(id => id === idx).length;
+            
+            if (!p.locked && participants.includes(idx) && p.route.length + alreadyAssigned < 5) {
+                order.push(idx);
+            }
+            
+            idx = (idx + 1) % 4;
+            
+            let canAnyPick = participants.some(pid => {
+                let pl = state.players[pid];
+                return !pl.locked && pl.route.length + order.filter(id => id === pl.id).length < 5;
+            });
+            if (!canAnyPick) break;
+        }
+
+        let msg = `最後尾のカードをすべて回収しシャッフルした！<br>カードを出した人だけで、順番に引きます。`;
+        let fullMsg = `${user.name} がハリケーンを発動！<br>` + 
+                      (detailLogs.length > 0 ? detailLogs.join('<br>') + '<br>' : '') + msg;
+        
+        addLog(`${user.name}: ハリケーン発動！`);
+        showEventModal('【ハリケーン】', fullMsg, () => {
+            if (order.length === 0) {
+                if (callback) callback();
+                return;
+            }
+            state.hurricaneData = { pool, pickOrder: order, currentPickIdx: 0, callback };
+            state.phase = 'hurricane';
+            state.isPicking = false; 
+            checkHurricanePick();
+        });
+    }
+
+    function checkHurricanePick() {
+        if (state.phase !== 'hurricane') return;
+
+        if (state.hurricaneData.currentPickIdx >= state.hurricaneData.pickOrder.length || state.hurricaneData.pool.length === 0) {
+            let cb = state.hurricaneData.callback;
+            state.phase = 'playing';
+            state.hurricaneData = null;
+            state.isPicking = false;
+            render();
+            if (cb) cb();
+            return;
+        }
+        
+        render(); 
+        
+        let pickerId = state.hurricaneData.pickOrder[state.hurricaneData.currentPickIdx];
+        if (state.players[pickerId].isHuman === false) { 
+            setTimeout(() => {
+                if(state.phase === 'hurricane' && state.hurricaneData) {
+                    let randIdx = Math.floor(Math.random() * state.hurricaneData.pool.length);
+                    pickHurricaneCard(randIdx);
+                }
+            }, 1200);
+        }
+    }
+
+    function pickHurricaneCard(poolIdx) {
+        if (state.phase !== 'hurricane') return;
+        if (state.isPicking) return; 
+        
+        if (!state.hurricaneData || poolIdx < 0 || poolIdx >= state.hurricaneData.pool.length) return;
+        
+        state.isPicking = true;
+        
+        let pickerId = state.hurricaneData.pickOrder[state.hurricaneData.currentPickIdx];
+        
+        if (state.players[pickerId].isHuman === true && state.players[0].id !== pickerId) {
+            state.isPicking = false;
+            return;
+        }
+
+        let card = state.hurricaneData.pool.splice(poolIdx, 1)[0];
+        
+        if (card) {
+            state.players[pickerId].route.push({ card: card });
+            addLog(`${state.players[pickerId].name} がカードを引いて配置`);
+            state.hurricaneData.currentPickIdx++;
+        }
+        
+        state.isPicking = false;
+        checkHurricanePick(); 
+    }
+
+
+    // --- AI ロジック ---
+    function processAiTurn() {
+        if(state.phase !== 'playing') return;
+        let pIdx = state.turnIdx;
+        let me = state.players[pIdx];
+        
+        if (me.locked || me.route.length >= 5) {
+            me.locked = true;
+            return endTurn();
+        }
+
+        let aVal = calcRouteVal(state.centerCard.value, me.route);
+
+        // イベント使用（1ターン1回）
+        if (!state.eventUsedThisTurn) {
+            let eventIdx = me.hand.findIndex(c => c.type === 'event' && c.name !== 'イコール' && !(c.name === 'シールド' && me.hasShield));
+            if (eventIdx !== -1) {
+                const ev = me.hand[eventIdx];
+                const en = ev.name;
+                let targetIdx = findAiTarget(pIdx, en);
+                
+                if (en === 'ハリケーン') {
+                    me.hand.splice(eventIdx, 1);
+                    state.eventUsedThisTurn = true;
+                    startHurricanePhase(me, () => {
+                        checkHandEmptyAndDraw(me);
+                        render();
+                        setTimeout(processAiTurn, 800);
+                    });
+                    return;
+                }
+
+                let msg = '';
+                me.hand.splice(eventIdx, 1);
+                
+                if (en === 'ドロー') {
+                    for(let i=0; i<2; i++) if(state.deck.length>0) me.hand.push(state.deck.pop());
+                    msg = `${me.name} は山札から2枚カードを引いた！`;
+                } else if (en === 'シールド') {
+                    me.hasShield = true; 
+                    msg = `${me.name} はシールドを展開した！<br>一度だけ他プレイヤーからの妨害を防ぐことができる。`;
+                } else if (en === 'ショート' || en === 'スナッチ' || en === 'アタック') {
+                    if (targetIdx !== -1) {
+                        let tgt = state.players[targetIdx];
+                        if (en === 'アタック') {
+                            let bestAtkIdx = -1, minTgtVal = Infinity;
+                            let tgtVal = calcRouteVal(state.centerCard.value, tgt.route);
+                            me.hand.forEach((c, idx) => {
+                                if (c.type === 'calc') {
+                                    let testTgtVal = calcRouteVal(state.centerCard.value, [...tgt.route, {card: c}]);
+                                    if (testTgtVal < minTgtVal) { minTgtVal = testTgtVal; bestAtkIdx = idx; }
+                                }
+                            });
+                            if (bestAtkIdx !== -1 && tgt.route.length < 5) {
+                                const c = me.hand.splice(bestAtkIdx, 1)[0];
+                                if (tgt.hasShield) { 
+                                    tgt.hasShield = false; 
+                                    msg = `${me.name} のアタック！<br>${tgt.name}のシールドで相殺された！`; 
+                                } else { 
+                                    tgt.route.push({ card: c }); 
+                                    msg = `${me.name} のアタック！<br>${tgt.name}に ${formatCard(c)} を送りつけた！`; 
+                                }
+                            } else {
+                                msg = `${me.name} のアタック！<br>しかし失敗した...`;
+                            }
+                        } else if (tgt.hasShield) {
+                            tgt.hasShield = false; 
+                            msg = `${me.name} の${en}！<br>${tgt.name}のシールドで相殺された！`;
+                        } else {
+                            if (en === 'ショート') { 
+                                let dropped = tgt.route.pop(); 
+                                msg = `${me.name} のショート！<br>${tgt.name}の ${formatCard(dropped.card)} を破壊した！`; 
+                            }
+                            if (en === 'スナッチ' && me.route.length < 5) { 
+                                let snatched = tgt.route.pop();
+                                me.route.push(snatched); 
+                                msg = `${me.name} のスナッチ！<br>${tgt.name}から ${formatCard(snatched.card)} を奪い取った！`; 
+                            }
+                        }
+                    } else {
+                        msg = `${me.name} の${en}！<br>しかし対象がいなかった...`;
+                    }
+                }
+                
+                state.eventUsedThisTurn = true;
+                addLog(`${me.name}: ${en}発動`);
+                showEventModal(`【${en}】`, msg, () => {
+                    checkHandEmptyAndDraw(me);
+                    render();
+                    setTimeout(processAiTurn, 800);
+                });
+                return;
+            }
+        }
+
+        if (me.route.length >= 5) {
+            me.locked = true;
+            return endTurn();
+        }
+
+        // 配置
+        let bestCalcIdx = -1, maxVal = -Infinity;
+        if (me.route.length < 5) {
+            me.hand.forEach((c, idx) => {
+                if (c.type === 'calc') {
+                    const testVal = calcRouteVal(state.centerCard.value, [...me.route, {card:c}]);
+                    if (testVal > maxVal) { maxVal = testVal; bestCalcIdx = idx; }
+                }
+            });
+        }
+
+        if (bestCalcIdx !== -1) {
+            const card = me.hand.splice(bestCalcIdx, 1)[0];
+            me.route.push({ card });
+            addLog(`${me.name}: ${formatCard(card)} を配置`);
+            return endTurn();
+        }
+
+        // イコール
+        if (!state.eventUsedThisTurn) {
+            let eqIdx = me.hand.findIndex(c => c.name === 'イコール');
+            if (eqIdx !== -1) {
+                me.hand.splice(eqIdx, 1); me.locked = true; 
+                let msg = `${me.name} は自分のルートを確定させた！`;
+                addLog(`${me.name}: イコール発動`);
+                showEventModal('【イコール】', msg, () => {
+                    endTurn();
+                });
+                return;
+            }
+        }
+
+        // パス
+        if (me.hand.length > 0) {
+            addLog(`${me.name}: パスした`);
+        } else {
+            me.locked = true; addLog(`${me.name}: 手札がなく確定`);
+        }
+        endTurn();
+    }
+
+    function findAiTarget(myIdx, eventName) {
+        let bestIdx = -1, maxScore = -Infinity;
+        for (let i=0; i<4; i++) {
+            if (i === myIdx || state.players[i].locked) continue;
+            let p = state.players[i];
+            if ((eventName === 'ショート' || eventName === 'スナッチ') && p.route.length === 0) continue;
+            if (eventName === 'アタック' && p.route.length >= 5) continue;
+            
+            let score = calcRouteVal(state.centerCard.value, p.route) - (p.hasShield ? 10000 : 0);
+            if (score > maxScore) { maxScore = score; bestIdx = i; }
+        }
+        return bestIdx;
+    }
+
+    // --- レンダリング関連 ---
+    function renderCard(card, hidden = false, index = -1, owner = '', isSelected = false, isShielded = false, isHand = false) {
+        const baseSize = isHand ? 'w-11 h-16 sm:w-12 sm:h-16' : 'w-10 h-14 sm:w-12 sm:h-16';
+        const textLg = isHand ? 'text-lg sm:text-xl' : 'text-base sm:text-lg';
+        const textMd = 'text-xs sm:text-sm';
+        const textSm = 'text-[9px] sm:text-[10px]';
+
+        let onClickAttr = '';
+        if (owner === 'player_hand') onClickAttr = `onclick="handleCardClick('${owner}', ${index})"`;
+        if (owner === 'hurricane_pool') onClickAttr = `onclick="pickHurricaneCard(${index})"`;
+        
+        let cursorClass = owner ? 'cursor-pointer hover:-translate-y-1' : '';
+
+        if (hidden) {
+            return `<div ${onClickAttr} class="relative ${baseSize} bg-slate-700 border border-slate-900 rounded shadow flex items-center justify-center shrink-0 opacity-90 transition-transform select-none ${cursorClass}"><div class="text-slate-400 ${textSm} font-bold">INFRE</div></div>`;
+        }
+        
+        let bg = 'bg-white', textC = 'text-black', border = 'border-gray-400', content = '';
+        if (card.type === 'start') {
+            bg = 'bg-yellow-200'; textC = 'text-yellow-900'; border = 'border-yellow-500';
+            content = `<div class="text-2xl sm:text-3xl font-black">${card.value}</div>`;
+        } else if (card.type === 'calc') {
+            if(card.op === '+') { bg = 'bg-green-100'; textC = 'text-green-900'; border = 'border-green-400'; }
+            if(card.op === '-') { bg = 'bg-red-100'; textC = 'text-red-900'; border = 'border-red-400'; }
+            if(card.op === '×') { 
+                if (card.val > 0) { bg = 'bg-blue-100'; textC = 'text-blue-900'; border = 'border-blue-400'; content = `<div class="${textLg} font-black">${card.op}${card.val}</div>`; }
+                else { bg = 'bg-indigo-200'; textC = 'text-indigo-900'; border = 'border-indigo-500'; content = `<div class="${textMd} font-black flex flex-col items-center leading-none"><span>${card.op}</span><span>(${card.val})</span></div>`; }
+            }
+            if(card.op === '÷') { bg = 'bg-orange-100'; textC = 'text-orange-900'; border = 'border-orange-400'; }
+            if(card.op !== '×') content = `<div class="${textLg} font-black">${card.op}${card.val}</div>`;
+        } else if (card.type === 'event') {
+            bg = 'bg-purple-100 text-purple-900 border-purple-400';
+            content = `<div class="${textSm} font-bold text-center px-0.5 leading-tight tracking-tighter">${card.name}</div>`;
+        }
+
+        const ring = isSelected ? 'ring-2 ring-yellow-400 -translate-y-2 z-20 shadow-md' : 'shadow-sm';
+        const shieldIcon = isShielded ? `<div class="absolute -bottom-1 -right-1 text-xs drop-shadow">🛡️</div>` : '';
+
+        return `<div ${onClickAttr} class="relative ${baseSize} ${bg} ${textC} ${border} border rounded flex flex-col items-center justify-center shrink-0 transition-transform select-none ${ring} ${cursorClass}">${content}${shieldIcon}</div>`;
+    }
+
+    function renderHurricanePanel() {
+        if (!state.hurricaneData || state.hurricaneData.currentPickIdx >= state.hurricaneData.pickOrder.length) return '';
+        
+        let pickerId = state.hurricaneData.pickOrder[state.hurricaneData.currentPickIdx];
+        let p = state.players[pickerId];
+        let isYou = p.id === 0;
+
+        let descHtml = `<div class="text-[10px] text-purple-300 font-bold mb-2 animate-pulse">🌀 ${p.name} がカードを選択中...</div>`;
+        if (isYou) descHtml = `<div class="text-[10px] text-yellow-400 font-bold mb-2 animate-pulse">🌀 あなたの番です！裏向きのカードを1枚選んでください</div>`;
+
+        let cardsHtml = state.hurricaneData.pool.map((c, i) => {
+            return renderCard(null, true, i, isYou ? 'hurricane_pool' : '', false, false, true);
+        }).join('');
+
+        return `<div class="flex flex-col items-center w-full min-h-[5.5rem] justify-center pt-2 pb-2">
+            ${descHtml}
+            <div class="flex gap-2 justify-center flex-wrap">${cardsHtml}</div>
+        </div>`;
+    }
+
+    function renderControlsPanel() {
+        if (state.turnIdx !== 0) return `<div class="text-slate-400 animate-pulse font-bold text-xs">AIの思考中...</div>`;
+        let me = state.players[0];
+
+        let descHtml = '', uiHtml = '';
+        if (state.actionMode === 'ATTACK_SELECT_CALC') {
+            descHtml = `<div class="text-[10px] text-yellow-300 font-bold mb-1">手札から送りつける計算カードを選択してください</div>`;
+            uiHtml = `<button onclick="cancelAction()" class="px-4 py-1.5 text-xs bg-slate-600 text-white rounded shadow">キャンセル</button>`;
+        } else if (state.selectedHandIndex !== null) {
+            let c = me.hand[state.selectedHandIndex];
+            if (c.type === 'event') {
+                descHtml = `<div class="text-[10px] text-purple-300 font-bold mb-1">${eventDescriptions[c.name]}</div>`;
+                if (state.eventUsedThisTurn) {
+                    uiHtml = `<div class="text-xs text-red-400 mb-1 font-bold">※イベントは1ターンに1回まで</div>`;
+                } else if (c.name === 'シールド' && me.hasShield) {
+                    uiHtml = `<div class="text-xs text-red-400 mb-1 font-bold">※シールドは展開済み</div>`;
+                } else if (c.name === 'スナッチ' && me.route.length >= 5) {
+                    uiHtml = `<div class="text-xs text-red-400 mb-1 font-bold">※自分のルートに空きがありません</div>`;
+                } else if (c.name === 'アタック' && !me.hand.some((card, i) => i !== state.selectedHandIndex && card.type === 'calc')) {
+                    uiHtml = `<div class="text-xs text-red-400 mb-1 font-bold">※手札に計算カードがありません</div>`;
+                } else {
+                    let msg = ['ドロー', 'イコール', 'シールド', 'ハリケーン'].includes(c.name) ? '自分の場をタップして発動' : '対象の相手の場をタップして発動';
+                    uiHtml = `<div class="text-xs text-yellow-400 mb-1 animate-pulse font-bold">${msg}</div>`;
+                }
+            } else if (c.type === 'calc') {
+                if (me.locked || me.route.length >= 5) {
+                    uiHtml = `<div class="text-xs text-red-400 mb-1 font-bold">※これ以上配置できません</div>`;
+                } else {
+                    uiHtml = `<div class="text-xs text-green-400 mb-1 animate-pulse font-bold">自分の場をタップして配置</div>`;
+                }
+            }
+
+            uiHtml += `<div class="flex gap-2 items-center mt-1">
+                <button onclick="cancelAction()" class="px-4 py-1.5 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded shadow">選択解除</button>
+            </div>`;
+        } else if (me.hand.length === 0) {
+            uiHtml = `<button onclick="state.players[0].locked = true; endTurn();" class="px-4 py-1.5 text-xs font-bold bg-red-700 text-white rounded shadow">ルート確定(終了)</button>`;
+        } else {
+            let canPlaceAnyCalc = !me.locked && me.route.length < 5 && me.hand.some(card => card.type === 'calc');
+            
+            descHtml = `<div class="text-[10px] text-yellow-400 mb-1">カードを選択してアクション</div>`;
+            let passBtn = `<button onclick="handlePass()" ${canPlaceAnyCalc ? 'disabled' : ''} class="px-5 py-1.5 text-xs font-bold ${canPlaceAnyCalc ? 'bg-slate-700 text-slate-500 opacity-50 cursor-not-allowed' : 'bg-slate-600 hover:bg-slate-500 text-white'} rounded shadow" ${canPlaceAnyCalc ? 'title="配置可能な計算カードがあるためパスできません"' : ''}>パス</button>`;
+            
+            uiHtml = `<div class="flex gap-2 items-center">${passBtn}</div>`;
+        }
+        return `<div class="flex flex-col items-center w-full min-h-[3rem] justify-center">${descHtml}${uiHtml}</div>`;
+    }
+
+    function render() {
+        const app = document.getElementById('app');
+
+        if (state.phase === 'start') {
+            app.innerHTML = `<div class="flex-1 flex flex-col items-center justify-center relative gap-2">
+                <button onclick="document.getElementById('rule-modal').classList.remove('hidden')" class="absolute top-4 right-4 bg-slate-800 border border-slate-600 px-3 py-1.5 rounded-full text-xs font-bold text-slate-300 hover:text-white shadow-lg flex items-center gap-1 z-50">
+                    <span class="text-base leading-none">📖</span> <span>ルールブック</span>
+                </button>
+                <h1 class="text-5xl sm:text-7xl font-black text-cyan-400 mb-2 tracking-widest text-center leading-none">2430</h1>
+                <h2 class="text-sm sm:text-base text-slate-400 mb-10">Single Player vs AI</h2>
+                <div class="flex flex-col gap-3 w-full max-w-xs px-4">
+                    <button onclick="initGame()" class="px-6 py-3 bg-cyan-600 rounded-lg text-lg font-bold shadow-lg">GAME START</button>
+                </div>
+            </div>`;
+            return;
+        }
+
+        const vals = state.players.map(p => calcRouteVal(state.centerCard.value, p.route));
+        const activePColor = colorMap[state.turnIdx];
+        const displayOrder = [1, 2, 3, 0];
+
+        const playerRows = displayOrder.map(idx => {
+            let p = state.players[idx], isCurrentTurn = state.turnIdx === idx, isYou = idx === 0;
+            let routeHtml = p.route.map((r, i) => renderCard(r.card, false, i, '', false, p.hasShield && i === p.route.length - 1)).join('');
+            
+            let pColor = colorMap[idx];
+            let isTargetable = canBeTarget(idx);
+            
+            let borderColor = isCurrentTurn && state.phase === 'playing' ? `${pColor.border} ${pColor.ring} ring-1 ring-inset` : 'border-slate-700';
+            let targetClass = isTargetable ? 'ring-2 ring-yellow-400 cursor-pointer hover:bg-slate-700/80 transition-colors animate-pulse' : '';
+
+            return `
+                <div onclick="handleAreaClick(${idx})" class="flex items-stretch gap-1 p-1 sm:p-2 rounded bg-slate-800/80 border ${borderColor} relative shrink-0 ${targetClass}">
+                    <div class="w-[4.5rem] flex flex-col items-center justify-center shrink-0 border-r border-slate-700/50 pr-1 pointer-events-none">
+                        <div class="font-bold text-[9px] ${pColor.text}">${p.name} ${p.locked ? '🔒' : ''} ${p.hasShield && p.route.length === 0 ? '🛡️' : ''}</div>
+                        <div class="text-white font-mono text-lg sm:text-xl font-black leading-none">${vals[idx]}</div>
+                        ${!isYou && state.phase === 'playing' ? `<div class="text-[8px] text-slate-500 mt-0.5">手札:${p.hand.length}</div>` : ''}
+                    </div>
+                    <div class="flex gap-0.5 overflow-x-auto no-scrollbar flex-1 items-center pl-1 h-16 pointer-events-none">
+                        ${routeHtml}
+                    </div>
+                </div>`;
+        }).join('');
+
+        let modalHtml = '';
+        if (state.eventModal && state.eventModal.visible) {
+            modalHtml = `
+            <div class="fixed inset-0 z-[300]" onclick="closeEventModal()"></div>
+            <div class="absolute inset-0 z-[301] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-2 pointer-events-none">
+                <div class="bg-slate-800 border border-purple-500 rounded-xl p-3 w-full max-w-sm shadow-[0_0_15px_rgba(168,85,247,0.3)] flex flex-col items-center justify-center text-center animate-pop-in pointer-events-auto cursor-pointer" onclick="closeEventModal()">
+                    <div class="text-sm font-black text-purple-400 mb-1 tracking-wider">${state.eventModal.title}</div>
+                    <div class="text-xs text-white mb-2 leading-relaxed font-bold">${state.eventModal.message}</div>
+                    <div class="text-[10px] text-slate-300 bg-slate-700 px-3 py-1 rounded-full animate-pulse shadow-inner font-bold border border-slate-500 pointer-events-none">画面タップで進む</div>
+                </div>
+            </div>`;
+        }
+
+        let confirmModalHtml = '';
+        if (state.confirmModal && state.confirmModal.visible) {
+            confirmModalHtml = `
+            <div class="fixed inset-0 z-[400] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div class="bg-slate-800 border border-slate-500 rounded-xl p-6 w-full max-w-sm shadow-2xl flex flex-col items-center text-center animate-pop-in">
+                    <div class="text-base font-black text-yellow-400 mb-4 tracking-wider">${state.confirmModal.title}</div>
+                    <div class="text-sm text-white mb-6 leading-relaxed">${state.confirmModal.message}</div>
+                    <div class="flex gap-4 w-full justify-center">
+                        <button onclick="closeConfirmModal(false)" class="px-5 py-2 bg-slate-600 rounded text-white font-bold w-24 shadow">いいえ</button>
+                        <button onclick="closeConfirmModal(true)" class="px-5 py-2 bg-red-600 hover:bg-red-500 rounded text-white font-bold w-24 shadow">はい</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        let controlAreaHtml = '';
+        if (state.phase === 'hurricane') {
+            controlAreaHtml = renderHurricanePanel();
+        } else if (state.phase === 'end') {
+            let scores = state.players.map(p => ({ name: p.name, score: calcRouteVal(state.centerCard.value, p.route), isYou: p.id === 0, id: p.id }));
+            scores.sort((a,b) => b.score - a.score);
+            let isWin = scores[0].isYou && scores[0].score > (scores[1] ? scores[1].score : -Infinity);
+            
+            controlAreaHtml = `
+                <div class="flex flex-col items-center justify-center p-2 w-full animate-pop-in">
+                    <div class="text-xl font-black mb-3 ${isWin ? 'text-yellow-400' : 'text-slate-400'}">${isWin ? '🎉 YOU WIN! 🎉' : '💀 YOU LOSE... 💀'}</div>
+                    <div class="flex gap-2 w-full justify-center flex-wrap mb-4">
+                        ${scores.map((s,i) => `
+                            <div class="flex flex-col items-center bg-slate-900 p-2 rounded-lg border ${s.isYou ? 'border-cyan-500' : 'border-slate-700'} min-w-[4.5rem] shadow">
+                                <span class="text-[10px] font-bold ${s.isYou ? colorMap[s.id].text : 'text-slate-400'}">${i===0?'👑 ':''}${s.name}</span>
+                                <span class="font-mono text-xl font-black text-white">${s.score}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="state.phase = 'start'; render();" class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-full text-sm font-bold text-white shadow-lg transition-colors">タイトルへ</button>
+                        <button onclick="initGame();" class="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 rounded-full text-sm font-bold text-white shadow-lg transition-colors">もう一回プレイ</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            controlAreaHtml = `
+                <div class="min-h-[2.5rem] flex flex-col justify-center items-center py-1 px-1">
+                    ${renderControlsPanel()}
+                </div>
+                <!-- Hand -->
+                <div class="flex gap-1.5 justify-center items-end h-16 pt-1 px-1">
+                    ${state.players[0].hand.map((c, i) => renderCard(c, false, i, 'player_hand', state.selectedHandIndex === i, false, true)).join('')}
+                </div>
+            `;
+        }
+
+        app.innerHTML = `
+            ${confirmModalHtml}
+            <div id="error-msg" class="hidden absolute top-12 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-1.5 rounded-full shadow-lg z-50 text-xs font-bold whitespace-nowrap transition-opacity"><span id="error-text"></span></div>
+
+            <!-- Header -->
+            <div class="flex justify-between items-center bg-slate-900 px-2 py-1.5 border-b border-slate-700 shrink-0">
+                <div class="flex items-center gap-1">
+                    <button onclick="showConfirmModal('タイトルへ戻る', '現在のゲームを終了してタイトル画面に戻りますか？', () => { state.phase = 'start'; render(); })" class="text-[10px] bg-red-700 hover:bg-red-600 px-2 py-1 rounded text-white font-bold shadow">終了</button>
+                    <div class="w-6 h-8 bg-yellow-200 text-yellow-900 border border-yellow-500 rounded flex items-center justify-center text-sm font-black shadow-sm ml-1">${state.centerCard.value}</div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div class="flex items-center gap-1 hidden sm:flex">
+                        <span class="text-[9px] text-slate-400 font-bold">DECK</span>
+                        <span class="text-sm font-black text-slate-200">${state.deck.length}</span>
+                    </div>
+                    ${state.phase !== 'end' ? `
+                    <div class="flex items-center gap-1 ml-1">
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-800 rounded border border-slate-600 ${activePColor.text} animate-pulse">${state.players[state.turnIdx].name}</span>
+                    </div>
+                    ` : ''}
+                    <button onclick="document.getElementById('rule-modal').classList.remove('hidden')" class="flex items-center gap-1 bg-slate-800 border border-slate-600 px-3 py-1 rounded-full text-[10px] font-bold text-slate-300 hover:bg-slate-700 hover:text-white shadow ml-1">
+                        <span class="text-xs leading-none">📖</span> <span>ルール</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Board -->
+            <div class="flex-1 overflow-y-auto p-1.5 flex flex-col gap-1.5 bg-slate-950 custom-scrollbar relative z-10">
+                ${playerRows}
+            </div>
+
+            <!-- Controls & Hand / Hurricane / End Result -->
+            <div class="shrink-0 bg-slate-800 flex flex-col border-t border-slate-700 pb-2 relative z-20">
+                ${modalHtml}
+                <!-- Log -->
+                <div class="h-20 overflow-y-auto text-[10px] sm:text-xs font-mono text-slate-400 bg-slate-900/50 p-2 custom-scrollbar">
+                    ${state.log.map(l => `<div class="leading-tight truncate mb-1">${l}</div>`).join('')}
+                </div>
+                
+                ${controlAreaHtml}
+            </div>
+        `;
+    }
+
+    render();
+</script>
+</body>
+</html>
