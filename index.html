@@ -4,71 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>kozgame ゲームポータル</title>
+    <!-- Google Fontsを読み込んでフォントを綺麗に -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        /* 全体のカラー設定 */
+        :root {
+            --primary: #4F46E5;       /* SPE-DIFE用のブルー */
+            --primary-hover: #4338CA;
+            --secondary: #10B981;     /* 2430用のグリーン */
+            --secondary-hover: #059669;
+            --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364); /* 背景のグラデーション */
+        }
+
         body {
-            font-family: sans-serif;
+            font-family: 'Noto Sans JP', sans-serif; /* モダンなフォントを適用 */
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* 高さ設定を調整 */
+            min-height: 100vh;
             margin: 0;
-            background-color: #f0f2f5;
-        }
-        .card {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
-        h1 {
+            background: var(--bg-gradient); /* ゲーミング感のある暗めの背景 */
             color: #333;
-            margin-bottom: 1.5rem;
         }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95); /* 少しだけ透明感のある白 */
+            padding: 3rem 2rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); /* 立体感のある影 */
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-weight: 900;
+            font-size: 2.2rem;
+            margin: 0 0 0.2rem 0;
+            color: #1f2937;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 2.5rem;
+            font-weight: 700;
+        }
+
         .button-container {
             display: flex;
             flex-direction: column;
-            gap: 1rem; /* ボタン同士の間隔 */
+            gap: 1.5rem;
         }
+
         .play-button {
             display: block;
-            padding: 14px 24px;
-            color: white;
+            position: relative;
+            padding: 1.5rem 1rem;
             text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            transition: transform 0.1s, background-color 0.2s;
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        /* ボタンごとの色分け（お好みで変更してください） */
+
+        /* SPE-DIFE ボタン */
         .btn-spe {
-            background-color: #007bff;
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
         }
         .btn-spe:hover {
-            background-color: #0056b3;
+            background-color: var(--primary-hover);
+            transform: translateY(-4px); /* ホバー時に少し浮き上がる */
+            box-shadow: 0 12px 20px rgba(79, 70, 229, 0.5);
         }
+
+        /* 2430 ボタン */
         .btn-2430 {
-            background-color: #28a745;
+            background-color: var(--secondary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
         }
         .btn-2430:hover {
-            background-color: #218838;
+            background-color: var(--secondary-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px rgba(16, 185, 129, 0.5);
         }
+
         .play-button:active {
-            transform: scale(0.98); /* クリック時に少しへこむ演出 */
+            transform: translateY(1px); /* クリック時の押し込み感 */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        /* NEWバッジの装飾 */
+        .badge {
+            display: inline-block;
+            background-color: #EF4444; /* 目立つ赤色 */
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            margin-bottom: 0.8rem;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* ゲームタイトルの装飾 */
+        .game-title {
+            display: block;
+            font-size: 1.4rem;
+            font-weight: 900;
+            margin-bottom: 0.4rem;
+        }
+
+        /* ゲーム説明の装飾 */
+        .game-desc {
+            display: block;
+            font-size: 0.85rem;
+            opacity: 0.9;
+            font-weight: 400;
         }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>kozgame<br>ゲームを選択</h1>
+        <h1>kozgame</h1>
+        <div class="subtitle">SELECT GAME</div>
+        
         <div class="button-container">
             <!-- SPE-DIFE.html へのリンク -->
-            <a href="SPE-DIFE.html" class="play-button btn-spe">【20260503 new!!】<br>SPE-DIFE(タワーディフェンスゲーム)</a>
+            <a href="SPE-DIFE.html" class="play-button btn-spe">
+                <span class="badge">2026/05/03 NEW!!</span>
+                <span class="game-title">SPE-DIFE</span>
+                <span class="game-desc">タワーディフェンスゲーム</span>
+            </a>
             
             <!-- 2430.html へのリンク -->
-            <a href="2430.html" class="play-button btn-2430">【20260503 new!!】<br>2430（オリジナルカードゲーム）</a>
+            <a href="2430.html" class="play-button btn-2430">
+                <span class="badge">2026/05/03 NEW!!</span>
+                <span class="game-title">2430</span>
+                <span class="game-desc">オリジナルカードゲーム</span>
+            </a>
         </div>
     </div>
 
