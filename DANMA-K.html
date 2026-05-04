@@ -16,7 +16,8 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            font-family: 'DotGothic16', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* 日本語の標準フォントを予備（フォールバック）として追加 */
+            font-family: 'DotGothic16', 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             touch-action: none;
         }
         #game-container {
@@ -152,7 +153,7 @@
             letter-spacing: 3px;
         }
         
-        /* ã®ã£ã©ãªã¼ç»é¢ç¨CSS */
+        /* ギャラリー画面用CSS */
         #gallery-ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 50; display: none;
@@ -192,7 +193,7 @@
             white-space: nowrap;
         }
 
-        /* ã«ã¼ã«ç»é¢ç¨CSS */
+        /* ルール画面用CSS */
         #rule-ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.9); z-index: 50; display: none;
@@ -248,21 +249,21 @@
         <div id="gallery-btn" class="title-btn">BOSS GALLERY</div>
     </div>
 
-    <!-- ã«ã¼ã«UI -->
+    <!-- ルールUI -->
     <div id="rule-ui">
         <div class="rule-content">
             <h2>SYSTEM RULES</h2>
             <ul>
-                <li>ç»é¢ããã©ãã°ï¼PCã¯ã¯ãªãã¯ï¼ãã©ãã°ï¼ã§ç§»åãå°æã¯ãªã¼ãã ã</li>
-                <li>ãã®ã²ã¼ã ã«<span class="highlight">ã²ã¼ã ãªã¼ãã¼ã¯ç¡ã</span>ãä½åº¦ã§ãåºæããç«ã¡åããï¼</li>
-                <li>ãã ããè¢«å¼¾ãããã³ã«ãLOST(åºææ°)ããã«ã¦ã³ããããã¯ãªã¢æã«<span class="highlight">ãLOSTæ° Ã 5ä¸ç¹ãã®ããã«ãã£</span>ãåããã</li>
-                <li>åã¦ã§ã¼ãã§éã£ã¦ãã<span class="rainbow-text">è¹è²ã®ã¢ã¤ãã </span>ãåãã¨ãç´10ç§éã¹ã³ã¢ã¨ãã¹æç ´ãã¼ãã¹ã<span class="rainbow-text">2å</span>ã«ãªããï¼</li>
+                <li>画面をドラッグ（PCはクリック＆ドラッグ）で移動。射撃はオートだ。</li>
+                <li>このゲームに<span class="highlight">ゲームオーバーは無い</span>。何度でも出撃し、立ち向かえ！</li>
+                <li>ただし、被弾するたびに「LOST(出撃数)」がカウントされ、クリア時に<span class="highlight">「LOST数 × 5万点」のペナルティ</span>を受ける。</li>
+                <li>各ウェーブで降ってくる<span class="rainbow-text">虹色のアイテム</span>を取ると、約10秒間スコアとボス撃破ボーナスが<span class="rainbow-text">2倍</span>になるぞ！</li>
             </ul>
         </div>
         <div id="rule-back-btn" class="gallery-back-btn">RETURN</div>
     </div>
 
-    <!-- ã®ã£ã©ãªã¼UI -->
+    <!-- ギャラリーUI -->
     <div id="gallery-ui">
         <div class="gallery-nav" id="gallery-prev">&lt;</div>
         <div class="gallery-nav" id="gallery-next">&gt;</div>
@@ -276,7 +277,7 @@
 
     <div id="wave-announce">
         <div id="announce-wave">WAVE 1</div>
-        <div id="announce-boss">Type-Î±: SPINNER</div>
+        <div id="announce-boss">Type-α: SPINNER</div>
     </div>
     
     <div id="back-title-btn">RETURN TO TITLE</div>
@@ -307,6 +308,9 @@
     const practiceBtnEl = document.getElementById('practice-btn');
     const resumeBtnEl = document.getElementById('resume-btn');
 
+    // Canvas描画用の標準フォント文字列
+    const fontFallback = '"DotGothic16", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif';
+
     function resize() {
         canvas.width = document.getElementById('game-container').clientWidth;
         canvas.height = document.getElementById('game-container').clientHeight;
@@ -314,25 +318,25 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // ãã¹ã®ãã¼ã¿å®ç¾©
+    // ボスのデータ定義
     const bossDataList = [
-        { name: "Type-Î±: SPINNER", color: "#ff007f", radius: 30, hp: 1500, desc: "ä¸å®ã®ãªãºã ã§åè»¢ããªãããç¾ããå¹¾ä½å­¦æ¨¡æ§ãæãæ¸¦å·»ãå¼¾ã¨å¨æ¹ä½å¼¾ãæ¾ã¤åºæ¬åãè½ã¡çãã¦å¼¾ã®ééãè¦æ¥µãããã¨ãèè¦ã ã" },
-        { name: "Type-Î²: STRIKER", color: "#00ff7f", radius: 28, hp: 1200, desc: "é«æ©åã§åãåããé­ãèªæ©çãå¼¾ãç»é¢ãèãæãæ¥µå¤ªã¬ã¼ã¶ã¼ãæ¾ã¤æ»æç¹ååãã¬ã¼ã¶ã¼ã®å°ç·ã«å¥ããªãããç´ æ©ãå¤æ­ãæ±ããããã" },
-        { name: "Type-Î³: BLOOM", color: "#ffaa00", radius: 35, hp: 2200, desc: "è±ãéããããªé£å½¢ãå±éããæ¯ãåãã»ã©é«å¯åº¦ã®å¼¾å¹ã¨é ­ä¸ããã®å¼¾ã®é¨ãéããããå¾®ç´°ãªæä½ã§å¼¾å¹ã®ç¶²ç®ãæ½ãæããã" },
-        { name: "Type-Î´: ILLUSION", color: "#aa00ff", radius: 25, hp: 1400, desc: "è»éãæ²ããã«ã¼ãå¼¾ããå¨æ¹ä½ã«å±éãããå¾ã«ä¸æçªæãã¦ããè¨­ç½®å¼¾ãæãå¤ååãäºæ³å¤ã®è»éã«æããããå·éã«å¯¾å¦ããã" },
-        { name: "Type-Îµ: BLASTER", color: "#00aaff", radius: 30, hp: 1800, desc: "å·¨å¤§ãªç ²å°ããæ¾ãããå§åçãªæ¥µå¤ªãã¼ã ã¨ãéãå ´ãå¥ªãåè»¢ãªãæãã¬ã¼ã¶ã¼ãèå¨ããã¼ã ã®äºåç·ãè¦éããªã" },
-        { name: "Type-Î¶: BOMBER", color: "#ffff00", radius: 35, hp: 2000, desc: "çå¼¾ããã¨ç¡æ°ã«åè£ããççºå¼¾ããèªæ©ãåå²ããæ©é·ãã°ãã¾ãç»é¢ãå¶å§ãããåè£åã®è»éãäºæ¸¬ããå®å¨å°å¸¯ãç¢ºä¿ããã" },
-        { name: "Type-Î·: PHALANX", color: "#aaffff", radius: 25, hp: 1600, desc: "æ¬ä½ã¨2æ©ã®ãããã«ããæ³¢ç¶æ»æã¨ãããããªééãããªãé«éã®å£å¼¾å¹ãå±éããããããããã®åå²ç¶²ãããã«çªç ´ããããéµã¨ãªãã" },
-        { name: "Type-Î¸: REFLECTOR", color: "#aaff00", radius: 28, hp: 1500, desc: "ç»é¢ç«¯ã§ä½åº¦ãè·³ã­è¿ãç¹æ®ãªåå°å¼¾ãåå°ã¬ã¼ã¶ã¼ãæããäºæ¸¬ä¸è½ãªåå°è»éãéè·¯ãæ­ã¤ãããç»é¢ä¸­å¤®ä»è¿ã§ã®ç«ã¡åããå®å¨ã ã" },
-        { name: "Type-Î¹: CHRONOS", color: "#ff55aa", radius: 32, hp: 1700, desc: "ç©ºä¸­ã§ä¸æåæ­¢ããå¾ã«æ¥çºé²ããå¼¾ããå¾ãã«å éããå¼¾ã§ãã¬ã¤ã¤ã¼ã®æéæè¦ãçããããç·©æ¥ã®ã¤ããå¼¾å¹ã«ç¦ããå¯¾å¿ããã" },
-        { name: "Î©: SYSTEM CORE", color: "#ffffff", radius: 50, hp: 3600, desc: "ãã¹ã¦ã®æ»æãã¿ã¼ã³ãè¤åããå§åçãªç©éã§ãã¬ã¤ã¤ã¼ãçµ¶æã«é¥ããæçµé²è¡ã·ã¹ãã ãå¨9ãã§ã¼ãºãããªãçæ»ãåãåãã" }
+        { name: "Type-α: SPINNER", color: "#ff007f", radius: 30, hp: 1500, desc: "一定のリズムで回転しながら、美しい幾何学模様を描く渦巻き弾と全方位弾を放つ基本型。落ち着いて弾の隙間を見極めることが肝要だ。" },
+        { name: "Type-β: STRIKER", color: "#00ff7f", radius: 28, hp: 1200, desc: "高機動で動き回り、鋭い自機狙い弾や画面を薙ぎ払う極太レーザーを放つ攻撃特化型。レーザーの射線に入らないよう素早い判断が求められる。" },
+        { name: "Type-γ: BLOOM", color: "#ffaa00", radius: 35, hp: 2200, desc: "花が開くような陣形を展開し、息を呑むほど高密度の弾幕と頭上からの弾の雨を降らせる。微細な操作で弾幕の網目を潜り抜けろ。" },
+        { name: "Type-δ: ILLUSION", color: "#aa00ff", radius: 25, hp: 1400, desc: "軌道が曲がるカーブ弾や、全方位に展開された後に一斉突撃してくる設置弾を操る変則型。予想外の軌道に惑わされず冷静に対処せよ。" },
+        { name: "Type-ε: BLASTER", color: "#00aaff", radius: 30, hp: 1800, desc: "巨大な砲台から放たれる圧倒的な極太ビームと、逃げ場を奪う回転なぎ払いレーザーが脅威。ビームの予告線を見逃すな。" },
+        { name: "Type-ζ: BOMBER", color: "#ffff00", radius: 35, hp: 2000, desc: "着弾すると無数に分裂する爆発弾や、自機を包囲する機雷をばらまき画面を制圧する。分裂前の軌道を予測し、安全地帯を確保せよ。" },
+        { name: "Type-η: PHALANX", color: "#aaffff", radius: 25, hp: 1600, desc: "本体と2機のビットによる波状攻撃と、わずかな隙間しかない高速の壁弾幕を展開する。ビットからの包囲網をいかに突破するかが鍵となる。" },
+        { name: "Type-θ: REFLECTOR", color: "#aaff00", radius: 28, hp: 1500, desc: "画面端で何度も跳ね返る特殊な反射弾や反射レーザーを操る。予測不能な反射軌道が退路を断つため、画面中央付近での立ち回りが安全だ。" },
+        { name: "Type-ι: CHRONOS", color: "#ff55aa", radius: 32, hp: 1700, desc: "空中で一時停止した後に急発進する弾や、徐々に加速する弾でプレイヤーの時間感覚を狂わせる。緩急のついた弾幕に焦らず対応しろ。" },
+        { name: "Ω: SYSTEM CORE", color: "#ffffff", radius: 50, hp: 3600, desc: "すべての攻撃パターンを複合し、圧倒的な物量でプレイヤーを絶望に陥れる最終防衛システム。全9フェーズからなる猛攻を凌ぎ切れ。" }
     ];
 
-    // --- ãµã¦ã³ãç®¡ç ---
+    // --- サウンド管理 ---
     class SoundManager {
         constructor() {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            this.bpm = 175; // ãã©ã ã³ãã¼ã¹ã«æé©ãªãã³ãã«å¤æ´
+            this.bpm = 175; // ドラムンベースに最適なテンポに変更
             this.stepTime = (60 / this.bpm) / 4;
             this.isPlaying = false;
             this.currentStep = 0;
@@ -340,7 +344,7 @@
             this.timerID = null;
             this.loopLength = 64; 
             
-            // é³å²ãé²æ­¢ã»é³å§èª¿æ´ç¨ã®ã³ã³ãã¬ããµã¼ã¨ãã¹ã¿ã¼ã²ã¤ã³
+            // 音割れ防止・音圧調整用のコンプレッサーとマスターゲイン
             this.compressor = this.ctx.createDynamicsCompressor();
             this.compressor.threshold.value = -15;
             this.compressor.knee.value = 30;
@@ -349,7 +353,7 @@
             this.compressor.release.value = 0.25;
             
             this.masterGain = this.ctx.createGain();
-            this.masterGain.gain.value = 0.6; // å¨ä½ããªã¥ã¼ã 
+            this.masterGain.gain.value = 0.6; // 全体ボリューム
             
             this.masterGain.connect(this.compressor);
             this.compressor.connect(this.ctx.destination);
@@ -376,18 +380,18 @@
         }
         playStep(step, time) {
             const stepInBar = step % 16;
-            const bar = Math.floor(step / 16) % 4; // 4å°ç¯ã®å±éãä½ã
+            const bar = Math.floor(step / 16) % 4; // 4小節の展開を作る
             
-            // ãã©ã ã³ãã¼ã¹ã®ã­ãã¯ãã¿ã¼ã³ (1æç®ã3æç®ã®è£ãªã©éã)
+            // ドラムンベースのキックパターン (1拍目、3拍目の裏など重く)
             if (stepInBar === 0 || stepInBar === 10 || (bar === 3 && stepInBar === 14)) {
                 this.playDrum(time, 60, 20, 0.4, 0.9);
             }
-            // ã­ãã¯ã®ã´ã¼ã¹ããã¼ã(ããªã¨ã¼ã·ã§ã³)
+            // キックのゴーストノート(バリエーション)
             if (step % 32 === 26) {
                 this.playDrum(time, 60, 20, 0.4, 0.6);
             }
             
-            // ã¹ãã¢ï¼ç²é«ãé³ãæ¶ããä½ããã¿ããã¨ãããã¼ã«ãã·ã§ã³ã«å¤æ´ï¼
+            // スネア（甲高い音を消し、低い「タッ」というパーカッションに変更）
             if (stepInBar === 4 || stepInBar === 12) {
                 this.playSnare(time, 0.5);
             }
@@ -395,15 +399,13 @@
                 this.playSnare(time, 0.15);
             }
 
-            // --- ç²é«ããã¤ãããã¯å®å¨ã«åé¤ ---
-
-            // ãã­ãéä½é³ãã¼ã¹ã©ã¤ã³ (4å°ç¯ã§ã³ã¼ãé²è¡ãä½ã)
+            // うねる重低音ベースライン (4小節でコード進行を作る)
             let baseFreq = 43.65; // F1
             if (bar === 1) baseFreq = 51.91; // Ab1
             else if (bar === 2) baseFreq = 38.89; // Eb1
             else if (bar === 3) baseFreq = 34.65; // Db1
 
-            // åå°ç¯ãã¨ã«ãã¼ã¹ã®ãªãºã ãã¿ã¼ã³ãå¤åããã
+            // 各小節ごとにベースのリズムパターンを変化させる
             const bassPattern = [
                 [1,0,0,1, 0,0,1,0, 1,0,0,0, 1,0,1,0],
                 [1,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0],
@@ -416,14 +418,13 @@
                 this.playReeseBass(time, baseFreq, duration, 0.5);
             }
             
-            // å°ç¯ã®é ­ã«å°ãéããããªãã£ã¼ãã»ãµããã¼ã¹ãéã­ã
+            // 小節の頭に地を這うようなディープ・サブベースを重ねる
             if (stepInBar === 0) {
                 this.playDrum(time, baseFreq, baseFreq, this.stepTime * 4, 0.6);
             }
         }
         
         playSnare(time, vol) {
-            // ç²é«ããã¤ãºæåãå®å¨åé¤ãä½ãé¿ãã¢ã¿ãã¯é³ã®ã¿ã
             const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
             osc.type = 'triangle'; osc.frequency.setValueAtTime(100, time); osc.frequency.exponentialRampToValueAtTime(30, time + 0.1);
             gain.gain.setValueAtTime(vol, time); gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
@@ -463,14 +464,12 @@
         seEnemyHit() { if(this.isPlaying) this.playNoise(this.ctx.currentTime, 0.03, 0.02, 4000); }
         seSmallExplosion() {
             if(!this.isPlaying) return;
-            // é³éï¼volï¼ãä¸ãã¦èª¿æ´
             this.playDrum(this.ctx.currentTime, 40, 10, 0.4, 0.3); 
             this.playNoise(this.ctx.currentTime, 0.4, 0.15, 150); 
         }
         sePlayerDeath() {
             if(!this.isPlaying) return;
             const t = this.ctx.currentTime;
-            // é³éï¼volï¼ãä¸ãã¦èª¿æ´
             this.playDrum(t, 60, 10, 1.0, 0.4); 
             this.playNoise(t, 1.0, 0.4, 150); 
             const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
@@ -478,14 +477,12 @@
             gain.gain.setValueAtTime(0.25, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 1.0); 
             osc.connect(gain); gain.connect(this.masterGain); osc.start(t); osc.stop(t + 1.0);
         }
-        seExplosion() { // ãã¹ã®å®å¨æç ´æã®å¤§ççº
+        seExplosion() {
             if(!this.isPlaying) return;
             const t = this.ctx.currentTime;
-            // é³éï¼volï¼ãä¸ãã¦èª¿æ´
             this.playDrum(t, 40, 5, 2.0, 0.5); 
             this.playNoise(t, 2.0, 0.35, 100); 
             this.playNoise(t + 0.1, 1.5, 0.25, 50); 
-            // éä½é³ã®ä½é»
             const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
             osc.type = 'sawtooth'; osc.frequency.setValueAtTime(30, t); osc.frequency.exponentialRampToValueAtTime(5, t + 2.0);
             gain.gain.setValueAtTime(0.35, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 2.0); 
@@ -506,7 +503,7 @@
 
     let sound = null;
 
-    // --- å¥åã»ç¶æç®¡ç ---
+    // --- 入力・状態管理 ---
     const keys = {};
     window.addEventListener('keydown', e => keys[e.code] = true);
     window.addEventListener('keyup', e => keys[e.code] = false);
@@ -533,7 +530,6 @@
         if (isPaused || state === 'allClear' || state === 'practiceClear') {
             backTitleBtnEl.style.display = 'block';
             if (isPaused) {
-                // ä¸æåæ­¢ä¸­ã¯ RESUME ãã¿ã³ã®ä¸ã«éç½®
                 backTitleBtnEl.style.top = 'auto';
                 backTitleBtnEl.style.right = 'auto';
                 backTitleBtnEl.style.bottom = '15%';
@@ -542,7 +538,6 @@
                 backTitleBtnEl.style.fontSize = '1.1rem';
                 backTitleBtnEl.style.padding = '12px 20px';
             } else {
-                // ã¯ãªã¢æã¯ä¸­å¤®ä¸ã«éç½®
                 backTitleBtnEl.style.top = 'auto';
                 backTitleBtnEl.style.right = 'auto';
                 backTitleBtnEl.style.bottom = '10%';
@@ -589,7 +584,7 @@
         updateDOM();
     }
 
-    // ã®ã£ã©ãªã¼ã®å¦ç
+    // ギャラリーの処理
     function openGallery() {
         state = 'gallery';
         galleryIndex = 0;
@@ -632,7 +627,7 @@
         setTimeout(() => { waveAnnounceEl.style.opacity = 0; }, 2500);
     }
 
-    // ã¤ãã³ããªã¹ãã¼ç»é²
+    // イベントリスナー登録
     startBtnEl.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); initAndStartGame(); });
     startBtnEl.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); initAndStartGame(); }, {passive: false});
 
@@ -720,7 +715,7 @@
         }
     });
 
-    // --- ã¨ã³ãã£ãã£ ---
+    // --- エンティティ ---
     class Player {
         constructor() {
             this.x = canvas.width / 2; this.y = canvas.height * 0.8;
@@ -728,14 +723,14 @@
             this.deaths = 0; 
             this.invincible = 0; 
             this.state = 'normal';
-            this.scoreMultiplierTimer = 0; // ã¹ã³ã¢2åã¿ã¤ãã¼
+            this.scoreMultiplierTimer = 0; // スコア2倍タイマー
         }
         update() {
             if (this.invincible > 0) this.invincible--;
 
             if (this.scoreMultiplierTimer > 0) {
                 this.scoreMultiplierTimer--;
-                if (this.scoreMultiplierTimer === 0) updateUI(); // åãããUIæ´æ°
+                if (this.scoreMultiplierTimer === 0) updateUI(); // 切れたらUI更新
             }
 
             if (this.state === 'respawning') {
@@ -786,8 +781,8 @@
     class Item {
         constructor(x, y) {
             this.x = x; this.y = y;
-            this.vx = 0; this.vy = 2; // ãã£ããè½ã¡ã
-            this.radius = 12; // å°ãå¤§ãããã¦ç®ç«ããã
+            this.vx = 0; this.vy = 2; // ゆっくり落ちる
+            this.radius = 12; // 少し大きくして目立たせる
             this.life = 0;
             this.dead = false;
         }
@@ -810,7 +805,7 @@
             
             ctx.shadowBlur = 0;
             ctx.fillStyle = 'white';
-            ctx.font = '12px "DotGothic16", sans-serif';
+            ctx.font = '12px ' + fontFallback;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('x2', this.x, this.y);
@@ -843,8 +838,8 @@
             this.dyingTimer = 0;
             this.dead = false;
             
-            this.itemDropTimer = Math.floor(Math.random() * 300) + 300; // 5ã10ç§ã§ã¢ã¤ãã åºç¾
-            this.hpItemDropped = false; // HP10%ã¢ã¤ãã ã®ãã­ãããã©ã°
+            this.itemDropTimer = Math.floor(Math.random() * 300) + 300; // 5〜10秒でアイテム出現
+            this.hpItemDropped = false; // HP10%アイテムのドロップフラグ
 
             if (this.isGallery) {
                 this.y = canvas.height * 0.35; 
@@ -891,12 +886,12 @@
 
             this.timer++;
             
-            // ã¢ã¤ãã ãã­ãã
+            // アイテムドロップ
             if (this.timer === this.itemDropTimer) {
                 items.push(new Item(this.x, this.y));
             }
 
-            // --- ãã¹ãã¨ã®åã ---
+            // --- ボスごとの動き ---
             if (this.bossType === 1 || this.bossType === 7) {
                 this.x = canvas.width/2 + Math.sin(this.timer*0.04)*(canvas.width/2.5);
             } else if (this.bossType === 4) { 
@@ -1025,10 +1020,9 @@
                 }
             }
             else if (this.bossType === 4) { // BLASTER
-                if (this.timer % 300 === 0) this.phase = (this.phase + 1) % 4; // 4ãã§ã¼ãºã«æ¡å¼µ
+                if (this.timer % 300 === 0) this.phase = (this.phase + 1) % 4; // 4フェーズに拡張
                 
                 if (this.phase === 0) {
-                    // ã¹ãã¼ã0.7åï¼çºå°ééã»ãã£ã¼ã¸æéå»¶é·ï¼
                     if (this.timer % 150 === 0) {
                         const a = Math.atan2(player.y - this.y, player.x - this.x);
                         this.fire(this.x, this.y, 0, 0, this.color, 36, (b) => { b.x = enemy.x; b.y = enemy.y; if(b.life >= 130) b.dead = true; }, {isBeam: true, beamAngle: a, chargeTime: 70});
@@ -1038,7 +1032,6 @@
                         for(let i=-2; i<=2; i++) this.fire(this.x, this.y, 4 + diff*0.1, a + i*0.2, '#ffffff', 4);
                     }
                 } else if (this.phase === 1) { 
-                    // 3æ¬ã¬ã¼ã¶ã¼
                     if (this.timer % 150 === 0) {
                         this.angle = Math.random() * Math.PI;
                         for(let i=0; i<3; i++) {
@@ -1047,7 +1040,6 @@
                     }
                     if (this.timer % 150 > 60) this.angle += 0.01; 
                     
-                    // å¼¾å¹è¿½å 
                     if (this.timer % 8 === 0) {
                         this.fire(this.x, this.y, 4, this.timer * 0.1, '#ffffff', 4);
                         this.fire(this.x, this.y, 4, this.timer * 0.1 + Math.PI, '#ffffff', 4);
@@ -1057,7 +1049,6 @@
                         this.fire(this.x, this.y, 4, a, '#ffff00', 5);
                     }
                 } else if (this.phase === 2) { 
-                    // 4æ¬ã¬ã¼ã¶ã¼
                     if (this.timer % 150 === 0) {
                         this.angle = Math.random() * Math.PI;
                         for(let i=0; i<4; i++) {
@@ -1066,7 +1057,6 @@
                     }
                     if (this.timer % 150 > 60) this.angle += 0.009; 
                     
-                    // å¼¾å¹è¿½å 
                     if (this.timer % 10 === 0) {
                         for (let i=0; i<5; i++) {
                             this.fire(this.x, this.y, 2 + Math.random()*2.5, Math.random()*Math.PI*2, '#ffffff', 4);
@@ -1077,7 +1067,6 @@
                         this.fire(this.x, this.y, 5, a, '#ff5555', 6);
                     }
                 } else if (this.phase === 3) { 
-                    // 8æ¬ã¬ã¼ã¶ã¼
                     if (this.timer % 150 === 0) {
                         this.angle = Math.random() * Math.PI;
                         for(let i=0; i<8; i++) {
@@ -1086,7 +1075,6 @@
                     }
                     if (this.timer % 150 > 60) this.angle += 0.007;
                     
-                    // å¼¾å¹è¿½å 
                     if (this.timer % 15 === 0) {
                         for (let i=0; i<3; i++) {
                             this.fire(this.x, this.y, 3 + Math.random()*2, Math.random()*Math.PI*2, '#ffff00', 4);
@@ -1583,7 +1571,7 @@
         }
     }
 
-    // --- ã¡ã¤ã³ã­ã¸ãã¯ ---
+    // --- メインロジック ---
     let player, enemy, playerBullets, enemyBullets, particles, items, score, currentWave;
     let waveClearTimer = 0;
 
@@ -1627,20 +1615,20 @@
     function checkCollisions() {
         if (state !== 'playing' || enemy.isEntering) return;
 
-        // ã¢ã¤ãã åå¾
+        // アイテム取得
         for (let i = items.length - 1; i >= 0; i--) {
             const item = items[i];
             if (player.state === 'normal' && Math.hypot(item.x - player.x, item.y - player.y) < player.radius + item.radius + 15) {
                 if(sound) sound.seItemGet();
-                player.scoreMultiplierTimer = 600; // 10ç§éã¹ã³ã¢2å
+                player.scoreMultiplierTimer = 600; // 10秒間スコア2倍
                 const hue = (item.life * 8) % 360;
-                createParticles(item.x, item.y, `hsl(${hue}, 100%, 60%)`, 20); // åã£ãç¬éã®è²ã§ãã¼ãã£ã¯ã«çºç
+                createParticles(item.x, item.y, `hsl(${hue}, 100%, 60%)`, 20); // 取った瞬間の色でパーティクル発生
                 items.splice(i, 1);
                 updateUI();
             }
         }
 
-        // èªæ©å¼¾ -> æµ
+        // 自機弾 -> 敵
         for (let i = playerBullets.length - 1; i >= 0; i--) {
             const b = playerBullets[i];
             if (!enemy.isDying && Math.hypot(b.x - enemy.x, b.y - enemy.y) < enemy.radius + b.radius) {
@@ -1653,7 +1641,7 @@
                 createParticles(b.x, b.y, '#39ff14', 2);
                 playerBullets.splice(i, 1);
                 
-                // ãã¹HPãè¦å®å¤ä»¥ä¸ã«ãªã£ããç¢ºå®ã§ã¢ã¤ãã ããã­ããï¼Wave 4 ä»¥éã®ã¿ï¼
+                // ボスHPが規定値以下になったら確定でアイテムをドロップ（Wave 4 以降のみ）
                 let hpThreshold = 0;
                 if (currentWave >= 4 && currentWave <= 6) hpThreshold = 0.15;
                 else if (currentWave >= 7) hpThreshold = 0.10;
@@ -1665,7 +1653,7 @@
                 
                 if (enemy.hp <= 0 && !enemy.isDying) {
                     enemy.isDying = true;
-                    enemy.dyingTimer = 120; // ç´2ç§éççºãç¶ãã
+                    enemy.dyingTimer = 120; // 約2秒間爆発し続ける
                     enemyBullets = []; 
                     if (!isPractice) {
                         const bossPoint = 50000 * currentWave;
@@ -1676,7 +1664,7 @@
             }
         }
         
-        // æµå¼¾ -> èªæ©
+        // 敵弾 -> 自機
         if (player.invincible === 0 && !enemy.isDying && player.state === 'normal') {
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
                 const b = enemyBullets[i];
@@ -1721,14 +1709,14 @@
         if (isPaused) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
-            ctx.fillStyle = 'white'; ctx.font = '30px "DotGothic16", sans-serif'; ctx.textAlign = 'center';
+            ctx.fillStyle = 'white'; ctx.font = '30px ' + fontFallback; ctx.textAlign = 'center';
             ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
             ctx.shadowBlur = 0;
             requestAnimationFrame(loop);
             return; 
         }
 
-        // --- èæ¯æç» ---
+        // --- 背景描画 ---
         ctx.globalCompositeOperation = 'source-over';
         ctx.fillStyle = 'rgba(2, 2, 5, 0.4)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1756,12 +1744,12 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.translate(canvas.width / 2, canvas.height / 2 - 120);
-            ctx.scale(0.3, 1.2); // æ¨ªå¹ãã®ã¥ãã¨ç­ããç¸¦ã«ç´°é·ã
+            ctx.scale(0.3, 1.2); // 横幅をギュッと狭く、縦に細長く
             ctx.fillText('DANMA-K', 0, 0);
             ctx.restore();
 
             ctx.fillStyle = '#ff007f'; 
-            ctx.font = '14px "DotGothic16", sans-serif';
+            ctx.font = '14px ' + fontFallback;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'alphabetic';
             ctx.fillText('10 WAVES / 10 BOSS TYPES', canvas.width / 2, canvas.height / 2 + 30);
@@ -1800,7 +1788,7 @@
             if(state === 'playing') enemy.draw();
             player.draw();
 
-            // æ­»äº¡æ¼åºãçµãã£ã¦å®å¨ã«æ­»ãã ã¨ã
+            // 死亡演出が終わって完全に死んだとき
             if (state === 'playing' && enemy.dead) {
                 if(sound) { sound.seExplosion(); setTimeout(()=>sound.seWaveClear(), 500); }
                 createParticles(enemy.x, enemy.y, enemy.color, 150); 
@@ -1834,19 +1822,19 @@
             const titleText = state === 'allClear' ? 'ALL CLEAR!!' : 'GAME OVER';
 
             ctx.shadowBlur = 10; ctx.shadowColor = titleColor;
-            ctx.fillStyle = titleColor; ctx.font = '40px "DotGothic16", sans-serif'; ctx.textAlign = 'center';
+            ctx.fillStyle = titleColor; ctx.font = '40px ' + fontFallback; ctx.textAlign = 'center';
             ctx.fillText(titleText, canvas.width / 2, canvas.height / 2 - 80);
             ctx.shadowBlur = 0;
 
-            ctx.fillStyle = 'white'; ctx.font = '20px "DotGothic16", sans-serif';
+            ctx.fillStyle = 'white'; ctx.font = '20px ' + fontFallback;
             ctx.fillText(`BASE SCORE: ${score}`, canvas.width / 2, canvas.height / 2 - 20);
             
             const penalty = player.deaths * 50000;
-            ctx.fillStyle = '#ff5555'; ctx.font = '20px "DotGothic16", sans-serif';
+            ctx.fillStyle = '#ff5555'; ctx.font = '20px ' + fontFallback;
             ctx.fillText(`LOST: ${player.deaths} ( -${penalty} )`, canvas.width / 2, canvas.height / 2 + 20);
 
             const finalScore = Math.max(0, score - penalty);
-            ctx.fillStyle = '#ff007f'; ctx.font = '26px "DotGothic16", sans-serif';
+            ctx.fillStyle = '#ff007f'; ctx.font = '26px ' + fontFallback;
             ctx.fillText(`FINAL SCORE: ${finalScore}`, canvas.width / 2, canvas.height / 2 + 70);
         }
         else if (state === 'practiceClear') {
@@ -1857,11 +1845,11 @@
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             ctx.shadowBlur = 10; ctx.shadowColor = '#39ff14';
-            ctx.fillStyle = '#39ff14'; ctx.font = '40px "DotGothic16", sans-serif'; ctx.textAlign = 'center';
+            ctx.fillStyle = '#39ff14'; ctx.font = '40px ' + fontFallback; ctx.textAlign = 'center';
             ctx.fillText('PRACTICE CLEAR', canvas.width / 2, canvas.height / 2 - 40);
             ctx.shadowBlur = 0;
 
-            ctx.fillStyle = '#ff5555'; ctx.font = '24px "DotGothic16", sans-serif';
+            ctx.fillStyle = '#ff5555'; ctx.font = '24px ' + fontFallback;
             ctx.fillText(`LOST: ${player.deaths}`, canvas.width / 2, canvas.height / 2 + 20);
         }
         requestAnimationFrame(loop);
