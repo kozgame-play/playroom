@@ -92,6 +92,18 @@
             box-shadow: 0 12px 20px rgba(16, 185, 129, 0.5);
         }
 
+        /*  DANMA-K ボタン */
+        .btn-dan {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        }
+        .btn-dan:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-4px); /* ホバー時に少し浮き上がる */
+            box-shadow: 0 12px 20px rgba(79, 70, 229, 0.5);
+        }
+
         .play-button:active {
             transform: translateY(1px); /* クリック時の押し込み感 */
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
@@ -148,6 +160,14 @@
                 <span class="game-title">2430</span>
                 <span class="game-desc">オリジナルカードゲーム</span>
             </a>
+            
+            <!--  DANMA-K.html へのリンク -->
+            <a href=" DANMA-K.html" class="play-button btn-dan">
+                <span class="badge">2026/05/03 NEW!!</span>
+                <span class="game-title"> DANMA-K</span>
+                <span class="game-desc">弾幕シューティングゲーム</span>
+            </a>
+            
         </div>
     </div>
 
