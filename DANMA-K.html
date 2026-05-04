@@ -351,21 +351,48 @@
             this.masterGain.connect(this.compressor);
             this.compressor.connect(this.ctx.destination);
 
-            // ★ BGM設定：ここに自作のMP3ファイル名（またはパス）を指定してください ★
-            this.bgm = new Audio('DANMA-K.mp3'); 
+            // ★ BGM設定 ★
+            this.bgm = new Audio(); 
             this.bgm.loop = true;  // ループ再生を有効にする
             this.bgm.volume = 0.4; // BGMの音量（0.0〜1.0）
             
             this.isPlaying = false;
+            this.currentBgmSrc = ''; // 現在のBGMファイル名を記憶
         }
 
         // BGMの再生制御メソッド
-        startBGM() {
-            if(this.isPlaying) return;
-            this.ctx.resume(); 
+        playWaveBGM(wave, isPractice) {
+            // 練習モードの場合はBGMを鳴らさない
+            if (isPractice) {
+                this.stopBGM();
+                return;
+            }
+
+            // ウェーブ数に応じたBGMソースを決定
+            let src = '';
+            if (wave >= 1 && wave <= 4) src = 'DANMA-K.mp3';
+            else if (wave >= 5 && wave <= 9) src = 'DANMA-K2.mp3';
+            else if (wave === 10) src = 'DANMA-K3.mp3';
+
+            // すでに同じ曲が流れている場合は再生を継続
+            if (this.currentBgmSrc === src) {
+                if (!this.isPlaying) {
+                    this.ctx.resume();
+                    this.bgm.play().catch(e => console.log("BGM play failed:", e));
+                    this.isPlaying = true;
+                }
+                return;
+            }
+
+            // 曲が切り替わる場合は前の曲を止めて新しい曲を再生
+            this.stopBGM();
+            this.currentBgmSrc = src;
+            this.bgm.src = src;
+            this.ctx.resume();
             this.bgm.play().catch(e => console.log("BGM play failed:", e));
             this.isPlaying = true;
         }
+
         stopBGM() { 
             this.isPlaying = false; 
             this.bgm.pause();
@@ -516,7 +543,6 @@
         if (sound) sound.close();
         sound = new SoundManager();
         isPractice = false;
-        sound.startBGM();
         startGame();
         updateDOM();
     }
@@ -556,7 +582,6 @@
         isPaused = false;
         enemy = new Enemy(currentWave, false); 
         
-        sound.startBGM();
         state = 'playing';
         updateUI();
         updateDOM();
@@ -1531,6 +1556,10 @@
         enemy = new Enemy(currentWave);
         state = 'playing';
         updateUI();
+        
+        if (sound) {
+            sound.playWaveBGM(currentWave, isPractice);
+        }
         
         announceWaveEl.innerText = currentWave === 10 ? 'FINAL WAVE' : `WAVE ${currentWave}`;
         announceBossEl.innerText = enemy.name;
