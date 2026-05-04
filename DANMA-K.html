@@ -336,15 +336,8 @@
     class SoundManager {
         constructor() {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            this.bpm = 175; // ドラムンベースに最適なテンポに変更
-            this.stepTime = (60 / this.bpm) / 4;
-            this.isPlaying = false;
-            this.currentStep = 0;
-            this.nextNoteTime = 0;
-            this.timerID = null;
-            this.loopLength = 64; 
             
-            // 音割れ防止・音圧調整用のコンプレッサーとマスターゲイン
+            // 音割れ防止・音圧調整用のコンプレッサーとマスターゲイン（SE用）
             this.compressor = this.ctx.createDynamicsCompressor();
             this.compressor.threshold.value = -15;
             this.compressor.knee.value = 30;
@@ -353,96 +346,45 @@
             this.compressor.release.value = 0.25;
             
             this.masterGain = this.ctx.createGain();
-            this.masterGain.gain.value = 0.6; // 全体ボリューム
+            this.masterGain.gain.value = 0.6; // SEの全体ボリューム
             
             this.masterGain.connect(this.compressor);
             this.compressor.connect(this.ctx.destination);
+
+            // ★ BGM設定：ここに自作のMP3ファイル名（またはパス）を指定してください ★
+            this.bgm = new Audio('DANMA-K.mp3'); 
+            this.bgm.loop = true;  // ループ再生を有効にする
+            this.bgm.volume = 0.4; // BGMの音量（0.0〜1.0）
+            
+            this.isPlaying = false;
         }
+
+        // BGMの再生制御メソッド
         startBGM() {
             if(this.isPlaying) return;
-            this.ctx.resume(); this.isPlaying = true;
-            this.currentStep = 0; this.nextNoteTime = this.ctx.currentTime + 0.1;
-            this.schedule();
+            this.ctx.resume(); 
+            this.bgm.play().catch(e => console.log("BGM play failed:", e));
+            this.isPlaying = true;
         }
-        stopBGM() { this.isPlaying = false; clearTimeout(this.timerID); }
-        pauseBGM() { if(this.ctx.state === 'running') this.ctx.suspend(); }
-        resumeBGM() { if(this.ctx.state === 'suspended') this.ctx.resume(); }
-        close() { this.stopBGM(); if (this.ctx.state !== 'closed') this.ctx.close(); }
-        
-        schedule() {
-            if (!this.isPlaying) return;
-            while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
-                this.playStep(this.currentStep, this.nextNoteTime);
-                this.nextNoteTime += this.stepTime;
-                this.currentStep = (this.currentStep + 1) % this.loopLength;
-            }
-            this.timerID = setTimeout(() => this.schedule(), 25);
+        stopBGM() { 
+            this.isPlaying = false; 
+            this.bgm.pause();
+            this.bgm.currentTime = 0;
         }
-        playStep(step, time) {
-            const stepInBar = step % 16;
-            const bar = Math.floor(step / 16) % 4; // 4小節の展開を作る
-            
-            // ドラムンベースのキックパターン (1拍目、3拍目の裏など重く)
-            if (stepInBar === 0 || stepInBar === 10 || (bar === 3 && stepInBar === 14)) {
-                this.playDrum(time, 60, 20, 0.4, 0.9);
-            }
-            // キックのゴーストノート(バリエーション)
-            if (step % 32 === 26) {
-                this.playDrum(time, 60, 20, 0.4, 0.6);
-            }
-            
-            // スネア（甲高い音を消し、低い「タッ」というパーカッションに変更）
-            if (stepInBar === 4 || stepInBar === 12) {
-                this.playSnare(time, 0.5);
-            }
-            if (stepInBar === 7 || stepInBar === 9) {
-                this.playSnare(time, 0.15);
-            }
-
-            // うねる重低音ベースライン (4小節でコード進行を作る)
-            let baseFreq = 43.65; // F1
-            if (bar === 1) baseFreq = 51.91; // Ab1
-            else if (bar === 2) baseFreq = 38.89; // Eb1
-            else if (bar === 3) baseFreq = 34.65; // Db1
-
-            // 各小節ごとにベースのリズムパターンを変化させる
-            const bassPattern = [
-                [1,0,0,1, 0,0,1,0, 1,0,0,0, 1,0,1,0],
-                [1,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0],
-                [1,0,0,1, 0,0,1,0, 1,0,0,0, 0,1,0,0],
-                [1,0,1,0, 1,0,0,1, 0,0,1,0, 1,0,1,1]
-            ][bar];
-
-            if (bassPattern[stepInBar]) {
-                const duration = (stepInBar === 0 || stepInBar === 8) ? this.stepTime * 1.8 : this.stepTime * 0.9;
-                this.playReeseBass(time, baseFreq, duration, 0.5);
-            }
-            
-            // 小節の頭に地を這うようなディープ・サブベースを重ねる
-            if (stepInBar === 0) {
-                this.playDrum(time, baseFreq, baseFreq, this.stepTime * 4, 0.6);
-            }
+        pauseBGM() { 
+            if(this.ctx.state === 'running') this.ctx.suspend(); 
+            this.bgm.pause();
         }
-        
-        playSnare(time, vol) {
-            const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(100, time); osc.frequency.exponentialRampToValueAtTime(30, time + 0.1);
-            gain.gain.setValueAtTime(vol, time); gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
-            osc.connect(gain); gain.connect(this.masterGain); osc.start(time); osc.stop(time + 0.1);
+        resumeBGM() { 
+            if(this.ctx.state === 'suspended') this.ctx.resume(); 
+            if(this.isPlaying) this.bgm.play().catch(e => console.log(e));
+        }
+        close() { 
+            this.stopBGM(); 
+            if (this.ctx.state !== 'closed') this.ctx.close(); 
         }
 
-        playReeseBass(time, freq, duration, vol) {
-            const osc1 = this.ctx.createOscillator(); const osc2 = this.ctx.createOscillator(); const sub = this.ctx.createOscillator();
-            const filter = this.ctx.createBiquadFilter(); const gain = this.ctx.createGain();
-            osc1.type = 'sawtooth'; osc1.frequency.value = freq; osc1.detune.value = 15;
-            osc2.type = 'sawtooth'; osc2.frequency.value = freq; osc2.detune.value = -15;
-            sub.type = 'sine'; sub.frequency.value = freq / 2;
-            filter.type = 'lowpass'; filter.frequency.setValueAtTime(freq * 1.5, time);
-            filter.frequency.exponentialRampToValueAtTime(freq * 6, time + duration * 0.2); filter.frequency.exponentialRampToValueAtTime(freq * 1.5, time + duration * 0.8);
-            gain.gain.setValueAtTime(0.001, time); gain.gain.linearRampToValueAtTime(vol, time + 0.05); gain.gain.setValueAtTime(vol, time + duration * 0.8); gain.gain.linearRampToValueAtTime(0.001, time + duration);
-            osc1.connect(filter); osc2.connect(filter); filter.connect(gain); sub.connect(gain); gain.connect(this.masterGain);
-            osc1.start(time); osc1.stop(time + duration); osc2.start(time); osc2.stop(time + duration); sub.start(time); sub.stop(time + duration);
-        }
+        // --- 以下はSE用のメソッド ---
         playDrum(time, startFreq, endFreq, duration, vol) {
             const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
             osc.type = 'sine'; osc.frequency.setValueAtTime(startFreq, time); osc.frequency.exponentialRampToValueAtTime(endFreq, time + duration);
