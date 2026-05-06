@@ -69,6 +69,47 @@
     </div>
 
 <script>
+    // --- サウンドエフェクト管理 (Web Audio API) ---
+    // うるさくない、柔らかい音を生成します
+    const Sound = {
+        ctx: null,
+        init: function() {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        },
+        play: function(freq, type, duration, vol) {
+            if (!this.ctx) return;
+            try {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type; // 'sine' または 'triangle' を使用して柔らかい音に
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                
+                // 音の立ち上がりと減衰を滑らかにして耳障りにならないようにする
+                gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            } catch(e) { console.warn("Sound play error", e); }
+        },
+        select: function() { this.play(320, 'sine', 0.15, 0.05); },   // コッ (選択音)
+        place:  function() { this.play(220, 'triangle', 0.2, 0.08); }, // トッ (配置音)
+        event:  function() { 
+            this.play(392, 'sine', 0.3, 0.06); 
+            setTimeout(() => this.play(523, 'sine', 0.4, 0.06), 100); 
+        }, // ポローン (イベント音)
+        error:  function() { this.play(110, 'triangle', 0.2, 0.05); }, // ブッ (エラー音)
+        turn:   function() { this.play(440, 'sine', 0.3, 0.04); }    // ポーン (自分のターン音)
+    };
+
     // --- イベントカード説明定義 ---
     const eventDescriptions = {
         'ハリケーン': '最後尾を全て回収しシャッフル。順番に1枚ずつ引く。',
@@ -100,6 +141,7 @@
     }
 
     function showError(msg) {
+        Sound.error(); // エラー音
         const el = document.getElementById('error-msg');
         const textEl = document.getElementById('error-text');
         if(el && textEl) {
@@ -129,6 +171,7 @@
             let cb = state.eventModal.callback;
             state.eventModal.visible = false;
             state.eventModal.callback = null;
+            Sound.select(); // モーダルを閉じたときの音
             render();
             if (cb) cb();
         }
@@ -142,6 +185,7 @@
             message: message,
             onConfirm: onConfirm
         };
+        Sound.select();
         render();
     }
 
@@ -150,6 +194,7 @@
             let cb = state.confirmModal.onConfirm;
             state.confirmModal.visible = false;
             state.confirmModal.onConfirm = null;
+            Sound.select();
             render();
             if (result && cb) cb();
         }
@@ -189,7 +234,11 @@
 
     // --- ゲームの初期化 ---
     function initGame() {
-        // BGMの再生開始（ユーザー操作を契機とするためここで再生可能）
+        // Sound APIの初期化
+        Sound.init();
+        Sound.event(); // スタート時の効果音
+
+        // BGMの再生開始
         const bgm = document.getElementById('bgm');
         bgm.play().catch(e => console.log('BGM play failed:', e));
 
@@ -275,6 +324,11 @@
                 addLog(`${current.name} のターン。（ドローなし）`);
             }
         }
+
+        // 自分のターンの開始時に音を鳴らす
+        if (state.turnIdx === 0 && state.phase === 'playing') {
+            Sound.turn();
+        }
         
         render();
         if (state.turnIdx !== 0 && state.phase === 'playing') {
@@ -298,6 +352,7 @@
         if (state.players.every(p => p.locked) || state.deck.length === 0) {
             state.phase = 'gameover';
             addLog(`ゲーム終了！`);
+            Sound.event(); // 終了音
             showEventModal('【ゲーム終了】', 'すべてのターンが終了しました！<br>盤面を確認したら、タップして結果発表へ進んでください。', () => {
                 state.phase = 'end';
                 render();
@@ -314,6 +369,7 @@
 
     // --- アクション制御 (Player) ---
     function cancelAction() {
+        Sound.select();
         state.actionMode = 'IDLE';
         state.selectedHandIndex = null;
         state.pendingEventIndex = null;
@@ -329,6 +385,7 @@
             const card = state.players[0].hand[index];
             if (card.type !== 'calc') return showError('計算カードを選んでください');
             
+            Sound.event(); // アタック発動音
             let me = state.players[0];
             let tgt = state.players[state.pendingTargetIdx];
             
@@ -350,7 +407,7 @@
                 msg = `${me.name} のアタック！<br>${tgt.name}に ${formatCard(card)} を送りつけた！`; 
             }
             
-            addLog(`YOU: アタック発発動`);
+            addLog(`YOU: アタック発動`);
             showEventModal('【アタック】', msg, () => {
                 checkHandEmptyAndDraw(me);
                 render(); 
@@ -359,6 +416,7 @@
         }
 
         if (state.actionMode === 'IDLE' && owner === 'player_hand') {
+            Sound.select(); // 選択音
             state.selectedHandIndex = state.selectedHandIndex === index ? null : index;
             render();
         }
@@ -369,12 +427,16 @@
         if (state.turnIdx !== 0 || state.phase !== 'playing') return;
         if (state.actionMode === 'ATTACK_SELECT_CALC') return; 
         if (state.selectedHandIndex === null) return;
-        if (!canBeTarget(targetIdx)) return; 
+        if (!canBeTarget(targetIdx)) {
+            Sound.error(); // 対象外の場合
+            return; 
+        }
         
         let me = state.players[0];
         let selCard = me.hand[state.selectedHandIndex];
         
         if (selCard.type === 'calc') {
+            Sound.place(); // 配置音
             const placed = me.hand.splice(state.selectedHandIndex, 1)[0];
             state.selectedHandIndex = null;
             me.route.push({ card: placed });
@@ -387,6 +449,7 @@
             } else if (evName === 'ショート' || evName === 'スナッチ') {
                 executeTargetedEventDirect(targetIdx, evName);
             } else if (evName === 'アタック') {
+                Sound.select(); // アタック対象選択時
                 state.pendingEventIndex = state.selectedHandIndex;
                 state.pendingTargetIdx = targetIdx;
                 state.actionMode = 'ATTACK_SELECT_CALC';
@@ -396,6 +459,7 @@
     }
 
     function executeNoTargetEvent(evName) {
+        Sound.event(); // イベント発動音
         let me = state.players[0];
         state.eventUsedThisTurn = true;
         me.hand.splice(state.selectedHandIndex, 1);
@@ -441,6 +505,7 @@
     }
 
     function executeTargetedEventDirect(targetIdx, evName) {
+        Sound.event(); // イベント発動音
         let me = state.players[0];
         let tgt = state.players[targetIdx];
         
@@ -483,6 +548,7 @@
         if (canPlaceAnyCalc) {
             return showError('配置可能な計算カードがあるためパスできません');
         }
+        Sound.select(); // パス時の音
         addLog(`YOU: パスした`);
         endTurn();
     }
@@ -639,6 +705,7 @@
             return;
         }
 
+        Sound.place(); // ハリケーンでカードを引いて配置する音
         let card = state.hurricaneData.pool.splice(poolIdx, 1)[0];
         
         if (card) {
@@ -676,6 +743,7 @@
                 if (en === 'ハリケーン') {
                     me.hand.splice(eventIdx, 1);
                     state.eventUsedThisTurn = true;
+                    Sound.event();
                     startHurricanePhase(me, () => {
                         checkHandEmptyAndDraw(me);
                         render();
@@ -742,6 +810,7 @@
                 
                 state.eventUsedThisTurn = true;
                 addLog(`${me.name}: ${en}発動`);
+                Sound.event();
                 showEventModal(`【${en}】`, msg, () => {
                     checkHandEmptyAndDraw(me);
                     render();
@@ -771,6 +840,7 @@
             const card = me.hand.splice(bestCalcIdx, 1)[0];
             me.route.push({ card });
             addLog(`${me.name}: ${formatCard(card)} を配置`);
+            Sound.place();
             return endTurn();
         }
 
@@ -781,6 +851,7 @@
                 me.hand.splice(eqIdx, 1); me.locked = true; 
                 let msg = `${me.name} は自分のルートを確定させた！`;
                 addLog(`${me.name}: イコール発動`);
+                Sound.event();
                 showEventModal('【イコール】', msg, () => {
                     endTurn();
                 });
@@ -908,7 +979,7 @@
                 <button onclick="cancelAction()" class="px-4 py-1.5 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded shadow">選択解除</button>
             </div>`;
         } else if (me.hand.length === 0) {
-            uiHtml = `<button onclick="state.players[0].locked = true; endTurn();" class="px-4 py-1.5 text-xs font-bold bg-red-700 text-white rounded shadow">ルート確定(終了)</button>`;
+            uiHtml = `<button onclick="state.players[0].locked = true; Sound.select(); endTurn();" class="px-4 py-1.5 text-xs font-bold bg-red-700 text-white rounded shadow">ルート確定(終了)</button>`;
         } else {
             let canPlaceAnyCalc = !me.locked && me.route.length < 5 && me.hand.some(card => card.type === 'calc');
             
@@ -928,7 +999,7 @@
                 <h1 class="text-5xl sm:text-7xl font-black text-cyan-400 mb-10 tracking-widest text-center leading-none">2430</h1>
                 <div class="flex flex-col gap-4 w-full max-w-xs px-4">
                     <button onclick="initGame()" class="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-lg font-bold shadow-lg transition-colors">GAME START</button>
-                    <button onclick="document.getElementById('rule-modal').classList.remove('hidden')" class="px-6 py-3 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:text-white rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center justify-center gap-2">
+                    <button onclick="Sound.select(); document.getElementById('rule-modal').classList.remove('hidden');" class="px-6 py-3 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:text-white rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center justify-center gap-2">
                         <span class="text-base leading-none">📖</span> <span>ルールブック</span>
                     </button>
                 </div>
@@ -1011,7 +1082,7 @@
                         `).join('')}
                     </div>
                     <div class="flex gap-3">
-                        <button onclick="state.phase = 'start'; render();" class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-full text-sm font-bold text-white shadow-lg transition-colors">タイトルへ</button>
+                        <button onclick="Sound.select(); state.phase = 'start'; render();" class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-full text-sm font-bold text-white shadow-lg transition-colors">タイトルへ</button>
                         <button onclick="initGame();" class="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 rounded-full text-sm font-bold text-white shadow-lg transition-colors">もう一回プレイ</button>
                     </div>
                 </div>
@@ -1048,7 +1119,7 @@
                         <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-800 rounded border border-slate-600 ${activePColor.text} animate-pulse">${state.players[state.turnIdx].name}</span>
                     </div>
                     ` : ''}
-                    <button onclick="document.getElementById('rule-modal').classList.remove('hidden')" class="flex items-center gap-1 bg-slate-800 border border-slate-600 px-2 py-1 rounded-full text-[10px] font-bold text-slate-300 hover:bg-slate-700 hover:text-white shadow ml-1">
+                    <button onclick="Sound.select(); document.getElementById('rule-modal').classList.remove('hidden')" class="flex items-center gap-1 bg-slate-800 border border-slate-600 px-2 py-1 rounded-full text-[10px] font-bold text-slate-300 hover:bg-slate-700 hover:text-white shadow ml-1">
                         <span class="text-xs leading-none">📖</span> <span>ルール</span>
                     </button>
                 </div>
