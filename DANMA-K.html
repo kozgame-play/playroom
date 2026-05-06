@@ -327,7 +327,7 @@
         { name: "Type-ε: BLASTER", color: "#00aaff", radius: 30, hp: 1800, desc: "巨大な砲台から放たれる圧倒的な極太ビームと、逃げ場を奪う回転なぎ払いレーザーが脅威。ビームの予告線を見逃すな。" },
         { name: "Type-ζ: BOMBER", color: "#ffff00", radius: 35, hp: 2000, desc: "着弾すると無数に分裂する爆発弾や、自機を包囲する機雷をばらまき画面を制圧する。分裂前の軌道を予測し、安全地帯を確保せよ。" },
         { name: "Type-η: PHALANX", color: "#aaffff", radius: 25, hp: 1600, desc: "本体と2機のビットによる波状攻撃と、わずかな隙間しかない高速の壁弾幕を展開する。ビットからの包囲網をいかに突破するかが鍵となる。" },
-        { name: "Type-θ: REFLECTOR", color: "#aaff00", radius: 28, hp: 1500, desc: "画面端で何度も跳ね返る特殊な反射弾や反射レーザーを操る。予測不能な反射軌道が退路を断つため、画面中央付近での立ち回りが安全だ。" },
+        { name: "Type-θ: REFLECTOR", color: "#ff3300", radius: 28, hp: 1500, desc: "画面端で何度も跳ね返る特殊な反射弾や反射レーザーを操る。予測不能な反射軌道が退路を断つため、画面中央付近での立ち回りが安全だ。" }, // 色を #aaff00 から #ff3300 に変更
         { name: "Type-ι: CHRONOS", color: "#ff55aa", radius: 32, hp: 1700, desc: "空中で一時停止した後に急発進する弾や、徐々に加速する弾でプレイヤーの時間感覚を狂わせる。緩急のついた弾幕に焦らず対応しろ。" },
         { name: "Ω: SYSTEM CORE", color: "#ffffff", radius: 50, hp: 3600, desc: "すべての攻撃パターンを複合し、圧倒的な物量でプレイヤーを絶望に陥れる最終防衛システム。全9フェーズからなる猛攻を凌ぎ切れ。" }
     ];
@@ -686,11 +686,13 @@
     class Player {
         constructor() {
             this.x = canvas.width / 2; this.y = canvas.height * 0.8;
+            this.prevX = this.x; // ロール（傾き）計算用
             this.speed = 5.5; this.radius = 3; this.cooldown = 0; 
             this.deaths = 0; 
             this.invincible = 0; 
             this.state = 'normal';
             this.scoreMultiplierTimer = 0; // スコア2倍タイマー
+            this.roll = 0; // 機体の傾き角度（ラジアン）
         }
         update() {
             if (this.invincible > 0) this.invincible--;
@@ -699,6 +701,8 @@
                 this.scoreMultiplierTimer--;
                 if (this.scoreMultiplierTimer === 0) updateUI(); // 切れたらUI更新
             }
+
+            this.prevX = this.x; // 移動前のX座標を保存
 
             if (this.state === 'respawning') {
                 this.y -= 4; 
@@ -710,6 +714,7 @@
                         playerStartY = this.y;
                     }
                 }
+                this.roll *= 0.9; // 復活時は傾きを徐々に戻す
                 return; 
             }
 
@@ -721,8 +726,17 @@
             this.x = Math.max(15, Math.min(canvas.width - 15, this.x));
             this.y = Math.max(15, Math.min(canvas.height - 15, this.y));
 
+            // ロールの計算（左右の移動量に応じて機体を傾ける）
+            let dx = this.x - this.prevX;
+            let moveRatio = dx / this.speed;
+            // タッチ操作などで瞬間的に大きく動いた場合の制限
+            moveRatio = Math.max(-1.5, Math.min(1.5, moveRatio)); 
+            let targetRoll = moveRatio * 0.35; // 傾き具合の調整
+            this.roll += (targetRoll - this.roll) * 0.15; // 滑らかに補間して傾ける
+
             if (this.cooldown > 0) this.cooldown--;
             if (state === 'playing' && (keys['Space'] || keys['KeyZ'] || isTouching) && this.cooldown === 0) {
+                // 弾の発射位置は元とほぼ同じになるように調整
                 playerBullets.push(new Bullet(this.x - 6, this.y - 10, 0, -20, 'player', '#39ff14', 4));
                 playerBullets.push(new Bullet(this.x + 6, this.y - 10, 0, -20, 'player', '#39ff14', 4));
                 if (sound) sound.seShoot();
@@ -732,16 +746,60 @@
         draw() {
             if (this.invincible > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
 
-            ctx.fillStyle = 'rgba(57, 255, 20, 0.9)';
-            ctx.shadowBlur = 10; ctx.shadowColor = '#39ff14'; 
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.roll);
+
+            // バックファイア（エンジン炎）
+            ctx.shadowBlur = 10; ctx.shadowColor = '#39ff14';
+            ctx.fillStyle = '#39ff14';
             ctx.beginPath();
-            ctx.moveTo(this.x, this.y - 18); ctx.lineTo(this.x - 14, this.y + 10);
-            ctx.lineTo(this.x, this.y + 5); ctx.lineTo(this.x + 14, this.y + 10);
-            ctx.closePath(); ctx.fill();
-            
-            ctx.shadowBlur = 0; 
+            ctx.moveTo(-5, 5);
+            ctx.lineTo(5, 5);
+            ctx.lineTo(0, 15 + Math.random() * 8); // 炎の揺らぎ
+            ctx.closePath();
+            ctx.fill();
+
+            // 蛍光緑のウィング（アクセント）
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = 'rgba(57, 255, 20, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(0, -8);
+            ctx.lineTo(-20, 12);
+            ctx.lineTo(-6, 6);
+            ctx.lineTo(0, 2);
+            ctx.lineTo(6, 6);
+            ctx.lineTo(20, 12);
+            ctx.closePath();
+            ctx.fill();
+
+            // 白のメインボディ（シャープなシルエット）
+            ctx.shadowBlur = 8; ctx.shadowColor = '#ffffff';
             ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(0, -24); // 機首先端
+            ctx.lineTo(-7, 8);
+            ctx.lineTo(0, 4);
+            ctx.lineTo(7, 8);
+            ctx.closePath();
+            ctx.fill();
+
+            // コックピットキャノピー（ダークグレー）
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#0a0a0a';
+            ctx.beginPath();
+            ctx.moveTo(0, -12);
+            ctx.lineTo(-3, 1);
+            ctx.lineTo(0, 4);
+            ctx.lineTo(3, 1);
+            ctx.closePath();
+            ctx.fill();
+
+            // 当たり判定のコア（ハイライト）
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fill();
+
+            ctx.restore();
         }
     }
 
