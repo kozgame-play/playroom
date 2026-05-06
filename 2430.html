@@ -35,6 +35,9 @@
 </head>
 <body class="bg-slate-950 text-slate-200 flex flex-col overflow-hidden select-none relative">
 
+    <!-- BGM用オーディオ要素 -->
+    <audio id="bgm" src="2430_BGM.mp3" loop preload="auto"></audio>
+
     <!-- アプリケーションのルート -->
     <div id="app" class="flex-1 flex flex-col h-full relative overflow-hidden"></div>
 
@@ -186,6 +189,10 @@
 
     // --- ゲームの初期化 ---
     function initGame() {
+        // BGMの再生開始（ユーザー操作を契機とするためここで再生可能）
+        const bgm = document.getElementById('bgm');
+        bgm.play().catch(e => console.log('BGM play failed:', e));
+
         let deck = [];
         
         ['+', '-'].forEach(op => {
@@ -343,7 +350,7 @@
                 msg = `${me.name} のアタック！<br>${tgt.name}に ${formatCard(card)} を送りつけた！`; 
             }
             
-            addLog(`YOU: アタック発動`);
+            addLog(`YOU: アタック発発動`);
             showEventModal('【アタック】', msg, () => {
                 checkHandEmptyAndDraw(me);
                 render(); 
@@ -918,13 +925,12 @@
 
         if (state.phase === 'start') {
             app.innerHTML = `<div class="flex-1 flex flex-col items-center justify-center relative gap-2">
-                <button onclick="document.getElementById('rule-modal').classList.remove('hidden')" class="absolute top-4 right-4 bg-slate-800 border border-slate-600 px-3 py-1.5 rounded-full text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white shadow-lg flex items-center gap-1 z-50">
-                    <span class="text-base leading-none">📖</span> <span>ルールブック</span>
-                </button>
-                <h1 class="text-5xl sm:text-7xl font-black text-cyan-400 mb-2 tracking-widest text-center leading-none">2430</h1>
-                <h2 class="text-sm sm:text-base text-slate-400 mb-10">Single Player vs AI</h2>
-                <div class="flex flex-col gap-3 w-full max-w-xs px-4">
+                <h1 class="text-5xl sm:text-7xl font-black text-cyan-400 mb-10 tracking-widest text-center leading-none">2430</h1>
+                <div class="flex flex-col gap-4 w-full max-w-xs px-4">
                     <button onclick="initGame()" class="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-lg font-bold shadow-lg transition-colors">GAME START</button>
+                    <button onclick="document.getElementById('rule-modal').classList.remove('hidden')" class="px-6 py-3 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:text-white rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center justify-center gap-2">
+                        <span class="text-base leading-none">📖</span> <span>ルールブック</span>
+                    </button>
                 </div>
             </div>`;
             return;
