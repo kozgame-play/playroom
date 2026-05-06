@@ -70,44 +70,49 @@
 
 <script>
     // --- サウンドエフェクト管理 (Web Audio API) ---
-    // うるさくない、柔らかい音を生成します
     const Sound = {
         ctx: null,
         init: function() {
             if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    this.ctx = new AudioContext();
+                }
             }
-            if (this.ctx.state === 'suspended') {
+            // iOS等でユーザーアクション時にAudioContextを再開する
+            if (this.ctx && this.ctx.state === 'suspended') {
                 this.ctx.resume();
             }
         },
         play: function(freq, type, duration, vol) {
+            this.init(); // 毎回初期化・再開チェックを行う
             if (!this.ctx) return;
             try {
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                osc.type = type; // 'sine' または 'triangle' を使用して柔らかい音に
+                osc.type = type; 
                 osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
                 
-                // 音の立ち上がりと減衰を滑らかにして耳障りにならないようにする
+                // 音量アップと自然な減衰の設定
                 gain.gain.setValueAtTime(0, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.01);
+                gain.gain.setTargetAtTime(0, this.ctx.currentTime + 0.01, duration / 4);
                 
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
                 osc.start();
-                osc.stop(this.ctx.currentTime + duration);
+                // 完全に音が消えるまで少し余裕を持たせて停止
+                osc.stop(this.ctx.currentTime + duration + 0.1);
             } catch(e) { console.warn("Sound play error", e); }
         },
-        select: function() { this.play(320, 'sine', 0.15, 0.05); },   // コッ (選択音)
-        place:  function() { this.play(220, 'triangle', 0.2, 0.08); }, // トッ (配置音)
+        select: function() { this.play(600, 'sine', 0.15, 0.4); },      // コッ (選択音) - 音量と周波数UP
+        place:  function() { this.play(400, 'triangle', 0.2, 0.5); },   // トッ (配置音) - 音量UP
         event:  function() { 
-            this.play(392, 'sine', 0.3, 0.06); 
-            setTimeout(() => this.play(523, 'sine', 0.4, 0.06), 100); 
-        }, // ポローン (イベント音)
-        error:  function() { this.play(110, 'triangle', 0.2, 0.05); }, // ブッ (エラー音)
-        turn:   function() { this.play(440, 'sine', 0.3, 0.04); }    // ポーン (自分のターン音)
+            this.play(659, 'sine', 0.4, 0.3); // E5
+            setTimeout(() => this.play(880, 'sine', 0.5, 0.3), 100); // A5 (ポローン)
+        },
+        error:  function() { this.play(150, 'sawtooth', 0.3, 0.2); },   // ブッ (エラー音)
+        turn:   function() { this.play(880, 'sine', 0.5, 0.3); }        // ポーン (自分のターン音)
     };
 
     // --- イベントカード説明定義 ---
