@@ -416,9 +416,37 @@
         }
 
         if (state.actionMode === 'IDLE' && owner === 'player_hand') {
-            Sound.select(); // 選択音
-            state.selectedHandIndex = state.selectedHandIndex === index ? null : index;
-            render();
+            const card = state.players[0].hand[index];
+            
+            if (state.selectedHandIndex === index) {
+                // すでに選択中のカードを再度タップした（ダブルタップ）
+                if (card.type === 'calc') {
+                    let me = state.players[0];
+                    if (!me.locked && me.route.length < 5) {
+                        Sound.place(); // 配置音
+                        const placed = me.hand.splice(index, 1)[0];
+                        state.selectedHandIndex = null;
+                        me.route.push({ card: placed });
+                        addLog(`YOU: ${formatCard(placed)} を配置`);
+                        endTurn();
+                    } else {
+                        Sound.error();
+                        showError('これ以上配置できません');
+                        state.selectedHandIndex = null;
+                        render();
+                    }
+                } else {
+                    // イベントカードの場合は選択解除
+                    Sound.select();
+                    state.selectedHandIndex = null;
+                    render();
+                }
+            } else {
+                // 初回タップ（新規選択）
+                Sound.select();
+                state.selectedHandIndex = index;
+                render();
+            }
         }
     }
 
@@ -971,7 +999,7 @@
                 if (me.locked || me.route.length >= 5) {
                     uiHtml = `<div class="text-xs text-red-400 mb-1 font-bold">※これ以上配置できません</div>`;
                 } else {
-                    uiHtml = `<div class="text-xs text-green-400 mb-1 animate-pulse font-bold">自分の場をタップして配置</div>`;
+                    uiHtml = `<div class="text-xs text-green-400 mb-1 animate-pulse font-bold">自分の場かカードをもう一度タップで配置</div>`;
                 }
             }
 
