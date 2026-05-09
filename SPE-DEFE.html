@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; background-color: #020617; color: white; user-select: none; touch-action: none; }
+        body { margin: 0; background-color: #0f172a; color: white; user-select: none; touch-action: none; }
         #gameCanvas {
             background-color: #0f172a;
             cursor: crosshair;
@@ -21,60 +21,76 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="flex flex-col h-[100dvh] overflow-hidden w-full max-w-3xl mx-auto relative bg-slate-950">
+<body class="flex flex-col h-[100dvh] overflow-hidden w-full max-w-3xl mx-auto relative bg-[#0f172a]">
 
     <!-- タイトル画面 -->
-    <div id="titleScreen" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-start z-[60] p-4 text-center overflow-y-auto no-scrollbar">
-        <div class="mt-8 mb-6">
-            <h1 class="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-1 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)] tracking-wider">SPE-DEFE</h1>
-            <p class="text-slate-300 font-bold tracking-widest text-[10px] sm:text-sm">SPACE DEFENSE FRONT</p>
-        </div>
+    <div id="titleScreen" class="absolute inset-0 bg-[#0f172a]/70 flex flex-col items-center justify-start z-[60] p-4 text-center overflow-y-auto no-scrollbar transition-opacity duration-300">
         
-        <div class="flex flex-col sm:flex-row w-full max-w-2xl gap-4 sm:gap-6 px-2">
-            <!-- STAGE 1 -->
-            <div class="relative bg-slate-800/90 p-5 sm:p-6 rounded-2xl border-2 border-cyan-800/50 shadow-[0_0_15px_rgba(34,211,238,0.1)] flex flex-col w-full flex-1 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer" onclick="startGame(1)">
-                <div class="absolute top-0 right-0 bg-cyan-900/50 text-cyan-400 text-[10px] font-black px-3 py-1.5 rounded-bl-lg border-b border-l border-cyan-800/50">CASUAL</div>
-                <h2 class="text-xl sm:text-2xl font-black text-cyan-400 mb-3 tracking-widest neon-text text-left font-[Orbitron]">STAGE 1 <span class="text-sm font-bold text-slate-300 neon-text-none block mt-1 font-sans">アルファ星域</span></h2>
-                
-                <div class="text-[11px] sm:text-xs text-slate-300 mb-6 flex-1 text-left space-y-2 font-medium">
-                    <p>新米司令官向けの<span class="text-cyan-300 font-bold">基礎防衛プログラム</span>。</p>
-                    <p>敵は無謀にも直進してくるだけだ。<br>まずはここで「生き残る術」を学べ。</p>
-                </div>
-                
-                <div class="mt-auto pointer-events-none">
-                    <button class="w-full py-3 bg-cyan-700 rounded-lg text-white font-black text-sm tracking-widest shadow-[0_0_15px_rgba(34,211,238,0.3)] border border-cyan-400 font-[Orbitron]">
-                        MISSION START
-                    </button>
-                </div>
+        <!-- タイトルビュー -->
+        <div id="titleView" class="w-full flex flex-col items-center justify-center min-h-full">
+            <div class="mb-12">
+                <h1 class="text-5xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)] tracking-wider font-[Orbitron]">SPE-DEFE</h1>
+                <p class="text-cyan-300 font-bold tracking-widest text-xs sm:text-sm neon-text">SPACE DEFENSE FRONT</p>
             </div>
-
-            <!-- STAGE 2 -->
-            <div class="relative bg-slate-900/90 p-5 sm:p-6 rounded-2xl border-2 border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)] flex flex-col w-full flex-1 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer" onclick="startGame(2)">
-                <div class="absolute top-0 right-0 bg-rose-900/50 text-rose-400 text-[10px] font-black px-3 py-1.5 rounded-bl-lg border-b border-l border-rose-800/50 animate-pulse">NIGHTMARE</div>
-                <h2 class="text-xl sm:text-2xl font-black text-rose-500 mb-3 tracking-widest neon-text text-left font-[Orbitron]">STAGE 2 <span class="text-sm font-bold text-slate-300 neon-text-none block mt-1 font-sans">ベータ星域</span></h2>
-                
-                <div class="text-[11px] sm:text-xs text-slate-300 mb-6 flex-1 text-left space-y-2 font-medium">
-                    <p>狂気の沙汰としか思えない<span class="text-rose-400 font-bold">強襲防衛任務</span>。</p>
-                    <p>敵は容赦なく<span class="text-rose-500 font-bold underline decoration-rose-500/50">防衛ユニットを破壊</span>しにくる。<br>腕に自信がないなら、帰ってママのミルクでも飲んでな。</p>
-                </div>
-                
-                <div class="mt-auto pointer-events-none">
-                    <button class="w-full py-3 bg-rose-700 rounded-lg text-white font-black text-sm tracking-widest shadow-[0_0_15px_rgba(244,63,94,0.3)] border border-rose-400 font-[Orbitron]">
-                        MISSION START
-                    </button>
-                </div>
+            
+            <div class="flex flex-col gap-6 w-full max-w-xs">
+                <button onclick="showStageSelect()" class="w-full py-4 bg-cyan-700 active:bg-cyan-600 rounded-lg text-white font-black text-lg sm:text-xl tracking-widest transition-all shadow-[0_0_20px_rgba(34,211,238,0.5)] border-2 border-cyan-400 active:scale-95 font-[Orbitron]">
+                    GAME START
+                </button>
+                <button onclick="showRuleBook()" class="w-full py-3 bg-slate-800 active:bg-slate-700 active:scale-95 rounded-lg text-amber-400 font-bold transition-all shadow-[0_0_10px_rgba(251,191,36,0.3)] border border-amber-600/50 flex items-center justify-center gap-2">
+                    <span class="text-xl">📖</span> ルールブックを確認
+                </button>
             </div>
         </div>
 
-        <div class="mt-8 mb-8">
-            <button onclick="showRuleBook()" class="px-8 py-3 bg-slate-800 active:scale-95 rounded-lg text-amber-400 font-bold transition-transform shadow-[0_0_10px_rgba(251,191,36,0.3)] border border-amber-600/50 flex items-center gap-2">
-                <span class="text-xl">📖</span> ルールブックを確認
+        <!-- ステージ選択ビュー -->
+        <div id="stageSelectView" class="w-full flex flex-col items-center hidden py-8 min-h-full justify-center">
+            <h2 class="text-2xl sm:text-3xl font-black text-cyan-400 mb-8 tracking-widest neon-text font-[Orbitron]">SELECT MISSION</h2>
+            
+            <div class="flex flex-col sm:flex-row w-full max-w-2xl gap-4 sm:gap-6 px-2">
+                <!-- STAGE 1 -->
+                <div class="relative bg-slate-800/90 p-5 sm:p-6 rounded-2xl border-2 border-cyan-800/50 shadow-[0_0_15px_rgba(34,211,238,0.1)] flex flex-col w-full flex-1 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer" onclick="startGame(1)">
+                    <div class="absolute top-0 right-0 bg-cyan-900/50 text-cyan-400 text-[10px] font-black px-3 py-1.5 rounded-bl-lg border-b border-l border-cyan-800/50">CASUAL</div>
+                    <h2 class="text-xl sm:text-2xl font-black text-cyan-400 mb-3 tracking-widest neon-text text-left font-[Orbitron]">STAGE 1 <span class="text-sm font-bold text-slate-300 neon-text-none block mt-1 font-sans">アルファ星域</span></h2>
+                    
+                    <div class="text-[11px] sm:text-xs text-slate-300 mb-6 flex-1 text-left space-y-2 font-medium">
+                        <p>新米司令官向けの<span class="text-cyan-300 font-bold">基礎防衛プログラム</span>。</p>
+                        <p>敵は無謀にも直進してくるだけだ。<br>まずはここで「生き残る術」を学べ。</p>
+                    </div>
+                    
+                    <div class="mt-auto pointer-events-none">
+                        <button class="w-full py-3 bg-cyan-700 rounded-lg text-white font-black text-sm tracking-widest shadow-[0_0_15px_rgba(34,211,238,0.3)] border border-cyan-400 font-[Orbitron]">
+                            MISSION START
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STAGE 2 -->
+                <div class="relative bg-slate-900/90 p-5 sm:p-6 rounded-2xl border-2 border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)] flex flex-col w-full flex-1 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer" onclick="startGame(2)">
+                    <div class="absolute top-0 right-0 bg-rose-900/50 text-rose-400 text-[10px] font-black px-3 py-1.5 rounded-bl-lg border-b border-l border-rose-800/50 animate-pulse">NIGHTMARE</div>
+                    <h2 class="text-xl sm:text-2xl font-black text-rose-500 mb-3 tracking-widest neon-text text-left font-[Orbitron]">STAGE 2 <span class="text-sm font-bold text-slate-300 neon-text-none block mt-1 font-sans">ベータ星域</span></h2>
+                    
+                    <div class="text-[11px] sm:text-xs text-slate-300 mb-6 flex-1 text-left space-y-2 font-medium">
+                        <p>狂気の沙汰としか思えない<span class="text-rose-400 font-bold">強襲防衛任務</span>。</p>
+                        <p>敵は容赦なく<span class="text-rose-500 font-bold underline decoration-rose-500/50">防衛ユニットを破壊</span>しにくる。<br>腕に自信がないなら、帰ってママのミルクでも飲んでな。</p>
+                    </div>
+                    
+                    <div class="mt-auto pointer-events-none">
+                        <button class="w-full py-3 bg-rose-700 rounded-lg text-white font-black text-sm tracking-widest shadow-[0_0_15px_rgba(244,63,94,0.3)] border border-rose-400 font-[Orbitron]">
+                            MISSION START
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="backToTitle()" class="mt-8 px-10 py-3 bg-slate-800 active:bg-slate-700 active:scale-95 rounded-lg text-slate-300 font-bold transition-all border border-slate-600 shadow-lg">
+                戻る
             </button>
         </div>
     </div>
 
     <!-- トップバー -->
-    <div class="bg-slate-900 px-1 py-1 sm:p-2 border-b border-slate-700 shadow-lg shrink-0 flex flex-col gap-1 relative z-20">
+    <div id="topBar" class="hidden flex-col gap-1 bg-slate-900 px-1 py-1 sm:p-2 border-b border-slate-700 shadow-lg shrink-0 relative z-20">
         <!-- 上段：ステータス -->
         <div class="flex justify-around items-center bg-slate-800 rounded py-0.5 px-1 border border-slate-700">
             <div class="flex flex-col items-center w-1/4">
@@ -113,7 +129,7 @@
     </div>
 
     <!-- ゲームキャンバス -->
-    <div class="relative flex-1 w-full flex items-center justify-center bg-black min-h-0">
+    <div class="relative flex-1 w-full flex items-center justify-center bg-[#0f172a] min-h-0">
         <canvas id="gameCanvas" width="800" height="600" class="w-full h-full object-contain"></canvas>
 
         <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center hidden z-10 backdrop-blur-sm">
@@ -124,7 +140,7 @@
     </div>
 
     <!-- コントロールパネル -->
-    <div class="bg-slate-900 p-1.5 sm:p-2 border-t border-slate-700 shadow-lg flex flex-col gap-1 shrink-0 z-20">
+    <div id="controlPanel" class="hidden flex-col gap-1 bg-slate-900 p-1.5 sm:p-2 border-t border-slate-700 shadow-lg shrink-0 z-20">
         <div id="infoMessage" class="text-center text-[10px] sm:text-xs font-bold text-slate-400 h-4 transition-colors leading-none">
             ユニット選択・破壊
         </div>
@@ -1055,11 +1071,36 @@ function toggleFastForward() {
     }
 }
 
+// --- ビュー切り替え関数 ---
+function showStageSelect() {
+    initAudio();
+    playSound('select');
+    document.getElementById('titleView').classList.add('hidden');
+    document.getElementById('stageSelectView').classList.remove('hidden');
+    document.getElementById('stageSelectView').classList.add('flex');
+}
+
+function backToTitle() {
+    playSound('select');
+    document.getElementById('stageSelectView').classList.add('hidden');
+    document.getElementById('stageSelectView').classList.remove('flex');
+    document.getElementById('titleView').classList.remove('hidden');
+}
+
 function startGame(stage) {
     initAudio(); // スタート時にもオーディオを有効化
     playBGM('ready'); // 準備BGMを再生
-    currentStage = stage; isTitleScreen = false;
+    currentStage = stage; 
+    isTitleScreen = false;
+    
+    // タイトル画面全体を隠す
     document.getElementById('titleScreen').classList.add('hidden');
+    
+    // ゲーム用UIを表示
+    document.getElementById('topBar').classList.remove('hidden');
+    document.getElementById('topBar').classList.add('flex');
+    document.getElementById('controlPanel').classList.remove('hidden');
+    document.getElementById('controlPanel').classList.add('flex');
     
     if (stage === 1) {
         pathPoints = [{c: 0, r: 2}, {c: 3, r: 2}, {c: 3, r: 8}, {c: 8, r: 8}, {c: 8, r: 3}, {c: 13, r: 3}, {c: 13, r: 9}, {c: 15, r: 9}];
@@ -1138,7 +1179,21 @@ function closeUnlockModal() { isModalOpen = false; document.getElementById('unlo
 function showTitleConfirm() { document.getElementById('titleConfirmModal').classList.remove('hidden'); }
 function hideTitleConfirm() { document.getElementById('titleConfirmModal').classList.add('hidden'); }
 function confirmTitle() {
-    hideTitleConfirm(); isTitleScreen = true; document.getElementById('titleScreen').classList.remove('hidden'); 
+    hideTitleConfirm(); 
+    isTitleScreen = true; 
+    
+    // UIを隠す
+    document.getElementById('topBar').classList.add('hidden');
+    document.getElementById('topBar').classList.remove('flex');
+    document.getElementById('controlPanel').classList.add('hidden');
+    document.getElementById('controlPanel').classList.remove('flex');
+
+    // タイトル画面の状態をリセットして表示
+    document.getElementById('titleScreen').classList.remove('hidden'); 
+    document.getElementById('stageSelectView').classList.add('hidden');
+    document.getElementById('stageSelectView').classList.remove('flex');
+    document.getElementById('titleView').classList.remove('hidden');
+    
     playBGM('stop'); // タイトルに戻る際にBGMを止める
 }
 
