@@ -1106,7 +1106,6 @@ class Game {
 
         this.showScreen('playing');
 
-        // BGMの分岐：レースモードならBATTLE、それ以外(タイムアタック)ならTITLE
         if (this.gameMode === 'race') {
             this.audio.playBGM('battle'); 
         } else {
@@ -1200,7 +1199,6 @@ class Game {
     finishGame() {
         if (this.state === 'finished' || this.state === 'result') return; 
         
-        this.audio.stopBGM(); 
         this.audio.seFinish(); 
         
         this.car.finished = true;
@@ -1351,8 +1349,6 @@ class Game {
         const justPressed = (this.state === 'playing') && (this.isActionDown && !this.prevActionDown);
         this.prevActionDown = this.isActionDown;
 
-        // --- 速度上限（ベーススピード）の決定ロジック ---
-        // コンボが繋がるほど上限が上がる。コンボが切れると元に戻っていく
         let targetSpeedLevel = this.combo * 0.8; 
         this.speedLevel += (targetSpeedLevel - this.speedLevel) * 0.02; 
         let maxS = Math.min(CONFIG.maxSpeed, CONFIG.baseSpeed + this.speedLevel);
