@@ -280,7 +280,7 @@ const CONFIG = {
 // --- オーディオ管理クラス ---
 class AudioManager {
     constructor() {
-        this.ctx = null; // コンストラクタ時点では作成しない
+        this.ctx = null; 
         
         this.bgmTitle = new Audio('SKY_DRIFT_TITLE.mp3');
         this.bgmTitle.loop = true;
@@ -329,7 +329,6 @@ class AudioManager {
     playBGM(type) {
         let target = type === 'title' ? this.bgmTitle : this.bgmBattle;
         
-        // 違うBGMに切り替わる場合のみリセットして再生
         if (this.currentBGMType !== type) {
             if (this.currentBGM) this.currentBGM.pause();
             target.currentTime = 0;
@@ -348,7 +347,6 @@ class AudioManager {
         }
     }
 
-    // 確実に音が鳴るように修正
     playTone(freq, type, duration, vol=0.1) {
         if (!this.ctx || this.ctx.state !== 'running') return;
         const t = this.ctx.currentTime;
@@ -361,7 +359,6 @@ class AudioManager {
         osc.type = type;
         osc.frequency.setValueAtTime(freq, startTime);
         gain.gain.setValueAtTime(vol, startTime);
-        // エラーを避けるためlinearRampToValueAtTimeを使用し、確実に0にする
         gain.gain.linearRampToValueAtTime(0, startTime + duration);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -411,13 +408,11 @@ class AudioManager {
         if (this.isDriftingSEPlaying) return;
         this.isDriftingSEPlaying = true;
         this.playNoise(0.15, 0.05, 800);
-        // ドリフト音が連続で鳴りすぎないように間隔をあける
         setTimeout(() => { this.isDriftingSEPlaying = false; }, 100);
     }
     seFinish() {
         if (!this.ctx || this.ctx.state !== 'running') return;
         const t = this.ctx.currentTime;
-        // ホイッスルのようなシンプルな「ピッ・ピッ・ピーー」という音に変更
         this._playToneAt(1046.50, 'square', 0.1, 0.1, t); // ピッ
         this._playToneAt(1046.50, 'square', 0.1, 0.1, t + 0.15); // ピッ
         this._playToneAt(1046.50, 'square', 0.5, 0.1, t + 0.3); // ピーー
@@ -773,6 +768,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         
         this.audio = new AudioManager(); 
+        this.frameCount = 0;
 
         this.state = 'title';
         this.gameMode = 'time_attack'; 
@@ -1334,6 +1330,7 @@ class Game {
     }
 
     update() {
+        this.frameCount++; 
 
         if (this.isPaused || (this.state !== 'playing' && this.state !== 'countdown' && this.state !== 'finished')) {
             this.particles.forEach(p => p.update()); this.particles = this.particles.filter(p => p.life > 0);
@@ -1354,7 +1351,10 @@ class Game {
         const justPressed = (this.state === 'playing') && (this.isActionDown && !this.prevActionDown);
         this.prevActionDown = this.isActionDown;
 
-        this.speedLevel += 0.002;
+        // --- 速度上限（ベーススピード）の決定ロジック ---
+        // コンボが繋がるほど上限が上がる。コンボが切れると元に戻っていく
+        let targetSpeedLevel = this.combo * 0.8; 
+        this.speedLevel += (targetSpeedLevel - this.speedLevel) * 0.02; 
         let maxS = Math.min(CONFIG.maxSpeed, CONFIG.baseSpeed + this.speedLevel);
         
         if (this.car.dashTimer > 0) {
@@ -1471,7 +1471,7 @@ class Game {
                     }
                     this.ui.combo.innerText = this.combo > 1 ? `${this.combo} COMBO!` : '';
                 } else {
-
+                    
                     this.audio.seDrift(); 
 
                     let av = (this.car.speed / this.car.driftRadius) * this.car.driftDir;
