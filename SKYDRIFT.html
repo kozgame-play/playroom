@@ -146,12 +146,12 @@
 
     <!-- カウントダウン表示 -->
     <div id="countdown-overlay" class="hidden absolute inset-0 flex items-center justify-center pointer-events-none z-[100]">
-        <div id="countdown-text" class="text-[8rem] md:text-[12rem] italic font-black text-rose-500 solid-shadow-title countdown-pop drop-shadow-2xl">3</div>
+        <div id="countdown-text" class="text-[8rem] md:text-[12rem] italic font-black text-white solid-shadow-title countdown-pop">3</div>
     </div>
 
     <!-- FINISH演出表示 -->
     <div id="finish-overlay" class="hidden absolute inset-0 flex items-center justify-center pointer-events-none z-[100]">
-        <div id="finish-text" class="text-[6rem] md:text-[10rem] italic font-black text-amber-400 solid-shadow-title finish-pop drop-shadow-2xl">FINISH!!</div>
+        <div id="finish-text" class="text-[6rem] md:text-[10rem] italic font-black text-white solid-shadow-title finish-pop">FINISH!!</div>
     </div>
 
     <!-- ポーズ画面 -->
@@ -166,7 +166,7 @@
         <!-- タイトル画面 -->
         <div id="screen-title" class="hidden flex-col items-center justify-center h-full fade-in pointer-events-auto bg-sky-200/50 backdrop-blur-md">
             <h1 class="text-6xl md:text-8xl italic tracking-wider mb-2 text-center font-black solid-shadow-title">SKY<br>DRIFT</h1>
-            <p class="text-sky-700 mb-8 text-center text-sm md:text-lg tracking-widest uppercase italic font-bold">Sky Battle Edition</p>
+            <p class="text-sky-700 mb-8 text-center text-sm md:text-lg tracking-widest uppercase italic font-bold">DRIFT-ONLY ACTION RACING</p>
             
             <div class="flex flex-col gap-4 w-full max-w-sm px-6">
                 <button id="btn-start-timeattack" class="w-full py-4 bg-white border-4 border-sky-400 text-sky-500 font-black text-xl md:text-2xl rounded-full hover:bg-sky-50 transition-all solid-shadow-btn cursor-pointer">
@@ -179,12 +179,11 @@
                     HOW TO PLAY
                 </button>
             </div>
-            <p class="text-sky-800 mt-10 text-xs md:text-sm blink text-center font-sans tracking-[0.2em] font-bold">画面の左右をタップしてドリフト</p>
         </div>
 
         <!-- トラック選択＆プレビュー画面 -->
         <div id="screen-track-select" class="hidden flex-col items-center justify-start h-full pointer-events-auto bg-sky-100/95 backdrop-blur-lg overflow-y-auto py-10 px-4 z-[80]">
-            <h2 class="text-4xl md:text-6xl text-sky-600 italic mb-6 font-black solid-shadow-title text-center mt-4">SELECT TRACK</h2>
+            <h2 class="text-4xl md:text-6xl text-white italic mb-6 font-black solid-shadow-title text-center mt-4">SELECT TRACK</h2>
             
             <div class="flex items-center justify-center gap-4 mb-6">
                 <button id="btn-prev-track" class="text-4xl text-white bg-sky-400 rounded-full w-12 h-12 flex items-center justify-center solid-shadow-btn cursor-pointer hover:bg-sky-300">&lt;</button>
@@ -209,7 +208,7 @@
 
         <!-- ルールブック画面 -->
         <div id="screen-how-to" class="hidden flex-col items-center justify-start h-full pointer-events-auto bg-sky-100/95 backdrop-blur-lg overflow-y-auto py-10 px-4 z-[70]">
-            <h2 class="text-4xl md:text-6xl text-sky-600 italic mb-6 font-black solid-shadow-title text-center mt-4">HOW TO PLAY</h2>
+            <h2 class="text-4xl md:text-6xl text-white italic mb-6 font-black solid-shadow-title text-center mt-4">HOW TO PLAY</h2>
             
             <div class="w-full max-w-2xl bg-white rounded-2xl border-4 border-sky-300 p-6 md:p-8 mb-8 solid-shadow-btn text-sky-800">
                 <h3 class="text-2xl md:text-3xl font-black italic text-rose-500 mb-3 border-b-2 border-sky-100 pb-2">1. CONTROLS & RULES</h3>
@@ -234,7 +233,7 @@
 
         <!-- リザルト画面 -->
         <div id="screen-result" class="hidden flex-col items-center justify-start h-full pointer-events-auto bg-sky-100/95 backdrop-blur-lg overflow-y-auto py-10 px-4">
-            <h2 class="text-5xl md:text-7xl text-rose-500 italic mb-2 font-black mt-10 solid-shadow-title" id="result-title">FINISH!!</h2>
+            <h2 class="text-5xl md:text-7xl text-white italic mb-2 font-black mt-10 solid-shadow-title" id="result-title">FINISH!!</h2>
             <p id="result-pos" class="hidden text-3xl md:text-5xl text-amber-500 font-black italic mb-6 solid-shadow-text">1st PLACE</p>
             <p id="result-max-combo" class="hidden text-2xl md:text-4xl text-orange-500 font-black italic mb-6 solid-shadow-text">MAX COMBO: 0</p>
             
@@ -277,6 +276,114 @@ const CONFIG = {
     },
     botColors: ['#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'] 
 };
+
+// --- オーディオ管理クラス ---
+class AudioManager {
+    constructor() {
+        // ユーザーインタラクションがあるまでAudioContextは作らないか、作ってもsuspend状態
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        this.bgmTitle = new Audio('SKY_DRIFT_TITLE.mp3');
+        this.bgmTitle.loop = true;
+        this.bgmTitle.volume = 0.5;
+        
+        this.bgmBattle = new Audio('SKY_DRIFT_BATTLE.mp3');
+        this.bgmBattle.loop = true;
+        this.bgmBattle.volume = 0.4;
+        
+        this.currentBGMType = 'title';
+        this.currentBGM = this.bgmTitle;
+        this.initialized = false;
+    }
+    
+    init() {
+        if (this.initialized) return;
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+        this.initialized = true;
+        
+        // 初期化時に指定されているBGMを再生開始
+        this.playBGM(this.currentBGMType);
+    }
+    
+    playBGM(type) {
+        this.currentBGMType = type;
+        let target = type === 'title' ? this.bgmTitle : this.bgmBattle;
+        
+        if (this.currentBGM && this.currentBGM !== target) {
+            this.currentBGM.pause();
+        }
+        this.currentBGM = target;
+        
+        if (this.initialized) {
+            this.currentBGM.play().catch(e => console.log("BGM play prevented or file not found:", e));
+        }
+    }
+    
+    stopBGM() {
+        if (this.currentBGM) {
+            this.currentBGM.pause();
+        }
+    }
+
+    // Web Audio API を使った発振器（オシレーター）によるSE
+    playTone(freq, type, duration, vol=0.1) {
+        if (!this.initialized || this.ctx.state === 'suspended') return;
+        let osc = this.ctx.createOscillator();
+        let gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+
+    // ノイズベースのSE (ドリフト音や衝突音)
+    playNoise(duration, vol=0.1, freq=1000) {
+        if (!this.initialized || this.ctx.state === 'suspended') return;
+        let bufferSize = this.ctx.sampleRate * duration;
+        let buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        let data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        let noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        let filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = freq;
+        let gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
+    }
+
+    seClick() { this.playTone(800, 'sine', 0.1, 0.1); }
+    seStart() { this.playTone(1200, 'square', 0.2, 0.1); }
+    seCountDown() { this.playTone(440, 'square', 0.1, 0.1); }
+    seGo() { this.playTone(880, 'square', 0.4, 0.15); }
+    sePerfect() {
+        this.playTone(880, 'sine', 0.1, 0.1);
+        setTimeout(() => this.playTone(1760, 'sine', 0.2, 0.15), 50);
+    }
+    seGood() { this.playTone(880, 'sine', 0.2, 0.1); }
+    seMiss() { this.playTone(150, 'sawtooth', 0.3, 0.15); }
+    seCrash() { this.playNoise(0.3, 0.3, 500); }
+    seDrift() { this.playNoise(0.1, 0.03, 1500); }
+    seFinish() {
+        this.playTone(523.25, 'square', 0.2, 0.1); // C5
+        setTimeout(() => this.playTone(659.25, 'square', 0.2, 0.1), 150); // E5
+        setTimeout(() => this.playTone(783.99, 'square', 0.4, 0.1), 300); // G5
+    }
+}
+// ----------------------------
 
 function normalizeAngle(a) { 
     while (a > Math.PI) a -= Math.PI * 2; 
@@ -482,11 +589,9 @@ class Bot {
         this.speed = 0; 
         
         if (game.currentTrackId === 0) {
-            // トラック1 (OVAL)
             this.baseSpeed = 19.5 - (index * 0.8);
             this.curveSpeed = 14.0 - (index * 0.8);
         } else {
-            // ★トラック2 (TECHNICAL): 19.5秒前後でゴールするように微調整（21.0 -> 21.8）
             this.baseSpeed = 21.8 - (index * 1.0);
             this.curveSpeed = 15.8 - (index * 0.9);
         }
@@ -626,6 +731,9 @@ class Game {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
+        
+        this.audio = new AudioManager(); 
+        this.frameCount = 0;
 
         this.state = 'title';
         this.gameMode = 'time_attack'; 
@@ -710,6 +818,7 @@ class Game {
             this.ui.hud.classList.add('hidden');
             this.ui.pause.classList.add('hidden');
             this.ui.finishOverlay.classList.add('hidden');
+            this.audio.playBGM('title'); 
         } else if (screenName === 'trackSelect') { 
             this.ui.trackSelectScreen.classList.remove('hidden');
             this.ui.trackSelectScreen.classList.add('flex');
@@ -723,6 +832,7 @@ class Game {
             this.ui.result.classList.add('flex');
             this.ui.hud.classList.add('hidden');
             this.ui.finishOverlay.classList.add('hidden');
+            this.audio.playBGM('title'); 
         } else if (screenName === 'playing') {
             this.ui.hud.classList.remove('hidden');
             this.ui.pause.classList.add('hidden');
@@ -732,6 +842,8 @@ class Game {
 
     bindEvents() {
         const handleDown = (e) => {
+            if (!this.audio.initialized) this.audio.init(); 
+
             if (e.target.closest('button')) return; 
             if (e.type !== 'keydown') e.preventDefault();
             if (e.type === 'keydown') {
@@ -763,7 +875,17 @@ class Game {
             const handler = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                if (!this.audio.initialized) this.audio.init(); 
+                
                 if (this.stateTransitioning) return;
+                
+                if (btn.id === 'btn-start-game') {
+                    this.audio.seStart();
+                } else {
+                    this.audio.seClick();
+                }
+
                 this.stateTransitioning = true; 
                 fn();
                 setTimeout(() => { this.stateTransitioning = false; }, 300); 
@@ -946,6 +1068,7 @@ class Game {
         this.createTrack(this.currentTrackId);
 
         this.showScreen('playing');
+        this.audio.playBGM('battle'); 
         
         this.ui.lap.innerText = `LAP 1 / ${CONFIG.totalLaps}`;
         this.ui.time.innerText = "00:00.000"; 
@@ -1007,6 +1130,7 @@ class Game {
             if (this.isPaused) { setTimeout(updateText, 100); return; }
             
             if (this.countdownValue > 0) {
+                this.audio.seCountDown(); 
                 this.ui.countdownText.innerText = this.countdownValue;
                 this.ui.countdownText.classList.remove('countdown-pop');
                 void this.ui.countdownText.offsetWidth; 
@@ -1014,6 +1138,7 @@ class Game {
                 this.countdownValue--;
                 setTimeout(updateText, 1000);
             } else if (this.countdownValue === 0) {
+                this.audio.seGo(); 
                 this.ui.countdownText.innerText = "GO!";
                 this.countdownValue--;
                 this.state = 'playing';
@@ -1031,6 +1156,9 @@ class Game {
 
     finishGame() {
         if (this.state === 'finished' || this.state === 'result') return; 
+        
+        this.audio.stopBGM(); 
+        this.audio.seFinish(); 
         
         this.car.finished = true;
         this.car.finishTime = Date.now() - this.startTime; 
@@ -1159,6 +1287,8 @@ class Game {
     }
 
     update() {
+        this.frameCount++; 
+
         if (this.isPaused || (this.state !== 'playing' && this.state !== 'countdown' && this.state !== 'finished')) {
             this.particles.forEach(p => p.update()); this.particles = this.particles.filter(p => p.life > 0);
             if (this.shake > 0) { this.shake *= 0.9; if (this.shake < 0.1) this.shake = 0; }
@@ -1281,17 +1411,24 @@ class Game {
                     let diff = Math.abs(normalizeAngle(this.car.angle - ta));
                     
                     if (diff < 0.35) {
+                        this.audio.sePerfect(); 
                         if(seg.type === 'straight') this.car.angle = ta;
                         this.car.dashTimer = 50; this.combo++; this.shake = 8;
                         this.maxCombo = Math.max(this.maxCombo, this.combo);
                         this.floatingTexts.push(new FloatingText("PERFECT!", this.car.x, this.car.y - 120, "#39ff14", this.camera.currentScale));
                     } else if (diff < 0.8) {
+                        this.audio.seGood(); 
                         this.combo = 0; this.floatingTexts.push(new FloatingText("GOOD", this.car.x, this.car.y - 120, "#fbbf24", this.camera.currentScale));
                     } else {
+                        this.audio.seMiss(); 
                         this.combo = 0; this.floatingTexts.push(new FloatingText("MISS...", this.car.x, this.car.y - 120, "#f43f5e", this.camera.currentScale));
                     }
                     this.ui.combo.innerText = this.combo > 1 ? `${this.combo} COMBO!` : '';
                 } else {
+                    if (this.frameCount % 5 === 0) {
+                        this.audio.seDrift(); 
+                    }
+
                     let av = (this.car.speed / this.car.driftRadius) * this.car.driftDir;
                     this.car.driftAngle += av;
                     this.car.x = this.car.anchor.x + Math.cos(this.car.driftAngle) * this.car.driftRadius;
@@ -1346,6 +1483,8 @@ class Game {
             let maxLat = (CONFIG.trackWidth / 2) - 25; 
             if (Math.abs(proj.lateralOffset) > maxLat && this.car.collisionGrace <= 0) {
                 
+                this.audio.seCrash(); 
+
                 let centerPos = getPosFromProjection(seg, proj.progress, 0);
                 let dx = centerPos.x - this.car.x;
                 let dy = centerPos.y - this.car.y;
