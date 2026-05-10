@@ -146,12 +146,12 @@
 
     <!-- カウントダウン表示 -->
     <div id="countdown-overlay" class="hidden absolute inset-0 flex items-center justify-center pointer-events-none z-[100]">
-        <div id="countdown-text" class="text-[8rem] md:text-[12rem] italic font-black text-white solid-shadow-title countdown-pop">3</div>
+        <div id="countdown-text" class="text-[8rem] md:text-[12rem] italic font-black text-red-500 solid-shadow-title countdown-pop">3</div>
     </div>
 
     <!-- FINISH演出表示 -->
     <div id="finish-overlay" class="hidden absolute inset-0 flex items-center justify-center pointer-events-none z-[100]">
-        <div id="finish-text" class="text-[6rem] md:text-[10rem] italic font-black text-white solid-shadow-title finish-pop">FINISH!!</div>
+        <div id="finish-text" class="text-[6rem] md:text-[10rem] italic font-black text-red-500 solid-shadow-title finish-pop">FINISH!!</div>
     </div>
 
     <!-- ポーズ画面 -->
@@ -280,7 +280,6 @@ const CONFIG = {
 // --- オーディオ管理クラス ---
 class AudioManager {
     constructor() {
-        // ユーザーインタラクションがあるまでAudioContextは作らないか、作ってもsuspend状態
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         
         this.bgmTitle = new Audio('SKY_DRIFT_TITLE.mp3');
@@ -302,18 +301,22 @@ class AudioManager {
             this.ctx.resume();
         }
         this.initialized = true;
-        
-        // 初期化時に指定されているBGMを再生開始
         this.playBGM(this.currentBGMType);
     }
     
     playBGM(type) {
-        this.currentBGMType = type;
         let target = type === 'title' ? this.bgmTitle : this.bgmBattle;
         
         if (this.currentBGM && this.currentBGM !== target) {
             this.currentBGM.pause();
         }
+
+        // BGMが切り替わる場合は最初から再生する
+        if (this.currentBGMType !== type) {
+            target.currentTime = 0;
+        }
+        
+        this.currentBGMType = type;
         this.currentBGM = target;
         
         if (this.initialized) {
@@ -327,7 +330,6 @@ class AudioManager {
         }
     }
 
-    // Web Audio API を使った発振器（オシレーター）によるSE
     playTone(freq, type, duration, vol=0.1) {
         if (!this.initialized || this.ctx.state === 'suspended') return;
         let osc = this.ctx.createOscillator();
@@ -342,7 +344,6 @@ class AudioManager {
         osc.stop(this.ctx.currentTime + duration);
     }
 
-    // ノイズベースのSE (ドリフト音や衝突音)
     playNoise(duration, vol=0.1, freq=1000) {
         if (!this.initialized || this.ctx.state === 'suspended') return;
         let bufferSize = this.ctx.sampleRate * duration;
