@@ -626,9 +626,13 @@ class Bot {
         if (game.currentTrackId === 0) {
             this.baseSpeed = 19.5 - (index * 0.8);
             this.curveSpeed = 14.0 - (index * 0.8);
-        } else {
+        } else if (game.currentTrackId === 1) {
             this.baseSpeed = 21.8 - (index * 1.0);
             this.curveSpeed = 15.8 - (index * 0.9);
+        } else {
+            // Track 3 (LONG RUN)
+            this.baseSpeed = 23.5 - (index * 1.0); 
+            this.curveSpeed = 16.5 - (index * 0.9);
         }
         
         this.velocity = {x:0, y:0};
@@ -774,7 +778,8 @@ class Game {
         this.gameMode = 'time_attack'; 
         
         this.currentTrackId = 0;
-        this.trackNames = ["1 (OVAL)", "2 (TECHNICAL)"];
+        // トラック3 (LONG RUN) を追加
+        this.trackNames = ["1 (OVAL)", "2 (TECHNICAL)", "3 (LONG RUN)"];
         
         this.isPaused = false; this.isActionDown = false; this.prevActionDown = false;
         this.stateTransitioning = false; this.lastInputX = window.innerWidth / 2;
@@ -1038,7 +1043,7 @@ class Game {
                 ['curve', 500, 1],
                 ['straight', 1200, 0]  
             ];
-        } else {
+        } else if (trackId === 1) {
             plan = [ 
                 ['straight', 400, 0],  
                 ['curve', 450, 1],     
@@ -1051,6 +1056,26 @@ class Game {
                 ['curve', 450, 1],     
                 ['curve', 450, 1],
                 ['straight', 400, 0]   
+            ];
+        } else {
+            // Track 3 (LONG RUN) : 交差せずスタートとゴールが完璧に繋がるロングランコース
+            plan = [
+                ['straight', 1000, 0],
+                ['curve', 500, 1],
+                ['straight', 1000, 0],
+                ['curve', 500, 1],
+                ['curve', 500, -1],
+                ['straight', 2000, 0],
+                ['curve', 500, -1],
+                ['curve', 500, 1],
+                ['curve', 500, 1],
+                ['straight', 3000, 0],
+                ['curve', 500, 1],
+                ['straight', 4000, 0],
+                ['curve', 500, 1],
+                ['curve', 500, -1],
+                ['curve', 500, 1],
+                ['straight', 1000, 0]
             ];
         }
         
@@ -1199,6 +1224,7 @@ class Game {
     finishGame() {
         if (this.state === 'finished' || this.state === 'result') return; 
         
+        // BGMは止めずに終了SEを鳴らす
         this.audio.seFinish(); 
         
         this.car.finished = true;
