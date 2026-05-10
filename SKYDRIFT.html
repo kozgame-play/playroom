@@ -280,7 +280,7 @@ const CONFIG = {
 // --- オーディオ管理クラス ---
 class AudioManager {
     constructor() {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.ctx = null; // コンストラクタ時点では作成しない
         
         this.bgmTitle = new Audio('SKY_DRIFT_TITLE.mp3');
         this.bgmTitle.loop = true;
@@ -293,31 +293,49 @@ class AudioManager {
         this.currentBGMType = 'title';
         this.currentBGM = this.bgmTitle;
         this.initialized = false;
+
+        this.isDriftingSEPlaying = false;
     }
     
     init() {
         if (this.initialized) return;
-        if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
+        
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+            this.ctx = new AudioContext();
+            
+            // iOS等のミュート解除のための無音再生
+            const buffer = this.ctx.createBuffer(1, 1, 22050);
+            const source = this.ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(this.ctx.destination);
+            if (source.start) {
+                source.start(0);
+            } else {
+                source.noteOn(0);
+            }
         }
+        
         this.initialized = true;
         this.playBGM(this.currentBGMType);
+    }
+
+    resumeContext() {
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
     }
     
     playBGM(type) {
         let target = type === 'title' ? this.bgmTitle : this.bgmBattle;
         
-        if (this.currentBGM && this.currentBGM !== target) {
-            this.currentBGM.pause();
-        }
-
-        // BGMが切り替わる場合は最初から再生する
+        // 違うBGMに切り替わる場合のみリセットして再生
         if (this.currentBGMType !== type) {
+            if (this.currentBGM) this.currentBGM.pause();
             target.currentTime = 0;
+            this.currentBGMType = type;
+            this.currentBGM = target;
         }
-        
-        this.currentBGMType = type;
-        this.currentBGM = target;
         
         if (this.initialized) {
             this.currentBGM.play().catch(e => console.log("BGM play prevented or file not found:", e));
@@ -330,58 +348,79 @@ class AudioManager {
         }
     }
 
+    // 確実に音が鳴るように修正
     playTone(freq, type, duration, vol=0.1) {
-        if (!this.initialized || this.ctx.state === 'suspended') return;
-        let osc = this.ctx.createOscillator();
-        let gain = this.ctx.createGain();
+        if (!this.ctx || this.ctx.state !== 'running') return;
+        const t = this.ctx.currentTime;
+        this._playToneAt(freq, type, duration, vol, t);
+    }
+
+    _playToneAt(freq, type, duration, vol, startTime) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
         osc.type = type;
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(vol, startTime);
+        // エラーを避けるためlinearRampToValueAtTimeを使用し、確実に0にする
+        gain.gain.linearRampToValueAtTime(0, startTime + duration);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + duration);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
     }
 
     playNoise(duration, vol=0.1, freq=1000) {
-        if (!this.initialized || this.ctx.state === 'suspended') return;
-        let bufferSize = this.ctx.sampleRate * duration;
-        let buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        let data = buffer.getChannelData(0);
+        if (!this.ctx || this.ctx.state !== 'running') return;
+        const bufferSize = this.ctx.sampleRate * duration;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) {
             data[i] = Math.random() * 2 - 1;
         }
-        let noise = this.ctx.createBufferSource();
+        const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
-        let filter = this.ctx.createBiquadFilter();
+        const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.value = freq;
-        let gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        const gain = this.ctx.createGain();
+        
+        const t = this.ctx.currentTime;
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.linearRampToValueAtTime(0, t + duration);
+        
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(this.ctx.destination);
-        noise.start();
+        noise.start(t);
     }
 
     seClick() { this.playTone(800, 'sine', 0.1, 0.1); }
     seStart() { this.playTone(1200, 'square', 0.2, 0.1); }
-    seCountDown() { this.playTone(440, 'square', 0.1, 0.1); }
+    seCountDown() { this.playTone(440, 'square', 0.15, 0.1); }
     seGo() { this.playTone(880, 'square', 0.4, 0.15); }
     sePerfect() {
-        this.playTone(880, 'sine', 0.1, 0.1);
-        setTimeout(() => this.playTone(1760, 'sine', 0.2, 0.15), 50);
+        if (!this.ctx || this.ctx.state !== 'running') return;
+        const t = this.ctx.currentTime;
+        this._playToneAt(880, 'sine', 0.1, 0.1, t);
+        this._playToneAt(1760, 'sine', 0.2, 0.15, t + 0.05);
     }
     seGood() { this.playTone(880, 'sine', 0.2, 0.1); }
     seMiss() { this.playTone(150, 'sawtooth', 0.3, 0.15); }
-    seCrash() { this.playNoise(0.3, 0.3, 500); }
-    seDrift() { this.playNoise(0.1, 0.03, 1500); }
+    seCrash() { this.playNoise(0.3, 0.4, 400); }
+    seDrift() { 
+        if (this.isDriftingSEPlaying) return;
+        this.isDriftingSEPlaying = true;
+        this.playNoise(0.15, 0.05, 800);
+        // ドリフト音が連続で鳴りすぎないように間隔をあける
+        setTimeout(() => { this.isDriftingSEPlaying = false; }, 100);
+    }
     seFinish() {
-        this.playTone(523.25, 'square', 0.2, 0.1); // C5
-        setTimeout(() => this.playTone(659.25, 'square', 0.2, 0.1), 150); // E5
-        setTimeout(() => this.playTone(783.99, 'square', 0.4, 0.1), 300); // G5
+        if (!this.ctx || this.ctx.state !== 'running') return;
+        const t = this.ctx.currentTime;
+        // ホイッスルのようなシンプルな「ピッ・ピッ・ピーー」という音に変更
+        this._playToneAt(1046.50, 'square', 0.1, 0.1, t); // ピッ
+        this._playToneAt(1046.50, 'square', 0.1, 0.1, t + 0.15); // ピッ
+        this._playToneAt(1046.50, 'square', 0.5, 0.1, t + 0.3); // ピーー
     }
 }
 // ----------------------------
@@ -734,7 +773,6 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         
         this.audio = new AudioManager(); 
-        this.frameCount = 0;
 
         this.state = 'title';
         this.gameMode = 'time_attack'; 
@@ -844,6 +882,7 @@ class Game {
     bindEvents() {
         const handleDown = (e) => {
             if (!this.audio.initialized) this.audio.init(); 
+            this.audio.resumeContext(); 
 
             if (e.target.closest('button')) return; 
             if (e.type !== 'keydown') e.preventDefault();
@@ -878,6 +917,7 @@ class Game {
                 e.stopPropagation();
                 
                 if (!this.audio.initialized) this.audio.init(); 
+                this.audio.resumeContext(); 
                 
                 if (this.stateTransitioning) return;
                 
@@ -1069,7 +1109,13 @@ class Game {
         this.createTrack(this.currentTrackId);
 
         this.showScreen('playing');
-        this.audio.playBGM('battle'); 
+
+        // BGMの分岐：レースモードならBATTLE、それ以外(タイムアタック)ならTITLE
+        if (this.gameMode === 'race') {
+            this.audio.playBGM('battle'); 
+        } else {
+            this.audio.playBGM('title');
+        }
         
         this.ui.lap.innerText = `LAP 1 / ${CONFIG.totalLaps}`;
         this.ui.time.innerText = "00:00.000"; 
@@ -1288,7 +1334,6 @@ class Game {
     }
 
     update() {
-        this.frameCount++; 
 
         if (this.isPaused || (this.state !== 'playing' && this.state !== 'countdown' && this.state !== 'finished')) {
             this.particles.forEach(p => p.update()); this.particles = this.particles.filter(p => p.life > 0);
@@ -1426,9 +1471,8 @@ class Game {
                     }
                     this.ui.combo.innerText = this.combo > 1 ? `${this.combo} COMBO!` : '';
                 } else {
-                    if (this.frameCount % 5 === 0) {
-                        this.audio.seDrift(); 
-                    }
+
+                    this.audio.seDrift(); 
 
                     let av = (this.car.speed / this.car.driftRadius) * this.car.driftDir;
                     this.car.driftAngle += av;
