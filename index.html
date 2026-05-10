@@ -5,33 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>kozgame ゲームポータル</title>
     
-    <!-- iPhone等のホーム画面に追加した際のアイコン・タイトル設定 -->
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-title" content="kozgame">
-    <!-- 
-      ※フルスクリーン（URLバー非表示）にするタグは削除しました
-      <meta name="apple-mobile-web-app-capable" content="yes">
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    -->
 
-    <!-- レトロなドット絵風フォントを読み込み -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     
     <style>
-        /* アイコン画像に合わせたレトロパープルなカラー設定 */
+        /* カラー設定 */
         :root {
-            --bg-purple: #5c187d;      /* アイコンに近い紫 */
-            --card-purple: #3a0a52;    /* カード用の濃い紫 */
+            --bg-purple: #5c187d;
+            --card-purple: #3a0a52;
             --text-light: #ffffff;
             
-            /* 各ゲームのテーマカラー（レトロポップな色合い） */
+            /* 各ゲームのテーマカラー */
             --color-spe: #3b82f6;      /* 青 */
             --color-2430: #22c55e;     /* 緑 */
             --color-dan: #ef4444;      /* 赤 */
+            --color-sky: #0ea5e9;      /* スカイブルー（新色） */
             
-            /* UIの影の色 */
             --shadow-dark: #1a0426;
         }
 
@@ -43,7 +36,6 @@
             min-height: 100vh;
             margin: 0;
             background-color: var(--bg-purple);
-            /* レトロゲーム風のドット背景（走査線風） */
             background-image: linear-gradient(rgba(0, 0, 0, 0.1) 2px, transparent 2px);
             background-size: 100% 4px;
             color: var(--text-light);
@@ -54,7 +46,6 @@
         .card {
             background: var(--card-purple);
             padding: 2.5rem 2rem;
-            /* 角ばったレトロデザイン */
             border-radius: 0;
             border: 4px solid var(--text-light);
             box-shadow: 8px 8px 0px var(--shadow-dark);
@@ -67,9 +58,8 @@
             font-weight: 400;
             font-size: 2.8rem;
             margin: 0 0 0.5rem 0;
-            color: var(--text-light);
             letter-spacing: 2px;
-            text-transform: lowercase; /* アイコンに合わせて小文字ベースに */
+            text-transform: lowercase;
             text-shadow: 3px 3px 0px var(--shadow-dark);
         }
 
@@ -83,61 +73,54 @@
         .button-container {
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1.2rem; /* ボタンが増えたので間隔を少し調整 */
         }
 
         .play-button {
             display: block;
             position: relative;
-            padding: 1.2rem 1rem;
+            padding: 1rem;
             text-decoration: none;
             color: var(--text-light);
             background: #000;
             border: 3px solid var(--text-light);
             box-shadow: 6px 6px 0px var(--shadow-dark);
-            transition: all 0.1s; /* レトロ感を出すためアニメーションは短く */
+            transition: all 0.1s;
         }
 
-        /* SPE-DEFE ボタン */
+        /* ボタンごとの背景色 */
         .btn-spe { background-color: var(--color-spe); }
-        
-        /* 2430 ボタン */
         .btn-2430 { background-color: var(--color-2430); }
-
-        /* DANMA-K ボタン */
         .btn-dan { background-color: var(--color-dan); }
+        .btn-sky { background-color: var(--color-sky); }
 
-        /* ホバー（マウスカーソルを乗せた時） */
         .play-button:hover {
             transform: translate(-2px, -2px);
             box-shadow: 8px 8px 0px var(--shadow-dark);
             filter: brightness(1.2);
         }
 
-        /* クリック時のアクション（沈み込む） */
         .play-button:active {
             transform: translate(4px, 4px);
             box-shadow: 2px 2px 0px var(--shadow-dark);
         }
 
-        /* NEWバッジの装飾 */
+        /* バッジ装飾 */
         .badge {
             display: inline-block;
-            background-color: #facc15; /* レトロな黄色 */
+            background-color: #facc15;
             color: #000;
             font-size: 0.8rem;
             padding: 0.1rem 0.5rem;
-            margin-bottom: 0.8rem;
+            margin-bottom: 0.5rem;
             border: 2px solid #000;
-            animation: blink 1s step-end infinite; /* 点滅アニメーション */
+            animation: blink 1s step-end infinite;
         }
 
-        /* バッジの点滅（8bit風） */
         @keyframes blink {
             50% { opacity: 0; }
         }
 
-        /* ゲームタイトルの装飾 */
         .game-title {
             display: block;
             font-size: 1.5rem;
@@ -145,14 +128,13 @@
             text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
         }
 
-        /* ゲーム説明の装飾 */
         .game-desc {
             display: block;
             font-size: 0.9rem;
             opacity: 0.9;
             background: rgba(0, 0, 0, 0.4);
-            padding: 0.3rem;
-            margin-top: 0.5rem;
+            padding: 0.2rem 0.5rem;
+            margin-top: 0.4rem;
             display: inline-block;
         }
     </style>
@@ -161,28 +143,28 @@
 
     <div class="card">
         <h1>kozgame</h1>
-        <div class="subtitle">SELECT GAME</div>
+        <div class="subtitle">▶ SELECT GAME</div>
         
         <div class="button-container">
-            <!-- SPE-DEFE.html へのリンク -->
+            <a href="SKYDRIFT.html" class="play-button btn-sky">
+                <span class="badge">NEW!!</span>
+                <span class="game-title">SKYDRIFT</span>
+                <span class="game-desc">爽快ドリフトレース</span>
+            </a>
+
             <a href="SPE-DEFE.html" class="play-button btn-spe">
-                <span class="badge">NEW!!</span>
                 <span class="game-title">SPE-DEFE</span>
-                <span class="game-desc">タワーディフェンスゲーム</span>
+                <span class="game-desc">タワーディフェンス</span>
             </a>
             
-            <!-- 2430.html へのリンク -->
             <a href="2430.html" class="play-button btn-2430">
-                <span class="badge">NEW!!</span>
                 <span class="game-title">2430</span>
-                <span class="game-desc">オリジナルカードゲーム</span>
+                <span class="game-desc">カードゲーム</span>
             </a>
             
-            <!-- DANMA-K.html へのリンク -->
             <a href="DANMA-K.html" class="play-button btn-dan">
-                <span class="badge">NEW!!</span>
                 <span class="game-title">DANMA-K</span>
-                <span class="game-desc">弾幕シューティングゲーム</span>
+                <span class="game-desc">弾幕シューティング</span>
             </a>
             
         </div>
