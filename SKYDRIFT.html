@@ -197,6 +197,9 @@
                 <button id="btn-start-race" class="w-full py-4 bg-white border-4 border-rose-400 text-rose-500 font-black text-xl md:text-2xl rounded-full hover:bg-rose-50 transition-all solid-shadow-btn cursor-pointer">
                     RACE VS AI
                 </button>
+                <button id="btn-show-leaderboard" class="w-full py-4 bg-white border-4 border-emerald-400 text-emerald-500 font-black text-xl md:text-2xl rounded-full hover:bg-emerald-50 transition-all solid-shadow-btn cursor-pointer">
+                    LEADERBOARD
+                </button>
                 <button id="btn-how-to-play" class="w-full py-4 bg-white border-4 border-amber-400 text-amber-500 font-black text-xl md:text-2xl rounded-full hover:bg-amber-50 transition-all solid-shadow-btn cursor-pointer">
                     HOW TO PLAY
                 </button>
@@ -227,13 +230,32 @@
                 </button>
             </div>
 
-            <!-- ランキング表示エリア (TRACK SELECT用) -->
+            <!-- ランキング表示エリア (TRACK SELECT用: Top 5) -->
             <div class="w-full max-w-sm flex flex-col items-center pb-10 shrink-0">
                 <h3 class="text-xl md:text-2xl font-black italic text-sky-600 mb-3 border-b-4 border-sky-300 pb-1 w-full text-center">TRACK LEADERBOARD</h3>
                 <div id="track-leaderboard-container" class="w-full flex flex-col gap-2 min-h-[120px]">
                     <div class="text-center text-sky-800 font-bold p-4 bg-white/50 rounded-xl border-4 border-sky-200">LOADING...</div>
                 </div>
             </div>
+        </div>
+
+        <!-- リーダーボード専用画面 (Top 10) -->
+        <div id="screen-leaderboard" class="hidden flex-col items-center justify-start h-full pointer-events-auto bg-sky-100/95 backdrop-blur-lg overflow-y-auto py-10 px-4 z-[80]">
+            <h2 class="text-4xl md:text-6xl text-white italic mb-6 font-black solid-shadow-title text-center mt-4">LEADERBOARD</h2>
+            
+            <div class="flex items-center justify-center gap-4 mb-6 shrink-0">
+                <button id="btn-lb-prev-track" class="text-4xl text-white bg-emerald-400 rounded-full w-12 h-12 flex items-center justify-center solid-shadow-btn cursor-pointer hover:bg-emerald-300">&lt;</button>
+                <div class="text-2xl md:text-4xl text-emerald-500 font-black italic solid-shadow-text w-64 text-center" id="lb-track-name-display">TRACK: 1 (OVAL)</div>
+                <button id="btn-lb-next-track" class="text-4xl text-white bg-emerald-400 rounded-full w-12 h-12 flex items-center justify-center solid-shadow-btn cursor-pointer hover:bg-emerald-300">&gt;</button>
+            </div>
+
+            <div id="global-leaderboard-container" class="w-full max-w-md flex flex-col gap-3 mb-8 shrink-0">
+                <!-- JSで生成 -->
+            </div>
+
+            <button id="btn-close-leaderboard" class="px-10 py-4 bg-white border-4 border-gray-400 text-gray-500 font-black text-xl md:text-2xl rounded-full hover:bg-gray-50 transition-all solid-shadow-btn cursor-pointer shrink-0">
+                BACK TO TITLE
+            </button>
         </div>
 
         <!-- ルールブック画面 -->
@@ -270,14 +292,14 @@
             <p id="result-max-combo" class="hidden text-2xl md:text-4xl text-orange-500 font-black italic mb-6 solid-shadow-text">MAX COMBO: 0</p>
             
             <!-- タイムアタック用のスコア送信UI -->
-            <div id="score-submit-container" class="hidden flex-col items-center gap-3 mb-8 w-full max-w-sm">
+            <div id="score-submit-container" class="hidden flex-col items-center gap-3 mb-8 w-full max-w-sm pointer-events-auto">
                 <input type="text" id="input-player-name" placeholder="ENTER YOUR NAME" maxlength="10" class="w-full text-center text-2xl font-black text-sky-700 p-3 rounded-full border-4 border-sky-300 focus:outline-none focus:border-rose-400 uppercase bg-white/90 shadow-inner">
                 <button id="btn-submit-score" class="w-full py-3 bg-rose-500 border-4 border-rose-400 text-white font-black text-xl rounded-full hover:bg-rose-400 transition-all solid-shadow-btn cursor-pointer flex items-center justify-center">
                     SUBMIT TO LEADERBOARD
                 </button>
             </div>
 
-            <!-- ランキング表示エリア -->
+            <!-- ランキング表示エリア (Top 10) -->
             <h3 id="leaderboard-title" class="text-2xl md:text-3xl font-black italic text-sky-600 mb-4 border-b-4 border-sky-300 pb-1 w-full max-w-md text-center">RACE RESULT</h3>
 
             <div id="leaderboard-container" class="w-full max-w-md flex flex-col gap-3 mb-8">
@@ -347,11 +369,11 @@ function setupLeaderboardListener() {
         if(window.gameInstance) {
             window.gameInstance.generateGlobalLeaderboard(); 
             window.gameInstance.generateTrackLeaderboard();
+            window.gameInstance.renderStandaloneLeaderboard();
         }
         return;
     }
 
-    // 汎用的なコレクション名に変更
     const lbRef = collection(db, 'leaderboard');
     
     onSnapshot(lbRef, (snapshot) => {
@@ -365,6 +387,8 @@ function setupLeaderboardListener() {
                 window.gameInstance.generateGlobalLeaderboard();
             } else if (window.gameInstance.state === 'trackSelect') {
                 window.gameInstance.generateTrackLeaderboard();
+            } else if (window.gameInstance.state === 'leaderboard') {
+                window.gameInstance.renderStandaloneLeaderboard();
             }
         }
     }, (error) => {
@@ -915,6 +939,7 @@ class Game {
         this.gameMode = 'time_attack'; 
         
         this.currentTrackId = 0;
+        this.lbCurrentTrackId = 0; // リーダーボード画面用のトラックID
         this.trackNames = ["1 (OVAL)", "2 (TECHNICAL)", "3 (LONG RUN)"];
         
         this.isPaused = false; this.isActionDown = false; this.prevActionDown = false;
@@ -934,6 +959,7 @@ class Game {
             trackSelectScreen: document.getElementById('screen-track-select'), 
             howToScreen: document.getElementById('screen-how-to'), 
             result: document.getElementById('screen-result'),
+            screenLeaderboard: document.getElementById('screen-leaderboard'), // 追加
             hud: document.getElementById('hud-layer'),
             pause: document.getElementById('pause-screen'),
             countdown: document.getElementById('countdown-overlay'),
@@ -953,6 +979,7 @@ class Game {
             resultMaxCombo: document.getElementById('result-max-combo'),
             btnStartTA: document.getElementById('btn-start-timeattack'),
             btnStartRace: document.getElementById('btn-start-race'),
+            btnShowLeaderboard: document.getElementById('btn-show-leaderboard'), // 追加
             btnPrevTrack: document.getElementById('btn-prev-track'), 
             btnNextTrack: document.getElementById('btn-next-track'), 
             btnBackToTitle: document.getElementById('btn-back-to-title'), 
@@ -969,7 +996,14 @@ class Game {
             inputPlayerName: document.getElementById('input-player-name'),
             btnSubmitScore: document.getElementById('btn-submit-score'),
             leaderboardTitle: document.getElementById('leaderboard-title'),
-            trackLeaderboardContainer: document.getElementById('track-leaderboard-container')
+            trackLeaderboardContainer: document.getElementById('track-leaderboard-container'),
+            
+            // リーダーボード専用画面用
+            btnLbPrevTrack: document.getElementById('btn-lb-prev-track'),
+            btnLbNextTrack: document.getElementById('btn-lb-next-track'),
+            lbTrackNameDisplay: document.getElementById('lb-track-name-display'),
+            globalLeaderboardContainer: document.getElementById('global-leaderboard-container'),
+            btnCloseLeaderboard: document.getElementById('btn-close-leaderboard')
         };
 
         this.createTrack(this.currentTrackId);
@@ -989,7 +1023,7 @@ class Game {
     }
 
     showScreen(screenName) {
-        [this.ui.title, this.ui.trackSelectScreen, this.ui.howToScreen, this.ui.result].forEach(el => {
+        [this.ui.title, this.ui.trackSelectScreen, this.ui.howToScreen, this.ui.result, this.ui.screenLeaderboard].forEach(el => {
             if (el) {
                 el.classList.remove('flex');
                 el.classList.add('hidden');
@@ -1017,6 +1051,10 @@ class Game {
             this.ui.hud.classList.add('hidden');
             this.ui.finishOverlay.classList.add('hidden');
             this.audio.playBGM('title'); 
+        } else if (screenName === 'leaderboard') {
+            this.ui.screenLeaderboard.classList.remove('hidden');
+            this.ui.screenLeaderboard.classList.add('flex');
+            this.ui.hud.classList.add('hidden');
         } else if (screenName === 'playing') {
             this.ui.hud.classList.remove('hidden');
             this.ui.pause.classList.add('hidden');
@@ -1104,6 +1142,23 @@ class Game {
             this.currentTrackId = (this.currentTrackId + 1) % this.trackNames.length;
             this.updateTrackSelectScreen();
         });
+
+        // リーダーボード専用画面への遷移と操作
+        bindUIBtn(this.ui.btnShowLeaderboard, () => {
+            this.state = 'leaderboard';
+            this.lbCurrentTrackId = 0;
+            this.updateLeaderboardScreen();
+            this.showScreen('leaderboard');
+        });
+        bindUIBtn(this.ui.btnLbPrevTrack, () => {
+            this.lbCurrentTrackId = (this.lbCurrentTrackId - 1 + this.trackNames.length) % this.trackNames.length;
+            this.updateLeaderboardScreen();
+        });
+        bindUIBtn(this.ui.btnLbNextTrack, () => {
+            this.lbCurrentTrackId = (this.lbCurrentTrackId + 1) % this.trackNames.length;
+            this.updateLeaderboardScreen();
+        });
+        bindUIBtn(this.ui.btnCloseLeaderboard, () => this.showTitle());
         
         bindUIBtn(this.ui.btnBackToTitle, () => this.showTitle());
         bindUIBtn(this.ui.btnStartGame, () => this.startGame(this.gameMode)); 
@@ -1157,6 +1212,11 @@ class Game {
         this.drawTrackPreview(); 
         
         this.generateTrackLeaderboard();
+    }
+
+    updateLeaderboardScreen() {
+        this.ui.lbTrackNameDisplay.innerText = `TRACK: ${this.trackNames[this.lbCurrentTrackId]}`;
+        this.renderStandaloneLeaderboard();
     }
 
     drawTrackPreview() {
@@ -1464,6 +1524,7 @@ class Game {
         }
     }
 
+    // レース用のローカルランキング（CPU結果）
     generateLocalLeaderboard() {
         let rankData = [];
         
@@ -1504,6 +1565,7 @@ class Game {
         this.ui.leaderboard.innerHTML = this.getLeaderboardHTML(rankData);
     }
 
+    // リザルト画面でのグローバルランキング (Top 10)
     generateGlobalLeaderboard() {
         if (!db || !user) {
             this.ui.leaderboard.innerHTML = `<div class="text-center text-rose-500 font-bold p-4 bg-white/50 rounded-xl border-4 border-rose-200">OFFLINE MODE<br><span class="text-sm text-sky-800">Firebase configuration is missing.</span></div>`;
@@ -1512,7 +1574,7 @@ class Game {
 
         let trackData = globalLeaderboardData.filter(d => d.trackId === this.currentTrackId);
         trackData.sort((a, b) => a.timeMs - b.timeMs);
-        trackData = trackData.slice(0, 10);
+        trackData = trackData.slice(0, 10); // MAX 10
         
         let rankData = trackData.map(d => {
             return {
@@ -1532,6 +1594,7 @@ class Game {
         this.ui.leaderboard.innerHTML = this.getLeaderboardHTML(rankData);
     }
 
+    // コース選択画面でのトラックごとのランキング (Top 5)
     generateTrackLeaderboard() {
         const container = this.ui.trackLeaderboardContainer;
         if (!container) return;
@@ -1543,7 +1606,7 @@ class Game {
 
         let trackData = globalLeaderboardData.filter(d => d.trackId === this.currentTrackId);
         trackData.sort((a, b) => a.timeMs - b.timeMs);
-        trackData = trackData.slice(0, 5); 
+        trackData = trackData.slice(0, 5); // コース選択では TOP 5
         
         let rankData = trackData.map(d => {
             return {
@@ -1561,6 +1624,38 @@ class Game {
         }
 
         container.innerHTML = this.getLeaderboardHTML(rankData, true);
+    }
+
+    // リーダーボード専用画面でのランキング描画 (Top 10)
+    renderStandaloneLeaderboard() {
+        const container = this.ui.globalLeaderboardContainer;
+        if (!container) return;
+
+        if (!db || !user) {
+            container.innerHTML = `<div class="text-center text-rose-500 font-bold p-4 bg-white/50 rounded-xl border-4 border-rose-200">OFFLINE MODE<br><span class="text-sm text-sky-800">Firebase configuration is missing.</span></div>`;
+            return;
+        }
+
+        let trackData = globalLeaderboardData.filter(d => d.trackId === this.lbCurrentTrackId);
+        trackData.sort((a, b) => a.timeMs - b.timeMs);
+        trackData = trackData.slice(0, 10); // MAX 10
+        
+        let rankData = trackData.map(d => {
+            return {
+                name: d.name,
+                isPlayer: user && d.userId === user.uid,
+                color: '#ffffff',
+                colorSub: '#cbd5e1',
+                timeMs: d.timeMs
+            };
+        });
+
+        if (rankData.length === 0) {
+            container.innerHTML = `<div class="text-center text-sky-800 font-bold p-4 bg-white/50 rounded-xl border-4 border-sky-200">NO RECORDS YET. BE THE FIRST!</div>`;
+            return;
+        }
+
+        container.innerHTML = this.getLeaderboardHTML(rankData);
     }
 
     getLeaderboardHTML(rankData, isCompact = false) {
@@ -1632,11 +1727,12 @@ class Game {
     update() {
         this.frameCount++; 
 
-        if (this.isPaused || (this.state !== 'playing' && this.state !== 'countdown' && this.state !== 'finished')) {
-            this.particles.forEach(p => p.update()); this.particles = this.particles.filter(p => p.life > 0);
-            if (this.shake > 0) { this.shake *= 0.9; if (this.shake < 0.1) this.shake = 0; }
+        // ゲーム中以外はオブジェクトの更新を止める
+        if (this.state !== 'playing' && this.state !== 'countdown' && this.state !== 'finished') {
             return;
         }
+        
+        if (this.isPaused) return;
 
         if (this.state === 'playing') {
             this.currentTimeMs = Date.now() - this.startTime;
@@ -1870,6 +1966,7 @@ class Game {
         this.ctx.fillStyle = CONFIG.colors.bg; 
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // タイトルやメニュー画面のときは背景（水色）のみ描画して処理を軽くする
         if (this.state !== 'playing' && this.state !== 'countdown' && this.state !== 'finished') {
             return;
         }
@@ -1894,8 +1991,8 @@ class Game {
         this.ctx.beginPath();
         this.track.forEach((seg, i) => {
             if (i === 0) this.ctx.moveTo(seg.start.x, seg.start.y);
-            if (seg.type === 'straight') this.ctx.lineTo(seg.end.x, seg.end.y);
-            else this.ctx.arc(seg.anchor.x, seg.anchor.y, seg.radius, seg.startAngle, seg.endAngle, seg.dir < 0);
+            if (seg.type === 'straight') ctx.lineTo(seg.end.x, seg.end.y);
+            else ctx.arc(seg.anchor.x, seg.anchor.y, seg.radius, seg.startAngle, seg.endAngle, seg.dir < 0);
         });
         this.ctx.stroke();
         
