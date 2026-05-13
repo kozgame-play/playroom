@@ -16,18 +16,34 @@
             overflow: hidden;
             background-color: #87ceeb; 
             font-family: 'Righteous', sans-serif;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* ゲーム操作を行うキャンバスのみ、スワイプや長押し選択を禁止する */
         #game-canvas {
             display: block;
             width: 100%;
             height: 100%;
             pointer-events: auto;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        /* UIレイヤー全体をテキスト選択不可にする（スマホでの変なハイライト防止） */
+        #ui-layer {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* ただし、入力欄だけは完全に全ての操作と選択を許可する */
+        input {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            touch-action: manipulation !important;
+            pointer-events: auto !important;
+            -webkit-touch-callout: default !important;
         }
 
         .solid-shadow-title {
@@ -44,6 +60,12 @@
         .solid-shadow-btn:active {
             box-shadow: 0px 0px 0px rgba(0,0,0,0.15);
             transform: translate(4px, 4px);
+        }
+        .solid-shadow-btn:disabled {
+            box-shadow: 0px 0px 0px rgba(0,0,0,0.15);
+            transform: translate(4px, 4px);
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .fade-in {
@@ -185,24 +207,32 @@
         <div id="screen-track-select" class="hidden flex-col items-center justify-start h-full pointer-events-auto bg-sky-100/95 backdrop-blur-lg overflow-y-auto py-10 px-4 z-[80]">
             <h2 class="text-4xl md:text-6xl text-white italic mb-6 font-black solid-shadow-title text-center mt-4">SELECT TRACK</h2>
             
-            <div class="flex items-center justify-center gap-4 mb-6">
+            <div class="flex items-center justify-center gap-4 mb-6 shrink-0">
                 <button id="btn-prev-track" class="text-4xl text-white bg-sky-400 rounded-full w-12 h-12 flex items-center justify-center solid-shadow-btn cursor-pointer hover:bg-sky-300">&lt;</button>
                 <div class="text-2xl md:text-4xl text-rose-500 font-black italic solid-shadow-text w-64 text-center" id="track-name-display">TRACK: 1 (OVAL)</div>
                 <button id="btn-next-track" class="text-4xl text-white bg-sky-400 rounded-full w-12 h-12 flex items-center justify-center solid-shadow-btn cursor-pointer hover:bg-sky-300">&gt;</button>
             </div>
 
             <!-- コースプレビューキャンバス -->
-            <div class="w-[280px] h-[280px] md:w-[400px] md:h-[400px] bg-white border-4 border-gray-300 rounded-3xl overflow-hidden solid-shadow-btn mb-8 relative">
+            <div class="w-[280px] h-[280px] md:w-[400px] md:h-[400px] bg-white border-4 border-gray-300 rounded-3xl overflow-hidden solid-shadow-btn mb-6 relative shrink-0">
                 <canvas id="track-preview-canvas" class="w-full h-full"></canvas>
             </div>
 
-            <div class="flex gap-4 w-full max-w-sm px-4 pb-10">
+            <div class="flex gap-4 w-full max-w-sm px-4 pb-8 shrink-0">
                 <button id="btn-back-to-title" class="flex-1 py-4 bg-white border-4 border-gray-400 text-gray-500 font-black text-xl rounded-full hover:bg-gray-50 transition-all solid-shadow-btn cursor-pointer">
                     BACK
                 </button>
                 <button id="btn-start-game" class="flex-1 py-4 bg-white border-4 border-rose-400 text-rose-500 font-black text-xl rounded-full hover:bg-rose-50 transition-all solid-shadow-btn cursor-pointer">
                     START!
                 </button>
+            </div>
+
+            <!-- ランキング表示エリア (TRACK SELECT用) -->
+            <div class="w-full max-w-sm flex flex-col items-center pb-10 shrink-0">
+                <h3 class="text-xl md:text-2xl font-black italic text-sky-600 mb-3 border-b-4 border-sky-300 pb-1 w-full text-center">TRACK LEADERBOARD</h3>
+                <div id="track-leaderboard-container" class="w-full flex flex-col gap-2 min-h-[120px]">
+                    <div class="text-center text-sky-800 font-bold p-4 bg-white/50 rounded-xl border-4 border-sky-200">LOADING...</div>
+                </div>
             </div>
         </div>
 
@@ -232,16 +262,29 @@
         </div>
 
         <!-- リザルト画面 -->
-        <div id="screen-result" class="hidden flex-col items-center justify-start h-full pointer-events-auto bg-sky-100/95 backdrop-blur-lg overflow-y-auto py-10 px-4">
+        <div id="screen-result" class="hidden flex-col items-center justify-start h-full pointer-events-auto bg-sky-100/95 backdrop-blur-lg overflow-y-auto py-10 px-4 z-[90]">
             <h2 class="text-5xl md:text-7xl text-white italic mb-2 font-black mt-10 solid-shadow-title" id="result-title">FINISH!!</h2>
+            
             <p id="result-pos" class="hidden text-3xl md:text-5xl text-amber-500 font-black italic mb-6 solid-shadow-text">1st PLACE</p>
+            <p id="result-time-display" class="hidden text-4xl md:text-6xl text-sky-500 font-black font-mono italic mb-2 solid-shadow-text">00:00.000</p>
             <p id="result-max-combo" class="hidden text-2xl md:text-4xl text-orange-500 font-black italic mb-6 solid-shadow-text">MAX COMBO: 0</p>
             
+            <!-- タイムアタック用のスコア送信UI -->
+            <div id="score-submit-container" class="hidden flex-col items-center gap-3 mb-8 w-full max-w-sm">
+                <input type="text" id="input-player-name" placeholder="ENTER YOUR NAME" maxlength="10" class="w-full text-center text-2xl font-black text-sky-700 p-3 rounded-full border-4 border-sky-300 focus:outline-none focus:border-rose-400 uppercase bg-white/90 shadow-inner">
+                <button id="btn-submit-score" class="w-full py-3 bg-rose-500 border-4 border-rose-400 text-white font-black text-xl rounded-full hover:bg-rose-400 transition-all solid-shadow-btn cursor-pointer flex items-center justify-center">
+                    SUBMIT TO LEADERBOARD
+                </button>
+            </div>
+
+            <!-- ランキング表示エリア -->
+            <h3 id="leaderboard-title" class="text-2xl md:text-3xl font-black italic text-sky-600 mb-4 border-b-4 border-sky-300 pb-1 w-full max-w-md text-center">RACE RESULT</h3>
+
             <div id="leaderboard-container" class="w-full max-w-md flex flex-col gap-3 mb-8">
                 <!-- JSで生成 -->
             </div>
             
-            <div class="flex flex-row gap-4 items-center pb-10">
+            <div class="flex flex-row gap-4 items-center pb-10 shrink-0">
                 <button id="btn-retry" class="px-8 py-3 bg-white border-4 border-amber-400 text-amber-500 font-black text-xl md:text-2xl rounded-full hover:bg-amber-50 transition-all solid-shadow-btn cursor-pointer">
                     TRY AGAIN
                 </button>
@@ -252,7 +295,107 @@
         </div>
     </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// ==========================================
+// ★★★ Firebaseの設定情報をここに貼り付けます ★★★
+// ==========================================
+const firebaseConfig = {
+  apiKey: "AIzaSyB5esz6oPFT7YI9VBFnitFmNzLNvKs6RBE",
+  authDomain: "kozgame.firebaseapp.com",
+  projectId: "kozgame",
+  storageBucket: "kozgame.firebasestorage.app",
+  messagingSenderId: "613372363405",
+  appId: "1:613372363405:web:8e68ca71c1b2e97db418c4",
+  measurementId: "G-MGP9LN5C6K"
+};
+// ==========================================
+
+let db = null;
+let auth = null;
+let user = null;
+let globalLeaderboardData = []; 
+
+async function initFirebase() {
+    if (!firebaseConfig.apiKey) {
+        console.warn("Firebase config is empty. Playing in offline mode.");
+        return;
+    }
+    try {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        await signInAnonymously(auth);
+
+        onAuthStateChanged(auth, (currentUser) => {
+            user = currentUser;
+            if (user) {
+                setupLeaderboardListener();
+            }
+        });
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+    }
+}
+
+function setupLeaderboardListener() {
+    if (!db || !user) {
+        if(window.gameInstance) {
+            window.gameInstance.generateGlobalLeaderboard(); 
+            window.gameInstance.generateTrackLeaderboard();
+        }
+        return;
+    }
+
+    // 汎用的なコレクション名に変更
+    const lbRef = collection(db, 'leaderboard');
+    
+    onSnapshot(lbRef, (snapshot) => {
+        globalLeaderboardData = [];
+        snapshot.forEach(doc => {
+            globalLeaderboardData.push({ id: doc.id, ...doc.data() });
+        });
+        
+        if(window.gameInstance) {
+            if (window.gameInstance.state === 'result' && window.gameInstance.gameMode === 'time_attack') {
+                window.gameInstance.generateGlobalLeaderboard();
+            } else if (window.gameInstance.state === 'trackSelect') {
+                window.gameInstance.generateTrackLeaderboard();
+            }
+        }
+    }, (error) => {
+        console.error("Leaderboard fetch error:", error);
+    });
+}
+
+async function submitTimeToLeaderboard(name, timeMs, trackId) {
+    if (!user || !db) {
+        console.error("Firebase is not ready.");
+        return false;
+    }
+    const lbRef = collection(db, 'leaderboard');
+    try {
+        await addDoc(lbRef, {
+            name: name || "GUEST",
+            timeMs: timeMs,
+            trackId: trackId,
+            timestamp: Date.now(),
+            userId: user.uid
+        });
+        return true;
+    } catch(e) {
+        console.error("Score submit error:", e);
+        return false;
+    }
+}
+
+initFirebase();
+
+// --- Game Logic ---
 const CONFIG = {
     trackWidth: 480,       
     baseSpeed: 12,         
@@ -304,16 +447,11 @@ class AudioManager {
         if (AudioContext) {
             this.ctx = new AudioContext();
             
-            // iOS等のミュート解除のための無音再生
             const buffer = this.ctx.createBuffer(1, 1, 22050);
             const source = this.ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(this.ctx.destination);
-            if (source.start) {
-                source.start(0);
-            } else {
-                source.noteOn(0);
-            }
+            if (source.start) { source.start(0); } else { source.noteOn(0); }
         }
         
         this.initialized = true;
@@ -413,9 +551,9 @@ class AudioManager {
     seFinish() {
         if (!this.ctx || this.ctx.state !== 'running') return;
         const t = this.ctx.currentTime;
-        this._playToneAt(1046.50, 'square', 0.1, 0.1, t); // ピッ
-        this._playToneAt(1046.50, 'square', 0.1, 0.1, t + 0.15); // ピッ
-        this._playToneAt(1046.50, 'square', 0.5, 0.1, t + 0.3); // ピーー
+        this._playToneAt(1046.50, 'square', 0.1, 0.1, t); 
+        this._playToneAt(1046.50, 'square', 0.1, 0.1, t + 0.15); 
+        this._playToneAt(1046.50, 'square', 0.5, 0.1, t + 0.3); 
     }
 }
 // ----------------------------
@@ -630,7 +768,6 @@ class Bot {
             this.baseSpeed = 21.8 - (index * 1.0);
             this.curveSpeed = 15.8 - (index * 0.9);
         } else {
-            // Track 3 (LONG RUN)
             this.baseSpeed = 23.5 - (index * 1.0); 
             this.curveSpeed = 16.5 - (index * 0.9);
         }
@@ -778,7 +915,6 @@ class Game {
         this.gameMode = 'time_attack'; 
         
         this.currentTrackId = 0;
-        // トラック3 (LONG RUN) を追加
         this.trackNames = ["1 (OVAL)", "2 (TECHNICAL)", "3 (LONG RUN)"];
         
         this.isPaused = false; this.isActionDown = false; this.prevActionDown = false;
@@ -813,6 +949,7 @@ class Game {
             leaderboard: document.getElementById('leaderboard-container'), 
             resultTitle: document.getElementById('result-title'),
             resultPos: document.getElementById('result-pos'),
+            resultTimeDisplay: document.getElementById('result-time-display'),
             resultMaxCombo: document.getElementById('result-max-combo'),
             btnStartTA: document.getElementById('btn-start-timeattack'),
             btnStartRace: document.getElementById('btn-start-race'),
@@ -827,7 +964,12 @@ class Game {
             btnPause: document.getElementById('btn-ingame-pause'),
             btnExitResult: document.getElementById('btn-result-exit'),
             btnInGameReset: document.getElementById('btn-ingame-reset'),
-            btnInGameExit: document.getElementById('btn-ingame-exit')
+            btnInGameExit: document.getElementById('btn-ingame-exit'),
+            scoreSubmitContainer: document.getElementById('score-submit-container'),
+            inputPlayerName: document.getElementById('input-player-name'),
+            btnSubmitScore: document.getElementById('btn-submit-score'),
+            leaderboardTitle: document.getElementById('leaderboard-title'),
+            trackLeaderboardContainer: document.getElementById('track-leaderboard-container')
         };
 
         this.createTrack(this.currentTrackId);
@@ -837,6 +979,8 @@ class Game {
         this.showScreen('title'); 
         this.loop = this.loop.bind(this);
         requestAnimationFrame(this.loop);
+
+        window.gameInstance = this; 
     }
 
     resize() {
@@ -882,11 +1026,17 @@ class Game {
 
     bindEvents() {
         const handleDown = (e) => {
+            if (this.state !== 'playing' || this.isPaused) return;
+
             if (!this.audio.initialized) this.audio.init(); 
             this.audio.resumeContext(); 
 
-            if (e.target.closest('button')) return; 
-            if (e.type !== 'keydown') e.preventDefault();
+            // UIボタンや入力欄の上ではゲーム操作を無効にする
+            if (e.target.closest('button') || (e.target.tagName && e.target.tagName.toLowerCase() === 'input')) return; 
+            
+            // スマホのスクロールを防ぐ（ゲーム中のみ）
+            if (e.type !== 'keydown' && e.cancelable) e.preventDefault();
+            
             if (e.type === 'keydown') {
                 if (e.code === 'Space') this.lastInputX = window.innerWidth * 0.75; 
                 else if (e.code === 'Escape' || e.code === 'KeyP') { this.togglePause(); return; }
@@ -894,12 +1044,13 @@ class Game {
             } else {
                 this.lastInputX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
             }
-            if (this.state !== 'playing' || this.isPaused) return;
             this.isActionDown = true;
         };
 
         const handleUp = (e) => {
-            if (e.type !== 'keyup') e.preventDefault();
+            if (this.state !== 'playing' || this.isPaused) return;
+
+            if (e.type !== 'keyup' && e.cancelable) e.preventDefault();
             if (e.type === 'keyup' && e.code !== 'Space') return;
             this.isActionDown = false;
         };
@@ -911,12 +1062,10 @@ class Game {
         window.addEventListener('touchend', handleUp, {passive: false});
         window.addEventListener('keyup', handleUp, {passive: false});
 
-        const bindBtn = (btn, fn) => {
+        // 確実なクリックイベントのバインド
+        const bindUIBtn = (btn, fn) => {
             if (!btn) return;
-            const handler = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
+            btn.onclick = async () => {
                 if (!this.audio.initialized) this.audio.init(); 
                 this.audio.resumeContext(); 
                 
@@ -924,63 +1073,100 @@ class Game {
                 
                 if (btn.id === 'btn-start-game') {
                     this.audio.seStart();
-                } else {
+                } else if (btn.id !== 'btn-submit-score') {
                     this.audio.seClick();
                 }
 
                 this.stateTransitioning = true; 
-                fn();
+                await fn();
                 setTimeout(() => { this.stateTransitioning = false; }, 300); 
             };
-            btn.addEventListener('pointerdown', handler, {passive: false});
         };
 
-        bindBtn(this.ui.btnStartTA, () => {
+        bindUIBtn(this.ui.btnStartTA, () => {
             this.gameMode = 'time_attack';
+            this.state = 'trackSelect';
             this.showScreen('trackSelect');
             this.updateTrackSelectScreen();
         });
-        bindBtn(this.ui.btnStartRace, () => {
+        bindUIBtn(this.ui.btnStartRace, () => {
             this.gameMode = 'race';
+            this.state = 'trackSelect';
             this.showScreen('trackSelect');
             this.updateTrackSelectScreen();
         });
         
-        bindBtn(this.ui.btnPrevTrack, () => {
+        bindUIBtn(this.ui.btnPrevTrack, () => {
             this.currentTrackId = (this.currentTrackId - 1 + this.trackNames.length) % this.trackNames.length;
             this.updateTrackSelectScreen();
         });
-        bindBtn(this.ui.btnNextTrack, () => {
+        bindUIBtn(this.ui.btnNextTrack, () => {
             this.currentTrackId = (this.currentTrackId + 1) % this.trackNames.length;
             this.updateTrackSelectScreen();
         });
         
-        bindBtn(this.ui.btnBackToTitle, () => this.showScreen('title'));
-        bindBtn(this.ui.btnStartGame, () => this.startGame(this.gameMode)); 
+        bindUIBtn(this.ui.btnBackToTitle, () => this.showTitle());
+        bindUIBtn(this.ui.btnStartGame, () => this.startGame(this.gameMode)); 
 
-        bindBtn(this.ui.btnHowToPlay, () => this.showScreen('howTo'));
-        bindBtn(this.ui.btnCloseHowTo, () => this.showScreen('title'));
+        bindUIBtn(this.ui.btnHowToPlay, () => {
+            this.state = 'howTo';
+            this.showScreen('howTo');
+        });
+        bindUIBtn(this.ui.btnCloseHowTo, () => this.showTitle());
         
-        bindBtn(this.ui.btnRetry, () => this.startGame(this.gameMode)); 
-        bindBtn(this.ui.btnInGameReset, () => this.startGame(this.gameMode)); 
+        bindUIBtn(this.ui.btnRetry, () => this.startGame(this.gameMode)); 
+        bindUIBtn(this.ui.btnInGameReset, () => this.startGame(this.gameMode)); 
         
-        bindBtn(this.ui.btnResume, () => this.togglePause());
-        bindBtn(this.ui.btnPause, () => this.togglePause());
-        bindBtn(this.ui.btnExitResult, () => this.showScreen('title'));
-        bindBtn(this.ui.btnInGameExit, () => this.showScreen('title'));
+        bindUIBtn(this.ui.btnResume, () => this.togglePause());
+        bindUIBtn(this.ui.btnPause, () => this.togglePause());
+        bindUIBtn(this.ui.btnExitResult, () => this.showTitle());
+        bindUIBtn(this.ui.btnInGameExit, () => this.showTitle());
+
+        bindUIBtn(this.ui.btnSubmitScore, async () => {
+            if (this.ui.btnSubmitScore.disabled) return;
+            
+            this.audio.seClick();
+            let name = this.ui.inputPlayerName.value.trim().toUpperCase() || "GUEST";
+            this.ui.btnSubmitScore.disabled = true;
+            this.ui.btnSubmitScore.innerText = "SUBMITTING...";
+            
+            let success = await submitTimeToLeaderboard(name, this.car.finishTime, this.currentTrackId);
+            
+            if (success) {
+                this.ui.btnSubmitScore.innerText = "SUBMITTED!";
+                this.ui.btnSubmitScore.classList.remove('bg-rose-500', 'border-rose-400');
+                this.ui.btnSubmitScore.classList.add('bg-gray-400', 'border-gray-300');
+            } else {
+                this.ui.btnSubmitScore.innerText = "ERROR - RETRY?";
+                this.ui.btnSubmitScore.disabled = false;
+            }
+        });
+    }
+
+    showTitle() {
+        this.state = 'title'; 
+        this.isPaused = false;
+        this.showScreen('title');
     }
 
     updateTrackSelectScreen() {
         document.getElementById('track-name-display').innerText = `TRACK: ${this.trackNames[this.currentTrackId]}`;
         this.createTrack(this.currentTrackId);
-        setTimeout(() => this.drawTrackPreview(), 50); 
+        
+        // メインループに任せず、明示的に1度キャンバスを描画してコースを表示する
+        this.drawTrackPreview(); 
+        
+        this.generateTrackLeaderboard();
     }
 
     drawTrackPreview() {
         const pCanvas = document.getElementById('track-preview-canvas');
         if (!pCanvas) return;
-        pCanvas.width = pCanvas.clientWidth;
-        pCanvas.height = pCanvas.clientHeight;
+        
+        // CSSでの縮小に任せるため、内部解像度を大きめに固定する
+        pCanvas.width = 800;
+        pCanvas.height = 800;
+        
         const ctx = pCanvas.getContext('2d');
         const w = pCanvas.width, h = pCanvas.height;
         ctx.clearRect(0, 0, w, h);
@@ -1045,20 +1231,19 @@ class Game {
             ];
         } else if (trackId === 1) {
             plan = [ 
-                ['straight', 400, 0],  
+                ['straight', 200, 0],  
                 ['curve', 450, 1],     
                 ['curve', 450, -1],    
                 ['curve', 450, 1],     
                 ['curve', 450, 1],     
-                ['straight', 800, 0], 
+                ['straight', 1200, 0], 
                 ['curve', 450, 1],     
                 ['curve', 450, -1],    
                 ['curve', 450, 1],     
                 ['curve', 450, 1],
-                ['straight', 400, 0]   
+                ['straight', 1000, 0]   
             ];
         } else {
-            // Track 3 (LONG RUN) : 交差せずスタートとゴールが完璧に繋がるロングランコース
             plan = [
                 ['straight', 1000, 0],
                 ['curve', 500, 1],
@@ -1099,11 +1284,6 @@ class Game {
         this.trackTotalLength = cumulativeLength;
     }
 
-    showTitle() {
-        this.state = 'title'; this.isPaused = false;
-        this.showScreen('title');
-    }
-
     togglePause() {
         if (this.state !== 'playing' && this.state !== 'countdown') return;
         this.isPaused = !this.isPaused;
@@ -1121,7 +1301,9 @@ class Game {
     startGame(mode) {
         if (mode) this.gameMode = mode; 
         
-        this.state = 'countdown'; this.isPaused = false; this.countdownValue = 3;
+        this.state = 'countdown'; 
+        this.isPaused = false; 
+        this.countdownValue = 3;
         this.combo = 0; this.maxCombo = 0; this.speedLevel = 0; this.particles = []; this.skidmarks = []; this.floatingTexts = [];
         this.isActionDown = false; this.prevActionDown = false;
         this.camera.currentScale = CONFIG.cameraBaseScale;
@@ -1224,7 +1406,6 @@ class Game {
     finishGame() {
         if (this.state === 'finished' || this.state === 'result') return; 
         
-        // BGMは止めずに終了SEを鳴らす
         this.audio.seFinish(); 
         
         this.car.finished = true;
@@ -1241,25 +1422,49 @@ class Game {
     showResultScreen() {
         this.state = 'result';
         this.showScreen('result');
-        this.generateLeaderboard();
+        
+        this.ui.inputPlayerName.value = "";
+        this.ui.btnSubmitScore.disabled = false;
+        this.ui.btnSubmitScore.innerText = "SUBMIT TO LEADERBOARD";
+        this.ui.btnSubmitScore.classList.add('bg-rose-500', 'border-rose-400');
+        this.ui.btnSubmitScore.classList.remove('bg-gray-400', 'border-gray-300');
         
         if(this.gameMode === 'race') {
-            let rankStr = this.calculateRankings(true);
             this.ui.resultPos.classList.remove('hidden');
             this.ui.resultMaxCombo.classList.add('hidden');
+            this.ui.scoreSubmitContainer.classList.add('hidden');
+            this.ui.resultTimeDisplay.classList.add('hidden');
+            
+            let rankStr = this.calculateRankings(true);
             this.ui.resultPos.innerText = `${rankStr} PLACE`;
             this.ui.resultTitle.innerText = rankStr === '1st' ? "VICTORY!!" : "FINISH!!";
             this.ui.resultTitle.className = "text-5xl md:text-7xl italic mb-2 font-black mt-10 solid-shadow-title " + (rankStr === '1st' ? "text-amber-400" : "text-rose-500");
+            
+            this.ui.leaderboardTitle.innerText = "RACE RESULT";
+            this.generateLocalLeaderboard();
         } else {
             this.ui.resultPos.classList.add('hidden');
             this.ui.resultMaxCombo.classList.remove('hidden');
+            this.ui.resultTimeDisplay.classList.remove('hidden');
             this.ui.resultMaxCombo.innerText = `MAX COMBO: ${this.maxCombo}`;
+            this.ui.resultTimeDisplay.innerText = formatTime(this.car.finishTime);
             this.ui.resultTitle.innerText = "FINISH!!";
             this.ui.resultTitle.className = "text-5xl md:text-7xl text-rose-500 italic mb-2 font-black mt-10 solid-shadow-title";
+            
+            if (db && user) {
+                this.ui.scoreSubmitContainer.classList.remove('hidden');
+                this.ui.scoreSubmitContainer.classList.add('flex');
+            } else {
+                this.ui.scoreSubmitContainer.classList.remove('flex');
+                this.ui.scoreSubmitContainer.classList.add('hidden');
+            }
+            
+            this.ui.leaderboardTitle.innerText = `GLOBAL TOP 10 (TRACK ${this.currentTrackId + 1})`;
+            this.generateGlobalLeaderboard();
         }
     }
 
-    generateLeaderboard() {
+    generateLocalLeaderboard() {
         let rankData = [];
         
         rankData.push({
@@ -1270,61 +1475,132 @@ class Game {
             timeMs: this.car.finishTime || this.currentTimeMs
         });
         
-        if (this.gameMode === 'race') {
-            this.bots.forEach((b, i) => {
-                let estimatedTime = 0;
-                if (b.finished) {
-                    estimatedTime = b.finishTime;
-                } else {
-                    let seg = this.track[b.currentSegIndex];
-                    let proj = getProjection(seg, b);
-                    let distDone = (b.lap - 1) * this.trackTotalLength + seg.cumulative + proj.progress;
-                    let targetDist = CONFIG.totalLaps * this.trackTotalLength;
-                    let distRemain = Math.max(0, targetDist - distDone);
-                    
-                    let avgSpeed = Math.max(b.speed, 5); 
-                    let framesRemain = distRemain / avgSpeed;
-                    let nowMs = Date.now() - this.startTime; 
-                    estimatedTime = nowMs + (framesRemain * (1000/60)); 
-                }
-                rankData.push({
-                    name: "COM " + (i + 1),
-                    isPlayer: false,
-                    color: b.color,
-                    colorSub: b.colorSub,
-                    timeMs: estimatedTime
-                });
+        this.bots.forEach((b, i) => {
+            let estimatedTime = 0;
+            if (b.finished) {
+                estimatedTime = b.finishTime;
+            } else {
+                let seg = this.track[b.currentSegIndex];
+                let proj = getProjection(seg, b);
+                let distDone = (b.lap - 1) * this.trackTotalLength + seg.cumulative + proj.progress;
+                let targetDist = CONFIG.totalLaps * this.trackTotalLength;
+                let distRemain = Math.max(0, targetDist - distDone);
+                
+                let avgSpeed = Math.max(b.speed, 5); 
+                let framesRemain = distRemain / avgSpeed;
+                let nowMs = Date.now() - this.startTime; 
+                estimatedTime = nowMs + (framesRemain * (1000/60)); 
+            }
+            rankData.push({
+                name: "COM " + (i + 1),
+                isPlayer: false,
+                color: b.color,
+                colorSub: b.colorSub,
+                timeMs: estimatedTime
             });
-        }
+        });
         
         rankData.sort((a, b) => a.timeMs - b.timeMs);
+        this.ui.leaderboard.innerHTML = this.getLeaderboardHTML(rankData);
+    }
+
+    generateGlobalLeaderboard() {
+        if (!db || !user) {
+            this.ui.leaderboard.innerHTML = `<div class="text-center text-rose-500 font-bold p-4 bg-white/50 rounded-xl border-4 border-rose-200">OFFLINE MODE<br><span class="text-sm text-sky-800">Firebase configuration is missing.</span></div>`;
+            return;
+        }
+
+        let trackData = globalLeaderboardData.filter(d => d.trackId === this.currentTrackId);
+        trackData.sort((a, b) => a.timeMs - b.timeMs);
+        trackData = trackData.slice(0, 10);
         
+        let rankData = trackData.map(d => {
+            return {
+                name: d.name,
+                isPlayer: user && d.userId === user.uid,
+                color: '#ffffff',
+                colorSub: '#cbd5e1',
+                timeMs: d.timeMs
+            };
+        });
+
+        if (rankData.length === 0) {
+            this.ui.leaderboard.innerHTML = `<div class="text-center text-sky-800 font-bold p-4 bg-white/50 rounded-xl border-4 border-sky-200">NO RECORDS YET. BE THE FIRST!</div>`;
+            return;
+        }
+
+        this.ui.leaderboard.innerHTML = this.getLeaderboardHTML(rankData);
+    }
+
+    generateTrackLeaderboard() {
+        const container = this.ui.trackLeaderboardContainer;
+        if (!container) return;
+
+        if (!db || !user) {
+            container.innerHTML = `<div class="text-center text-rose-500 font-bold p-4 bg-white/50 rounded-xl border-4 border-rose-200 shadow-md">OFFLINE MODE</div>`;
+            return;
+        }
+
+        let trackData = globalLeaderboardData.filter(d => d.trackId === this.currentTrackId);
+        trackData.sort((a, b) => a.timeMs - b.timeMs);
+        trackData = trackData.slice(0, 5); 
+        
+        let rankData = trackData.map(d => {
+            return {
+                name: d.name,
+                isPlayer: user && d.userId === user.uid,
+                color: '#ffffff',
+                colorSub: '#cbd5e1',
+                timeMs: d.timeMs
+            };
+        });
+
+        if (rankData.length === 0) {
+            container.innerHTML = `<div class="text-center text-sky-800 font-bold p-4 bg-white/50 rounded-xl border-4 border-sky-200 shadow-md">NO RECORDS YET.</div>`;
+            return;
+        }
+
+        container.innerHTML = this.getLeaderboardHTML(rankData, true);
+    }
+
+    getLeaderboardHTML(rankData, isCompact = false) {
         let html = "";
         rankData.forEach((r, idx) => {
             let bgClass = r.isPlayer ? "bg-white border-sky-400" : "bg-sky-50/90 border-sky-200";
             let rankColor = idx === 0 ? "text-amber-500" : (idx === 1 ? "text-gray-400" : (idx === 2 ? "text-orange-500" : "text-sky-800"));
             
             let iconCanvas = document.createElement('canvas');
-            iconCanvas.width = 80;
-            iconCanvas.height = 80;
+            iconCanvas.width = isCompact ? 60 : 80;
+            iconCanvas.height = isCompact ? 60 : 80;
             let iconCtx = iconCanvas.getContext('2d');
-            iconCtx.translate(40, 40);
+            iconCtx.translate(isCompact ? 30 : 40, isCompact ? 30 : 40);
             drawCar(iconCtx, 0, 0, Math.PI / 4, {x:0, y:0}, false, 1, r.color, r.colorSub, 0);
             let iconDataUrl = iconCanvas.toDataURL();
 
-            html += `
-                <div class="flex justify-between items-center p-3 rounded-xl border-4 ${bgClass} shadow-md backdrop-blur-sm">
-                    <div class="flex items-center gap-2 md:gap-4">
-                        <span class="text-xl md:text-3xl font-black italic w-8 text-center ${rankColor} solid-shadow-text">${idx + 1}</span>
-                        <img src="${iconDataUrl}" class="w-10 h-10 md:w-12 md:h-12 object-contain filter drop-shadow-md" />
-                        <span class="${r.isPlayer ? 'text-sky-600' : 'text-sky-800'} font-black italic tracking-wider text-sm md:text-base">${r.name}</span>
+            if (isCompact) {
+                html += `
+                    <div class="flex justify-between items-center p-2 px-3 rounded-xl border-4 ${bgClass} shadow-sm backdrop-blur-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg md:text-xl font-black italic w-6 text-center ${rankColor} solid-shadow-text">${idx + 1}</span>
+                            <span class="${r.isPlayer ? 'text-sky-600' : 'text-sky-800'} font-black italic tracking-wider text-xs md:text-sm w-20 md:w-28 truncate">${r.name}</span>
+                        </div>
+                        <span class="text-sky-500 font-mono text-sm md:text-base font-bold">${formatTime(r.timeMs)}</span>
                     </div>
-                    <span class="text-sky-500 font-mono text-lg md:text-2xl font-bold">${formatTime(r.timeMs)}</span>
-                </div>
-            `;
+                `;
+            } else {
+                html += `
+                    <div class="flex justify-between items-center p-3 rounded-xl border-4 ${bgClass} shadow-md backdrop-blur-sm">
+                        <div class="flex items-center gap-2 md:gap-4">
+                            <span class="text-xl md:text-3xl font-black italic w-8 text-center ${rankColor} solid-shadow-text">${idx + 1}</span>
+                            <img src="${iconDataUrl}" class="w-10 h-10 md:w-12 md:h-12 object-contain filter drop-shadow-md" />
+                            <span class="${r.isPlayer ? 'text-sky-600' : 'text-sky-800'} font-black italic tracking-wider text-sm md:text-base w-24 md:w-32 truncate">${r.name}</span>
+                        </div>
+                        <span class="text-sky-500 font-mono text-lg md:text-2xl font-bold">${formatTime(r.timeMs)}</span>
+                    </div>
+                `;
+            }
         });
-        
-        this.ui.leaderboard.innerHTML = html;
+        return html;
     }
 
     calculateRankings(isFinal = false) {
@@ -1591,7 +1867,13 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = CONFIG.colors.bg; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = CONFIG.colors.bg; 
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (this.state !== 'playing' && this.state !== 'countdown' && this.state !== 'finished') {
+            return;
+        }
+
         this.ctx.save();
         this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
         this.ctx.scale(this.camera.currentScale, this.camera.currentScale);
@@ -1612,7 +1894,7 @@ class Game {
         this.ctx.beginPath();
         this.track.forEach((seg, i) => {
             if (i === 0) this.ctx.moveTo(seg.start.x, seg.start.y);
-            if (seg.type === 'straight') { this.ctx.lineTo(seg.end.x, seg.end.y); }
+            if (seg.type === 'straight') this.ctx.lineTo(seg.end.x, seg.end.y);
             else this.ctx.arc(seg.anchor.x, seg.anchor.y, seg.radius, seg.startAngle, seg.endAngle, seg.dir < 0);
         });
         this.ctx.stroke();
@@ -1623,7 +1905,7 @@ class Game {
 
         let s0 = this.track[0];
         this.ctx.save(); this.ctx.translate(s0.start.x, s0.start.y); this.ctx.rotate(s0.angle); 
-        this.ctx.fillStyle = '#94a3b8'; 
+        this.ctx.fillStyle = '#ef4444'; 
         let tw = CONFIG.trackWidth - 16;
         let thw = tw / 2;
         for(let i=-thw; i<thw; i+=40) { 
@@ -1633,15 +1915,15 @@ class Game {
         }
         this.ctx.restore();
 
-        if (this.state !== 'title') {
-            this.skidmarks.forEach(s => { 
-                this.ctx.fillStyle = s.color;
-                this.ctx.beginPath(); this.ctx.arc(s.x, s.y, s.width, 0, Math.PI*2); this.ctx.fill(); 
-            });
-            this.particles.forEach(p => p.draw(this.ctx));
-            
-            this.bots.forEach(b => b.draw(this.ctx));
+        this.skidmarks.forEach(s => { 
+            this.ctx.fillStyle = s.color;
+            this.ctx.beginPath(); this.ctx.arc(s.x, s.y, s.width, 0, Math.PI*2); this.ctx.fill(); 
+        });
+        this.particles.forEach(p => p.draw(this.ctx));
+        
+        this.bots.forEach(b => b.draw(this.ctx));
 
+        if (this.car) {
             drawCar(
                 this.ctx, 
                 this.car.x, 
@@ -1654,9 +1936,9 @@ class Game {
                 CONFIG.colors.carSub, 
                 this.car.dashTimer
             );
-            
-            this.floatingTexts.forEach(t => t.draw(this.ctx));
         }
+        
+        this.floatingTexts.forEach(t => t.draw(this.ctx));
         this.ctx.restore();
     }
 
