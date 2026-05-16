@@ -21,6 +21,7 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 
+    <!-- Firebase SDK (v11.6.1) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -66,7 +67,7 @@
             try {
                 await addDoc(collection(db, "leaderboard_03"), {
                     name: name || "名無し司令官",
-                    stage: stage, // stageを保存
+                    stage: stage,
                     wave: waveNum,
                     timestamp: Date.now(),
                     userId: user.uid
@@ -81,7 +82,6 @@
         window.getLeaderboardFromFirebase = async function(stage) {
             if (!db) return null;
             try {
-                // 複合インデックスエラーを避けるため、stageの絞り込みのみFirestoreで行う
                 const q = query(collection(db, "leaderboard_03"), where("stage", "==", stage));
                 const querySnapshot = await getDocs(q);
                 let results = [];
@@ -89,10 +89,7 @@
                     results.push(doc.data());
                 });
                 
-                // JavaScript側でwaveが多い順（降順）にソートする
                 results.sort((a, b) => b.wave - a.wave);
-                
-                // 上位10件だけを返す
                 return results.slice(0, 10);
             } catch (error) {
                 console.error("Error getting leaderboard: ", error);
@@ -103,8 +100,10 @@
 </head>
 <body class="flex flex-col h-[100dvh] overflow-hidden w-full max-w-3xl mx-auto relative bg-[#0f172a]">
 
+    <!-- タイトル画面 -->
     <div id="titleScreen" class="absolute inset-0 bg-[#0f172a]/70 flex flex-col items-center justify-start z-[60] p-4 text-center overflow-y-auto no-scrollbar transition-opacity duration-300">
         
+        <!-- タイトルビュー -->
         <div id="titleView" class="w-full flex flex-col items-center justify-center min-h-full">
             <div class="mb-12">
                 <h1 class="text-5xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)] tracking-wider font-[Orbitron]">SPA-DEFE</h1>
@@ -126,10 +125,12 @@
             </div>
         </div>
 
+        <!-- ステージ選択ビュー -->
         <div id="stageSelectView" class="w-full flex flex-col items-center hidden py-8 min-h-full justify-center">
             <h2 class="text-2xl sm:text-3xl font-black text-cyan-400 mb-8 tracking-widest neon-text font-[Orbitron]">SELECT MISSION</h2>
             
             <div class="flex flex-col sm:flex-row w-full max-w-2xl gap-4 sm:gap-6 px-2">
+                <!-- STAGE 1 -->
                 <div class="relative bg-slate-800/90 p-5 sm:p-6 rounded-2xl border-2 border-cyan-800/50 shadow-[0_0_15px_rgba(34,211,238,0.1)] flex flex-col w-full flex-1 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer" onclick="startGame(1)">
                     <div class="absolute top-0 right-0 bg-cyan-900/50 text-cyan-400 text-[10px] font-black px-3 py-1.5 rounded-bl-lg border-b border-l border-cyan-800/50">CASUAL</div>
                     <h2 class="text-xl sm:text-2xl font-black text-cyan-400 mb-3 tracking-widest neon-text text-left font-[Orbitron]">STAGE 1 <span class="text-sm font-bold text-slate-300 neon-text-none block mt-1 font-sans">アルファ星域</span></h2>
@@ -146,6 +147,7 @@
                     </div>
                 </div>
 
+                <!-- STAGE 2 -->
                 <div class="relative bg-slate-900/90 p-5 sm:p-6 rounded-2xl border-2 border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)] flex flex-col w-full flex-1 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer" onclick="startGame(2)">
                     <div class="absolute top-0 right-0 bg-rose-900/50 text-rose-400 text-[10px] font-black px-3 py-1.5 rounded-bl-lg border-b border-l border-rose-800/50 animate-pulse">NIGHTMARE</div>
                     <h2 class="text-xl sm:text-2xl font-black text-rose-500 mb-3 tracking-widest neon-text text-left font-[Orbitron]">STAGE 2 <span class="text-sm font-bold text-slate-300 neon-text-none block mt-1 font-sans">ベータ星域</span></h2>
@@ -169,7 +171,9 @@
         </div>
     </div>
 
+    <!-- トップバー -->
     <div id="topBar" class="hidden flex-col gap-1 bg-slate-900 px-1 py-1 sm:p-2 border-b border-slate-700 shadow-lg shrink-0 relative z-20">
+        <!-- 上段：ステータス -->
         <div class="flex justify-around items-center bg-slate-800 rounded py-0.5 px-1 border border-slate-700">
             <div class="flex flex-col items-center w-1/4">
                 <span class="text-[9px] text-slate-400 font-bold mb-[-3px]">LIFE</span>
@@ -197,17 +201,21 @@
             </div>
         </div>
         
-        <div class="grid grid-cols-4 gap-1">
-            <button id="pauseBtn" onclick="togglePause()" class="py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200">一時停止</button>
-            <button id="fastForwardBtn" onclick="toggleFastForward()" class="py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200">1倍速</button>
-            <button onclick="showRuleBook()" class="py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200">ルール</button>
-            <button onclick="showTitleConfirm()" class="py-1 bg-indigo-900 hover:bg-indigo-800 rounded text-[10px] sm:text-xs font-bold transition shadow border border-indigo-700 text-indigo-200">タイトル</button>
+        <!-- 下段：ボタン群 (1倍速と加速を分割して5列に変更) -->
+        <div class="grid grid-cols-5 gap-1">
+            <button id="pauseBtn" onclick="togglePause()" class="py-1 bg-slate-700 hover:bg-slate-600 rounded text-[9px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200">一時停止</button>
+            <button id="speed1xBtn" onclick="resetSpeed()" class="py-1 bg-cyan-600 hover:bg-cyan-500 rounded text-[9px] sm:text-xs font-bold transition shadow border border-cyan-400 text-white">1倍速</button>
+            <button id="speedFastBtn" onclick="cycleSpeed()" class="py-1 bg-slate-700 hover:bg-slate-600 rounded text-[9px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200">加速</button>
+            <button onclick="showRuleBook()" class="py-1 bg-slate-700 hover:bg-slate-600 rounded text-[9px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200">ルール</button>
+            <button onclick="showTitleConfirm()" class="py-1 bg-indigo-900 hover:bg-indigo-800 rounded text-[9px] sm:text-xs font-bold transition shadow border border-indigo-700 text-indigo-200">タイトル</button>
         </div>
     </div>
 
+    <!-- ゲームキャンバス -->
     <div class="relative flex-1 w-full flex items-center justify-center bg-[#0f172a] min-h-0">
         <canvas id="gameCanvas" width="800" height="600" class="w-full h-full object-contain"></canvas>
 
+        <!-- ゲームオーバー画面 -->
         <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center hidden z-10 backdrop-blur-sm p-4">
             <h1 class="text-4xl sm:text-5xl font-bold text-red-500 mb-2 neon-text">GAME OVER</h1>
             <p id="finalScore" class="text-xl sm:text-2xl mb-6 text-white">生存wave: 1</p>
@@ -217,13 +225,18 @@
                 <button onclick="submitScore()" class="w-full px-4 py-3 bg-amber-600 hover:bg-amber-500 rounded font-bold text-white shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-amber-400 transition">スコアを送信してランキングへ</button>
             </div>
             
-            <div class="flex gap-4 w-full max-w-xs">
-                <button onclick="resetCurrentGame()" class="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold text-white transition shadow-[0_0_15px_rgba(79,70,229,0.5)] border border-indigo-400">再挑戦</button>
-                <button onclick="showLeaderboardModal(currentStage)" class="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold text-white transition border border-slate-500 shadow-lg">ランキング</button>
+            <!-- ボタングループ (タイトルへ戻るボタンを追加) -->
+            <div class="flex flex-col gap-3 w-full max-w-xs">
+                <div class="flex gap-3">
+                    <button onclick="resetCurrentGame()" class="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold text-white transition shadow-[0_0_15px_rgba(79,70,229,0.5)] border border-indigo-400">再挑戦</button>
+                    <button onclick="showLeaderboardModal(currentStage)" class="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold text-white transition border border-slate-500 shadow-lg">ランキング</button>
+                </div>
+                <button onclick="confirmTitle()" class="w-full px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-bold text-slate-300 transition border border-slate-600 shadow-lg">タイトルに戻る</button>
             </div>
         </div>
     </div>
 
+    <!-- コントロールパネル -->
     <div id="controlPanel" class="hidden flex-col gap-1 bg-slate-900 p-1.5 sm:p-2 border-t border-slate-700 shadow-lg shrink-0 z-20">
         <div id="infoMessage" class="text-center text-[10px] sm:text-xs font-bold text-slate-400 h-4 transition-colors leading-none">
             ユニット選択・破壊
@@ -236,7 +249,8 @@
             </button>
 
             <div id="towerButtons" class="flex-1 flex gap-1.5 overflow-x-auto pb-1 no-scrollbar snap-x">
-                </div>
+                <!-- JSで動的生成 -->
+            </div>
         </div>
         
         <button id="startWaveBtn" class="w-full py-2 bg-cyan-700 hover:bg-cyan-600 rounded text-sm sm:text-base font-bold transition shadow-[0_0_10px_rgba(6,182,212,0.3)] border border-cyan-400 flex items-center justify-center gap-2 mt-0.5" onclick="startWave()">
@@ -244,6 +258,7 @@
         </button>
     </div>
 
+    <!-- 各種モーダル -->
     <div id="unlockModal" class="absolute inset-0 bg-black/80 flex items-center justify-center hidden z-[70] backdrop-blur-sm p-4">
         <div class="bg-slate-800 p-6 rounded-lg border-2 border-amber-500 text-center max-w-sm w-full mx-4 shadow-[0_0_30px_rgba(245,158,11,0.5)] flex flex-col max-h-[90vh]">
             <h2 class="text-2xl font-bold text-amber-400 mb-2 neon-text">UNIT UNLOCKED!</h2>
@@ -302,6 +317,7 @@
         </div>
     </div>
 
+    <!-- ランキングモーダル -->
     <div id="leaderboardModal" class="absolute inset-0 bg-black/80 flex items-center justify-center hidden z-[80] backdrop-blur-sm p-4">
         <div class="bg-slate-900 p-6 rounded-lg border-2 border-amber-500 text-center w-full max-w-sm mx-4 shadow-[0_0_30px_rgba(245,158,11,0.5)] flex flex-col max-h-[90vh]">
             <h2 class="text-2xl font-bold text-amber-400 mb-4 neon-text font-[Orbitron]">LEADERBOARD</h2>
@@ -318,7 +334,8 @@
             </div>
 
             <div id="leaderboardList" class="flex-1 overflow-y-auto mb-4 no-scrollbar flex flex-col gap-1 min-h-[250px]">
-                </div>
+                <!-- ランキングデータ生成箇所 -->
+            </div>
             
             <button onclick="closeLeaderboard()" class="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded text-white font-bold transition border border-slate-500">閉じる</button>
         </div>
@@ -1158,37 +1175,63 @@ function updateUI() {
 function togglePause() {
     isPaused = !isPaused; const btn = document.getElementById('pauseBtn');
     if (isPaused) { btn.classList.replace('bg-slate-700', 'bg-amber-600'); btn.classList.replace('hover:bg-slate-600', 'hover:bg-amber-500'); btn.innerText = "▶ 再生"; }
-    else { btn.classList.replace('bg-amber-600', 'bg-slate-700'); btn.classList.replace('hover:bg-amber-500', 'hover:bg-slate-600'); btn.innerText = "⏸ 一時停止"; }
+    else { btn.classList.replace('bg-amber-600', 'bg-slate-700'); btn.classList.replace('hover:bg-amber-500', 'hover:bg-slate-600'); btn.innerText = "一時停止"; }
 }
 
-function toggleFastForward() {
-    const btn = document.getElementById('fastForwardBtn');
-    if (gameSpeed === 1) { 
-        gameSpeed = 2; 
-        btn.classList.replace('bg-slate-700', 'bg-emerald-600'); btn.classList.replace('hover:bg-slate-600', 'hover:bg-emerald-500'); 
-        btn.innerText = "⏩ 2倍速"; 
+// --- 倍速機能の新ロジック ---
+function updateSpeedUI() {
+    const btn1x = document.getElementById('speed1xBtn');
+    const btnFast = document.getElementById('speedFastBtn');
+    
+    if (gameSpeed === 1) {
+        btn1x.classList.replace('bg-slate-700', 'bg-cyan-600');
+        btn1x.classList.replace('hover:bg-slate-600', 'hover:bg-cyan-500');
+        btn1x.classList.add('text-white', 'border-cyan-400');
+        btn1x.classList.remove('text-slate-200', 'border-slate-500');
+
+        btnFast.className = "py-1 bg-slate-700 hover:bg-slate-600 rounded text-[9px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200";
+        btnFast.innerText = "加速";
+    } else {
+        btn1x.className = "py-1 bg-slate-700 hover:bg-slate-600 rounded text-[9px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200";
+        
+        let colorClass = 'bg-emerald-600';
+        let hoverClass = 'hover:bg-emerald-500';
+        let borderColor = 'border-emerald-400';
+        let text = "⏩ 2x";
+        
+        if (gameSpeed === 5) {
+            colorClass = 'bg-orange-600'; hoverClass = 'hover:bg-orange-500'; borderColor = 'border-orange-400'; text = "🚀 5x";
+        } else if (gameSpeed === 10) {
+            colorClass = 'bg-red-600'; hoverClass = 'hover:bg-red-500'; borderColor = 'border-red-400'; text = "☄️ 10x";
+        } else if (gameSpeed === 30) {
+            colorClass = 'bg-purple-600'; hoverClass = 'hover:bg-purple-500'; borderColor = 'border-purple-400'; text = "⚡ 30x";
+        } else if (gameSpeed === 100) {
+            colorClass = 'bg-pink-600'; hoverClass = 'hover:bg-pink-500'; borderColor = 'border-pink-400'; text = "💥 100x";
+        }
+
+        btnFast.className = `py-1 ${colorClass} ${hoverClass} rounded text-[9px] sm:text-xs font-bold transition shadow border ${borderColor} text-white`;
+        btnFast.innerText = text;
     }
-    else if (gameSpeed === 2) { 
-        gameSpeed = 5; 
-        btn.classList.replace('bg-emerald-600', 'bg-orange-600'); btn.classList.replace('hover:bg-emerald-500', 'hover:bg-orange-500'); 
-        btn.innerText = "🚀 5倍速"; 
+}
+
+function resetSpeed() {
+    gameSpeed = 1;
+    updateSpeedUI();
+}
+
+function cycleSpeed() {
+    if (gameSpeed === 1 || gameSpeed === 100 || (gameSpeed === 30 && wave < 50)) {
+        gameSpeed = 2;
+    } else if (gameSpeed === 2) {
+        gameSpeed = 5;
+    } else if (gameSpeed === 5) {
+        gameSpeed = 10;
+    } else if (gameSpeed === 10) {
+        gameSpeed = 30;
+    } else if (gameSpeed === 30 && wave >= 50) {
+        gameSpeed = 100;
     }
-    else if (gameSpeed === 5) { 
-        gameSpeed = 10; 
-        btn.classList.replace('bg-orange-600', 'bg-red-600'); btn.classList.replace('hover:bg-orange-500', 'hover:bg-red-500'); 
-        btn.innerText = "☄️ 10倍速"; 
-    }
-    else if (gameSpeed === 10) { 
-        gameSpeed = 30; 
-        btn.classList.replace('bg-red-600', 'bg-purple-600'); btn.classList.replace('hover:bg-red-500', 'hover:bg-purple-500'); 
-        btn.innerText = "⚡ 30倍速"; 
-    }
-    else { 
-        gameSpeed = 1; 
-        btn.classList.replace('bg-purple-600', 'bg-slate-700'); 
-        btn.classList.replace('hover:bg-purple-500', 'hover:bg-slate-600'); 
-        btn.innerText = "⏩ 1倍速"; 
-    }
+    updateSpeedUI();
 }
 
 // --- ランキング関連関数 ---
@@ -1377,6 +1420,8 @@ function closeUnlockModal() { isModalOpen = false; document.getElementById('unlo
 
 function showTitleConfirm() { document.getElementById('titleConfirmModal').classList.remove('hidden'); }
 function hideTitleConfirm() { document.getElementById('titleConfirmModal').classList.add('hidden'); }
+
+// タイトルへ戻る処理の修正：ゲームオーバー画面などを確実にリセットする
 function confirmTitle() {
     hideTitleConfirm(); 
     isTitleScreen = true; 
@@ -1385,6 +1430,12 @@ function confirmTitle() {
     document.getElementById('topBar').classList.remove('flex');
     document.getElementById('controlPanel').classList.add('hidden');
     document.getElementById('controlPanel').classList.remove('flex');
+
+    // ★追加：すべてのモーダルやゲームオーバー画面を確実に隠す
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    document.getElementById('unlockModal').classList.add('hidden');
+    document.getElementById('endingModal').classList.add('hidden');
+    document.getElementById('leaderboardModal').classList.add('hidden');
 
     document.getElementById('titleScreen').classList.remove('hidden'); 
     document.getElementById('stageSelectView').classList.add('hidden');
@@ -1446,9 +1497,13 @@ function renderRuleBookDescriptions() {
 
 function resetBase() {
     wave = 1; isGameOver = false; waveActive = false; enemiesSpawned = 0; totalEnemiesToSpawn = 0; spawnTimer = 0;
-    isPaused = false; isModalOpen = false; hasShownEnding = false; gameSpeed = 1; screenShake = 0; flashAlpha = 0; flashColor = '255, 255, 255';
+    isPaused = false; isModalOpen = false; hasShownEnding = false; screenShake = 0; flashAlpha = 0; flashColor = '255, 255, 255';
     enemies = []; towers = []; projectiles = []; laserBlasts = []; explosions = []; enemyProjectiles = []; selectedTowerType = null; previewPos = null;
     
+    // スピードの初期化
+    gameSpeed = 1;
+    updateSpeedUI();
+
     missionAnim.active = false;
     waveAnim.active = false;
 
@@ -1461,12 +1516,8 @@ function resetBase() {
     const btn = document.getElementById('startWaveBtn'); btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); btn.innerHTML = "▶ START";
     
     const pauseBtn = document.getElementById('pauseBtn'); 
-    pauseBtn.className = "py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200";
+    pauseBtn.className = "py-1 bg-slate-700 hover:bg-slate-600 rounded text-[9px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200";
     pauseBtn.innerText = "一時停止";
-    
-    const ffwBtn = document.getElementById('fastForwardBtn');
-    ffwBtn.className = "py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200";
-    ffwBtn.innerText = "1倍速";
 
     updateUI(); renderTowerButtons();
 }
