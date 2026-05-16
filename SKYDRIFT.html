@@ -138,8 +138,8 @@
 
     <canvas id="game-canvas"></canvas>
 
-    <!-- HUDレイヤー -->
-    <div id="hud-layer" class="hidden absolute inset-0 p-4 md:p-6 pointer-events-none z-40 flex flex-col justify-between">
+    <!-- HUDレイヤー Z-indexを上げてUIレイヤーと被らないように修正 -->
+    <div id="hud-layer" class="hidden absolute inset-0 p-4 md:p-6 pointer-events-none z-[55] flex flex-col justify-between">
         <div class="flex justify-between items-start w-full">
             <div class="flex flex-col items-start">
                 <div class="flex gap-2 mb-4 pointer-events-auto">
@@ -351,7 +351,6 @@ function setupLeaderboardListener() {
         return;
     }
 
-    // 汎用的なコレクション名に変更
     const lbRef = collection(db, 'leaderboard');
     
     onSnapshot(lbRef, (snapshot) => {
@@ -482,6 +481,25 @@ class AudioManager {
     stopBGM() {
         if (this.currentBGM) {
             this.currentBGM.pause();
+        }
+    }
+
+    // 追加: バックグラウンド用の一時停止と再開メソッド
+    pauseAll() {
+        if (this.currentBGM) {
+            this.currentBGM.pause();
+        }
+        if (this.ctx && this.ctx.state === 'running') {
+            this.ctx.suspend();
+        }
+    }
+
+    resumeAll() {
+        if (this.initialized && this.currentBGM) {
+            this.currentBGM.play().catch(e => console.log("BGM resume prevented:", e));
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
         }
     }
 
@@ -1026,13 +1044,16 @@ class Game {
 
     bindEvents() {
         const handleDown = (e) => {
-            if (this.state !== 'playing' || this.isPaused) return;
+            if (this.state !== 'playing' && this.state !== 'countdown') return;
+
+            // ポーズ中は入力を受け付けない
+            if (this.isPaused) return;
 
             if (!this.audio.initialized) this.audio.init(); 
             this.audio.resumeContext(); 
 
-            // UIボタンや入力欄の上ではゲーム操作を無効にする
-            if (e.target.closest('button') || (e.target.tagName && e.target.tagName.toLowerCase() === 'input')) return; 
+            // UIボタンや入力欄の上ではゲーム操作を無効にする（念のため安全なプロパティチェック）
+            if (e.target && e.target.closest && (e.target.closest('button') || (e.target.tagName && e.target.tagName.toLowerCase() === 'input'))) return; 
             
             // スマホのスクロールを防ぐ（ゲーム中のみ）
             if (e.type !== 'keydown' && e.cancelable) e.preventDefault();
@@ -1048,7 +1069,13 @@ class Game {
         };
 
         const handleUp = (e) => {
-            if (this.state !== 'playing' || this.isPaused) return;
+            if (this.state !== 'playing' && this.state !== 'countdown') return;
+
+            // ★修正ポイント: ボタン上で指を離したりクリックした場合は preventDefault を実行せず、クリックイベントを発生させる
+            if (e.target && e.target.closest && (e.target.closest('button') || (e.target.tagName && e.target.tagName.toLowerCase() === 'input'))) {
+                this.isActionDown = false;
+                return;
+            }
 
             if (e.type !== 'keyup' && e.cancelable) e.preventDefault();
             if (e.type === 'keyup' && e.code !== 'Space') return;
@@ -1061,6 +1088,20 @@ class Game {
         window.addEventListener('mouseup', handleUp, {passive: false});
         window.addEventListener('touchend', handleUp, {passive: false});
         window.addEventListener('keyup', handleUp, {passive: false});
+
+        // ★追加: バックグラウンド時に音を止め、ゲームをポーズする処理
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // バックグラウンドに回った時
+                this.audio.pauseAll();
+                if (this.state === 'playing' && !this.isPaused) {
+                    this.togglePause();
+                }
+            } else {
+                // フォアグラウンドに戻った時
+                this.audio.resumeAll();
+            }
+        });
 
         // 確実なクリックイベントのバインド
         const bindUIBtn = (btn, fn) => {
