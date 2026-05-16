@@ -16,7 +16,6 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            /* 日本語の標準フォントを予備（フォールバック）として追加 */
             font-family: 'DotGothic16', 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             touch-action: none;
         }
@@ -90,12 +89,12 @@
         }
         #title-controls {
             position: absolute;
-            bottom: 10%;
+            bottom: 5%;
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             z-index: 30;
         }
         .title-btn {
@@ -113,6 +112,11 @@
             box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
             user-select: none;
             text-align: center;
+        }
+        #ranking-btn {
+            border-color: #00ffff; color: #00ffff;
+            background: rgba(0, 255, 255, 0.1); text-shadow: 0 0 5px #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
         }
         #back-title-btn {
             position: absolute;
@@ -211,6 +215,64 @@
         .highlight { color: #ff5555; text-shadow: 0 0 5px #ff5555; }
         .item-highlight { color: #39ff14; text-shadow: 0 0 5px #39ff14; }
 
+        /* ランキング画面用CSS */
+        #ranking-ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95); z-index: 60; display: none;
+            flex-direction: column; justify-content: flex-start; align-items: center;
+            padding-top: 10%; box-sizing: border-box;
+        }
+        .ranking-container {
+            width: 90%; max-width: 400px; height: 65vh;
+            border: 2px solid #00ffff; border-radius: 10px;
+            background: rgba(0, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            display: flex; flex-direction: column; margin-bottom: 20px;
+        }
+        .ranking-header {
+            color: #00ffff; text-align: center; margin: 15px 0; text-shadow: 0 0 10px #00ffff; letter-spacing: 2px; font-size: 1.5rem; font-weight: bold;
+        }
+        #ranking-list {
+            overflow-y: auto; flex-grow: 1; padding: 0 20px 20px 20px;
+        }
+        .ranking-item {
+            display: flex; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: white; font-size: 1.1rem;
+        }
+        .ranking-item:nth-child(1) { color: #ffd700; font-weight: bold; text-shadow: 0 0 5px #ffd700; }
+        .ranking-item:nth-child(2) { color: #e0e0e0; font-weight: bold; text-shadow: 0 0 5px #e0e0e0; }
+        .ranking-item:nth-child(3) { color: #cd7f32; font-weight: bold; text-shadow: 0 0 5px #cd7f32; }
+
+        /* 名前入力用CSS */
+        #name-entry-ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); z-index: 60; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .name-entry-box {
+            width: 85%; max-width: 350px;
+            border: 2px solid #ff007f; border-radius: 10px;
+            padding: 30px 20px; background: rgba(255, 0, 127, 0.1);
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.2);
+            text-align: center;
+        }
+        .name-entry-box h2 { color: #ff007f; text-shadow: 0 0 10px #ff007f; margin-top: 0; }
+        #final-score-display { font-size: 1.5rem; color: #fff; margin-bottom: 15px; font-weight: bold; }
+        #player-name-input {
+            width: 80%; padding: 10px; margin: 10px 0 25px 0;
+            background: rgba(0,0,0,0.5); border: 1px solid #ff007f; color: white;
+            font-family: inherit; font-size: 1.2rem; text-align: center; outline: none;
+        }
+        #player-name-input:focus { box-shadow: 0 0 10px #ff007f; }
+        .name-entry-btns { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+
+        /* ALL CLEAR 後のアクションUI */
+        #allclear-actions {
+            position: absolute; bottom: 12%; width: 100%; display: none;
+            flex-direction: column; align-items: center; gap: 15px; z-index: 40;
+        }
+
         @keyframes rainbow {
             0% { color: hsl(0, 100%, 60%); text-shadow: 0 0 8px hsl(0, 100%, 60%); }
             25% { color: hsl(90, 100%, 60%); text-shadow: 0 0 8px hsl(90, 100%, 60%); }
@@ -247,6 +309,7 @@
         <div id="start-btn" class="title-btn">START</div>
         <div id="rule-btn" class="title-btn">RULES</div>
         <div id="gallery-btn" class="title-btn">BOSS GALLERY</div>
+        <div id="ranking-btn" class="title-btn">TOP 50 RANKING</div>
     </div>
 
     <!-- ルールUI -->
@@ -275,6 +338,36 @@
         <div id="gallery-back-btn" class="gallery-back-btn">RETURN</div>
     </div>
 
+    <!-- ランキングUI -->
+    <div id="ranking-ui">
+        <div class="ranking-container">
+            <div class="ranking-header">LEADERBOARD TOP 50</div>
+            <div id="ranking-list">
+                <div style="text-align:center; color:#00ffff;">LOADING...</div>
+            </div>
+        </div>
+        <div id="ranking-close-btn" class="gallery-back-btn">CLOSE</div>
+    </div>
+
+    <!-- 名前入力UI -->
+    <div id="name-entry-ui">
+        <div class="name-entry-box">
+            <h2>SCORE REGISTRATION</h2>
+            <div id="final-score-display">SCORE: 0</div>
+            <input type="text" id="player-name-input" placeholder="ENTER NAME (Max 10)" maxlength="10">
+            <div class="name-entry-btns">
+                <div id="submit-score-btn" class="title-btn" style="width: 100%; border-color:#ff007f; color:#ff007f; background:rgba(255,0,127,0.2);">SUBMIT</div>
+                <div id="skip-score-btn" class="title-btn" style="width: 100%; border-color:#555; color:#aaa; background:rgba(255,255,255,0.05); box-shadow:none; text-shadow:none;">SKIP</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- クリア後のアクションボタン -->
+    <div id="allclear-actions">
+        <div id="register-score-action-btn" class="title-btn" style="border-color:#00ffff; color:#00ffff; background:rgba(0,255,255,0.1); text-shadow:0 0 5px #00ffff; box-shadow:0 0 10px rgba(0,255,255,0.2);">REGISTER SCORE</div>
+        <div id="allclear-back-btn" class="title-btn" style="border-color:#39ff14; color:#39ff14; background:rgba(57,255,20,0.1);">RETURN TO TITLE</div>
+    </div>
+
     <div id="wave-announce">
         <div id="announce-wave">WAVE 1</div>
         <div id="announce-boss">Type-α: SPINNER</div>
@@ -286,7 +379,38 @@
     <canvas id="gameCanvas"></canvas>
 </div>
 
-<script>
+<script type="module">
+    // Firebase Imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    // User's Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyB5esz6oPFT7YI9VBFnitFmNzLNvKs6RBE",
+      authDomain: "kozgame.firebaseapp.com",
+      projectId: "kozgame",
+      storageBucket: "kozgame.firebasestorage.app",
+      messagingSenderId: "613372363405",
+      appId: "1:613372363405:web:8e68ca71c1b2e97db418c4",
+      measurementId: "G-MGP9LN5C6K"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let isAuthReady = false;
+    let authUser = null;
+
+    // RULE 3: Auth Before Queries
+    signInAnonymously(auth).then((userCredential) => {
+        isAuthReady = true;
+        authUser = userCredential.user;
+    }).catch(err => {
+        console.error("Firebase Auth Error", err);
+    });
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const uiEl = document.getElementById('ui');
@@ -303,12 +427,15 @@
     const startBtnEl = document.getElementById('start-btn');
     const galleryBtnEl = document.getElementById('gallery-btn');
     const ruleBtnEl = document.getElementById('rule-btn');
+    const rankingBtnEl = document.getElementById('ranking-btn');
     const galleryUiEl = document.getElementById('gallery-ui');
     const ruleUiEl = document.getElementById('rule-ui');
+    const rankingUiEl = document.getElementById('ranking-ui');
+    const nameEntryUiEl = document.getElementById('name-entry-ui');
+    const allclearActionsEl = document.getElementById('allclear-actions');
     const practiceBtnEl = document.getElementById('practice-btn');
     const resumeBtnEl = document.getElementById('resume-btn');
 
-    // Canvas描画用の標準フォント文字列
     const fontFallback = '"DotGothic16", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif';
 
     function resize() {
@@ -327,7 +454,7 @@
         { name: "Type-ε: BLASTER", color: "#00aaff", radius: 30, hp: 1800, desc: "巨大な砲台から放たれる圧倒的な極太ビームと、逃げ場を奪う回転なぎ払いレーザーが脅威。ビームの予告線を見逃すな。" },
         { name: "Type-ζ: BOMBER", color: "#ffff00", radius: 35, hp: 2000, desc: "着弾すると無数に分裂する爆発弾や、自機を包囲する機雷をばらまき画面を制圧する。分裂前の軌道を予測し、安全地帯を確保せよ。" },
         { name: "Type-η: PHALANX", color: "#aaffff", radius: 25, hp: 1600, desc: "本体と2機のビットによる波状攻撃と、わずかな隙間しかない高速の壁弾幕を展開する。ビットからの包囲網をいかに突破するかが鍵となる。" },
-        { name: "Type-θ: REFLECTOR", color: "#ff3300", radius: 28, hp: 1500, desc: "画面端で何度も跳ね返る特殊な反射弾や反射レーザーを操る。予測不能な反射軌道が退路を断つため、画面中央付近での立ち回りが安全だ。" }, // 色を #aaff00 から #ff3300 に変更
+        { name: "Type-θ: REFLECTOR", color: "#ff3300", radius: 28, hp: 1500, desc: "画面端で何度も跳ね返る特殊な反射弾や反射レーザーを操る。予測不能な反射軌道が退路を断つため、画面中央付近での立ち回りが安全だ。" }, 
         { name: "Type-ι: CHRONOS", color: "#ff55aa", radius: 32, hp: 1700, desc: "空中で一時停止した後に急発進する弾や、徐々に加速する弾でプレイヤーの時間感覚を狂わせる。緩急のついた弾幕に焦らず対応しろ。" },
         { name: "Ω: SYSTEM CORE", color: "#ffffff", radius: 50, hp: 3600, desc: "すべての攻撃パターンを複合し、圧倒的な物量でプレイヤーを絶望に陥れる最終防衛システム。全9フェーズからなる猛攻を凌ぎ切れ。" }
     ];
@@ -336,45 +463,31 @@
     class SoundManager {
         constructor() {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // 音割れ防止・音圧調整用のコンプレッサーとマスターゲイン（SE用）
             this.compressor = this.ctx.createDynamicsCompressor();
             this.compressor.threshold.value = -15;
             this.compressor.knee.value = 30;
             this.compressor.ratio.value = 12;
             this.compressor.attack.value = 0.01;
             this.compressor.release.value = 0.25;
-            
             this.masterGain = this.ctx.createGain();
-            this.masterGain.gain.value = 0.6; // SEの全体ボリューム
-            
+            this.masterGain.gain.value = 0.6;
             this.masterGain.connect(this.compressor);
             this.compressor.connect(this.ctx.destination);
 
-            // ★ BGM設定 ★
             this.bgm = new Audio(); 
-            this.bgm.loop = true;  // ループ再生を有効にする
-            this.bgm.volume = 0.4; // BGMの音量（0.0〜1.0）
-            
+            this.bgm.loop = true; 
+            this.bgm.volume = 0.4;
             this.isPlaying = false;
-            this.currentBgmSrc = ''; // 現在のBGMファイル名を記憶
+            this.currentBgmSrc = ''; 
         }
 
-        // BGMの再生制御メソッド
         playWaveBGM(wave, isPractice) {
-            // 練習モードの場合はBGMを鳴らさない
-            if (isPractice) {
-                this.stopBGM();
-                return;
-            }
-
-            // ウェーブ数に応じたBGMソースを決定
+            if (isPractice) { this.stopBGM(); return; }
             let src = '';
             if (wave >= 1 && wave <= 4) src = 'DANMA-K.mp3';
             else if (wave >= 5 && wave <= 9) src = 'DANMA-K2.mp3';
             else if (wave === 10) src = 'DANMA-K3.mp3';
 
-            // すでに同じ曲が流れている場合は再生を継続
             if (this.currentBgmSrc === src) {
                 if (!this.isPlaying) {
                     this.ctx.resume();
@@ -384,7 +497,6 @@
                 return;
             }
 
-            // 曲が切り替わる場合は前の曲を止めて新しい曲を再生
             this.stopBGM();
             this.currentBgmSrc = src;
             this.bgm.src = src;
@@ -411,7 +523,6 @@
             if (this.ctx.state !== 'closed') this.ctx.close(); 
         }
 
-        // --- 以下はSE用のメソッド ---
         playDrum(time, startFreq, endFreq, duration, vol) {
             const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
             osc.type = 'sine'; osc.frequency.setValueAtTime(startFreq, time); osc.frequency.exponentialRampToValueAtTime(endFreq, time + duration);
@@ -481,42 +592,58 @@
     let touchStartX = 0, touchStartY = 0;
     let playerStartX = 0, playerStartY = 0;
     
-    let state = 'title'; // title, rule, gallery, practiceClear, playing, waveClear, allClear
+    let state = 'title'; // title, rule, gallery, practiceClear, playing, waveClear, allClear, ranking, nameEntry
     let isPaused = false;
     let isPractice = false;
 
     let galleryIndex = 0;
     let galleryEnemy = null;
+    let calculatedFinalScore = 0;
+
+    // BGM停止制御 (画面バックグラウンド時)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (sound) sound.pauseBGM();
+        } else {
+            if (sound && !isPaused && (state === 'playing' || state === 'waveClear')) {
+                sound.resumeBGM();
+            }
+        }
+    });
+    window.addEventListener('pagehide', () => {
+        if (sound) {
+            sound.stopBGM();
+            sound.close();
+        }
+    });
 
     function updateDOM() {
         titleControlsEl.style.display = (state === 'title') ? 'flex' : 'none';
         uiEl.style.display = (state === 'playing' || state === 'waveClear') ? 'flex' : 'none';
         galleryUiEl.style.display = (state === 'gallery') ? 'block' : 'none';
         ruleUiEl.style.display = (state === 'rule') ? 'flex' : 'none';
+        rankingUiEl.style.display = (state === 'ranking') ? 'flex' : 'none';
+        nameEntryUiEl.style.display = (state === 'nameEntry') ? 'flex' : 'none';
         
         pauseBtnEl.style.display = (isPaused || (state !== 'playing' && state !== 'waveClear')) ? 'none' : 'block';
         
-        if (isPaused || state === 'allClear' || state === 'practiceClear') {
-            backTitleBtnEl.style.display = 'block';
-            if (isPaused) {
+        if (state === 'allClear') {
+            allclearActionsEl.style.display = 'flex';
+            backTitleBtnEl.style.display = 'none';
+        } else {
+            allclearActionsEl.style.display = 'none';
+            if (isPaused || state === 'practiceClear') {
+                backTitleBtnEl.style.display = 'block';
                 backTitleBtnEl.style.top = 'auto';
                 backTitleBtnEl.style.right = 'auto';
-                backTitleBtnEl.style.bottom = '15%';
+                backTitleBtnEl.style.bottom = isPaused ? '15%' : '10%';
                 backTitleBtnEl.style.left = '50%';
                 backTitleBtnEl.style.transform = 'translateX(-50%)';
                 backTitleBtnEl.style.fontSize = '1.1rem';
                 backTitleBtnEl.style.padding = '12px 20px';
             } else {
-                backTitleBtnEl.style.top = 'auto';
-                backTitleBtnEl.style.right = 'auto';
-                backTitleBtnEl.style.bottom = '10%';
-                backTitleBtnEl.style.left = '50%';
-                backTitleBtnEl.style.transform = 'translateX(-50%)';
-                backTitleBtnEl.style.fontSize = '1.1rem';
-                backTitleBtnEl.style.padding = '12px 20px';
+                backTitleBtnEl.style.display = 'none';
             }
-        } else {
-            backTitleBtnEl.style.display = 'none';
         }
 
         if (isPaused) {
@@ -547,12 +674,8 @@
         updateDOM();
     }
 
-    function openRule() {
-        state = 'rule';
-        updateDOM();
-    }
-
-    // ギャラリーの処理
+    function openRule() { state = 'rule'; updateDOM(); }
+    
     function openGallery() {
         state = 'gallery';
         galleryIndex = 0;
@@ -594,57 +717,123 @@
         setTimeout(() => { waveAnnounceEl.style.opacity = 0; }, 2500);
     }
 
+    // ランキング処理
+    async function openRanking() {
+        state = 'ranking';
+        updateDOM();
+        const listEl = document.getElementById('ranking-list');
+        listEl.innerHTML = '<div style="text-align:center; color:#00ffff; margin-top:20px;">LOADING DATA...</div>';
+
+        if (!isAuthReady || !authUser) {
+             listEl.innerHTML = '<div style="text-align:center; color:#ff5555; margin-top:20px;">AUTH ERROR</div>';
+             return;
+        }
+
+        try {
+            // RULE 2に従い単純な取得を行い、クライアント側でソートする
+            const querySnapshot = await getDocs(collection(db, "leaderboard_02"));
+            let scores = [];
+            querySnapshot.forEach((doc) => {
+                scores.push(doc.data());
+            });
+
+            scores.sort((a, b) => b.score - a.score);
+            scores = scores.slice(0, 50);
+
+            listEl.innerHTML = '';
+            if (scores.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#ccc; margin-top:20px;">NO DATA</div>';
+            } else {
+                scores.forEach((s, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'ranking-item';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = `${index + 1}. ${s.name || 'UNKNOWN'}`;
+                    const scoreSpan = document.createElement('span');
+                    scoreSpan.textContent = s.score;
+                    if(index > 2) scoreSpan.style.color = '#ff007f';
+                    
+                    item.appendChild(nameSpan);
+                    item.appendChild(scoreSpan);
+                    listEl.appendChild(item);
+                });
+            }
+        } catch (e) {
+            listEl.innerHTML = '<div style="text-align:center; color:#ff5555; margin-top:20px;">ERROR LOADING DATA</div>';
+            console.error(e);
+        }
+    }
+
+    function promptNameEntry() {
+        state = 'nameEntry';
+        updateDOM();
+        document.getElementById('final-score-display').innerText = `SCORE: ${calculatedFinalScore}`;
+        document.getElementById('player-name-input').value = '';
+    }
+
+    async function submitScore() {
+        const nameInput = document.getElementById('player-name-input').value.trim();
+        const name = nameInput || 'ANONYMOUS';
+        const btn = document.getElementById('submit-score-btn');
+        btn.innerText = 'SAVING...';
+        btn.style.pointerEvents = 'none';
+
+        try {
+            if (isAuthReady && authUser) {
+                await addDoc(collection(db, "leaderboard_02"), {
+                    name: name,
+                    score: calculatedFinalScore,
+                    timestamp: Date.now()
+                });
+            }
+        } catch(e) {
+            console.error(e);
+        }
+        
+        btn.innerText = 'SUBMIT';
+        btn.style.pointerEvents = 'auto';
+        openRanking(); // 登録後はランキング画面へ
+    }
+
     // イベントリスナー登録
-    startBtnEl.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); initAndStartGame(); });
-    startBtnEl.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); initAndStartGame(); }, {passive: false});
+    const handleEvent = (el, fn) => {
+        el.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); fn(); });
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); fn(); }, {passive: false});
+    };
 
-    ruleBtnEl.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); openRule(); });
-    ruleBtnEl.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); openRule(); }, {passive: false});
+    handleEvent(startBtnEl, initAndStartGame);
+    handleEvent(ruleBtnEl, openRule);
+    handleEvent(document.getElementById('rule-back-btn'), returnToTitle);
+    handleEvent(galleryBtnEl, openGallery);
+    handleEvent(document.getElementById('gallery-prev'), () => setGalleryBoss(galleryIndex - 1));
+    handleEvent(document.getElementById('gallery-next'), () => setGalleryBoss(galleryIndex + 1));
+    handleEvent(document.getElementById('gallery-back-btn'), returnToTitle);
+    handleEvent(practiceBtnEl, () => startPractice(galleryIndex));
     
-    document.getElementById('rule-back-btn').addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); returnToTitle(); });
-    document.getElementById('rule-back-btn').addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); returnToTitle(); }, {passive: false});
-
-    galleryBtnEl.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); openGallery(); });
-    galleryBtnEl.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); openGallery(); }, {passive: false});
-
-    document.getElementById('gallery-prev').addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); setGalleryBoss(galleryIndex - 1); });
-    document.getElementById('gallery-prev').addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); setGalleryBoss(galleryIndex - 1); }, {passive: false});
-
-    document.getElementById('gallery-next').addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); setGalleryBoss(galleryIndex + 1); });
-    document.getElementById('gallery-next').addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); setGalleryBoss(galleryIndex + 1); }, {passive: false});
-
-    document.getElementById('gallery-back-btn').addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); returnToTitle(); });
-    document.getElementById('gallery-back-btn').addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); returnToTitle(); }, {passive: false});
-
-    practiceBtnEl.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); startPractice(galleryIndex); });
-    practiceBtnEl.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); startPractice(galleryIndex); }, {passive: false});
+    // ランキング関連イベント
+    handleEvent(rankingBtnEl, openRanking);
+    handleEvent(document.getElementById('ranking-close-btn'), returnToTitle);
+    handleEvent(document.getElementById('register-score-action-btn'), promptNameEntry);
+    handleEvent(document.getElementById('allclear-back-btn'), returnToTitle);
+    handleEvent(document.getElementById('submit-score-btn'), submitScore);
+    handleEvent(document.getElementById('skip-score-btn'), returnToTitle);
 
     function togglePause() {
         if (state !== 'playing' && state !== 'waveClear') return;
         isPaused = !isPaused;
-        if (isPaused) {
-            if(sound) sound.pauseBGM();
-        } else {
-            if(sound) sound.resumeBGM();
-        }
+        if (isPaused) { if(sound) sound.pauseBGM(); } 
+        else { if(sound) sound.resumeBGM(); }
         updateDOM();
     }
 
-    pauseBtnEl.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); togglePause(); }, {passive: false});
-    pauseBtnEl.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); togglePause(); });
-
-    resumeBtnEl.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); togglePause(); }, {passive: false});
-    resumeBtnEl.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); togglePause(); });
-
-    backTitleBtnEl.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); returnToTitle(); }, {passive: false});
-    backTitleBtnEl.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); returnToTitle(); });
+    handleEvent(pauseBtnEl, togglePause);
+    handleEvent(resumeBtnEl, togglePause);
+    handleEvent(backTitleBtnEl, returnToTitle);
 
     function handleInputStart(x, y) {
-        if (state === 'title') {
-            initAndStartGame();
-            return;
-        }
-        if (state === 'gallery' || state === 'rule') return;
+        if (state === 'title') { initAndStartGame(); return; }
+        if (state === 'gallery' || state === 'rule' || state === 'ranking' || state === 'nameEntry') return;
 
         if (!isPaused && (state === 'playing' || state === 'waveClear')) {
             isTouching = true;
@@ -674,47 +863,39 @@
     canvas.addEventListener('mouseleave', () => { isTouching = false; });
 
     window.addEventListener('keydown', e => {
-        if ((e.code === 'Space' || e.code === 'Enter') && state === 'title') {
-            initAndStartGame();
-        }
-        if (e.code === 'KeyP') {
-            togglePause();
-        }
+        if ((e.code === 'Space' || e.code === 'Enter') && state === 'title') initAndStartGame();
+        if (e.code === 'KeyP') togglePause();
     });
 
     // --- エンティティ ---
     class Player {
         constructor() {
             this.x = canvas.width / 2; this.y = canvas.height * 0.8;
-            this.prevX = this.x; // ロール（傾き）計算用
+            this.prevX = this.x; 
             this.speed = 5.5; this.radius = 3; this.cooldown = 0; 
             this.deaths = 0; 
             this.invincible = 0; 
             this.state = 'normal';
-            this.scoreMultiplierTimer = 0; // スコア2倍タイマー
-            this.roll = 0; // 機体の傾き角度（ラジアン）
+            this.scoreMultiplierTimer = 0;
+            this.roll = 0; 
         }
         update() {
             if (this.invincible > 0) this.invincible--;
-
             if (this.scoreMultiplierTimer > 0) {
                 this.scoreMultiplierTimer--;
-                if (this.scoreMultiplierTimer === 0) updateUI(); // 切れたらUI更新
+                if (this.scoreMultiplierTimer === 0) updateUI();
             }
 
-            this.prevX = this.x; // 移動前のX座標を保存
+            this.prevX = this.x;
 
             if (this.state === 'respawning') {
                 this.y -= 4; 
                 if (this.y <= canvas.height * 0.8) {
                     this.y = canvas.height * 0.8;
                     this.state = 'normal';
-                    if (isTouching) {
-                        playerStartX = this.x;
-                        playerStartY = this.y;
-                    }
+                    if (isTouching) { playerStartX = this.x; playerStartY = this.y; }
                 }
-                this.roll *= 0.9; // 復活時は傾きを徐々に戻す
+                this.roll *= 0.9;
                 return; 
             }
 
@@ -726,17 +907,14 @@
             this.x = Math.max(15, Math.min(canvas.width - 15, this.x));
             this.y = Math.max(15, Math.min(canvas.height - 15, this.y));
 
-            // ロールの計算（左右の移動量に応じて機体を傾ける）
             let dx = this.x - this.prevX;
             let moveRatio = dx / this.speed;
-            // タッチ操作などで瞬間的に大きく動いた場合の制限
             moveRatio = Math.max(-1.5, Math.min(1.5, moveRatio)); 
-            let targetRoll = moveRatio * 0.35; // 傾き具合の調整
-            this.roll += (targetRoll - this.roll) * 0.15; // 滑らかに補間して傾ける
+            let targetRoll = moveRatio * 0.35; 
+            this.roll += (targetRoll - this.roll) * 0.15;
 
             if (this.cooldown > 0) this.cooldown--;
             if (state === 'playing' && (keys['Space'] || keys['KeyZ'] || isTouching) && this.cooldown === 0) {
-                // 弾の発射位置は元とほぼ同じになるように調整
                 playerBullets.push(new Bullet(this.x - 6, this.y - 10, 0, -20, 'player', '#39ff14', 4));
                 playerBullets.push(new Bullet(this.x + 6, this.y - 10, 0, -20, 'player', '#39ff14', 4));
                 if (sound) sound.seShoot();
@@ -750,52 +928,30 @@
             ctx.translate(this.x, this.y);
             ctx.rotate(this.roll);
 
-            // バックファイア（エンジン炎）
             ctx.shadowBlur = 10; ctx.shadowColor = '#39ff14';
             ctx.fillStyle = '#39ff14';
             ctx.beginPath();
-            ctx.moveTo(-5, 5);
-            ctx.lineTo(5, 5);
-            ctx.lineTo(0, 15 + Math.random() * 8); // 炎の揺らぎ
-            ctx.closePath();
-            ctx.fill();
+            ctx.moveTo(-5, 5); ctx.lineTo(5, 5); ctx.lineTo(0, 15 + Math.random() * 8);
+            ctx.closePath(); ctx.fill();
 
-            // 蛍光緑のウィング（アクセント）
             ctx.shadowBlur = 15;
             ctx.fillStyle = 'rgba(57, 255, 20, 0.9)';
             ctx.beginPath();
-            ctx.moveTo(0, -8);
-            ctx.lineTo(-20, 12);
-            ctx.lineTo(-6, 6);
-            ctx.lineTo(0, 2);
-            ctx.lineTo(6, 6);
-            ctx.lineTo(20, 12);
-            ctx.closePath();
-            ctx.fill();
+            ctx.moveTo(0, -8); ctx.lineTo(-20, 12); ctx.lineTo(-6, 6); ctx.lineTo(0, 2); ctx.lineTo(6, 6); ctx.lineTo(20, 12);
+            ctx.closePath(); ctx.fill();
 
-            // 白のメインボディ（シャープなシルエット）
             ctx.shadowBlur = 8; ctx.shadowColor = '#ffffff';
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.moveTo(0, -24); // 機首先端
-            ctx.lineTo(-7, 8);
-            ctx.lineTo(0, 4);
-            ctx.lineTo(7, 8);
-            ctx.closePath();
-            ctx.fill();
+            ctx.moveTo(0, -24); ctx.lineTo(-7, 8); ctx.lineTo(0, 4); ctx.lineTo(7, 8);
+            ctx.closePath(); ctx.fill();
 
-            // コックピットキャノピー（ダークグレー）
             ctx.shadowBlur = 0;
             ctx.fillStyle = '#0a0a0a';
             ctx.beginPath();
-            ctx.moveTo(0, -12);
-            ctx.lineTo(-3, 1);
-            ctx.lineTo(0, 4);
-            ctx.lineTo(3, 1);
-            ctx.closePath();
-            ctx.fill();
+            ctx.moveTo(0, -12); ctx.lineTo(-3, 1); ctx.lineTo(0, 4); ctx.lineTo(3, 1);
+            ctx.closePath(); ctx.fill();
 
-            // 当たり判定のコア（ハイライト）
             ctx.fillStyle = '#ffffff';
             ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fill();
 
@@ -806,38 +962,28 @@
     class Item {
         constructor(x, y) {
             this.x = x; this.y = y;
-            this.vx = 0; this.vy = 2; // ゆっくり落ちる
-            this.radius = 12; // 少し大きくして目立たせる
-            this.life = 0;
-            this.dead = false;
+            this.vx = 0; this.vy = 2; 
+            this.radius = 12; 
+            this.life = 0; this.dead = false;
         }
-        update() {
-            this.x += this.vx; this.y += this.vy;
-            this.life++;
-        }
+        update() { this.x += this.vx; this.y += this.vy; this.life++; }
         draw() {
             ctx.shadowBlur = 20;
             const hue = (this.life * 8) % 360; 
             ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
             ctx.fillStyle = ctx.shadowColor;
             ctx.beginPath();
-            ctx.moveTo(this.x, this.y - this.radius);
-            ctx.lineTo(this.x + this.radius, this.y);
-            ctx.lineTo(this.x, this.y + this.radius);
-            ctx.lineTo(this.x - this.radius, this.y);
-            ctx.closePath();
-            ctx.fill();
+            ctx.moveTo(this.x, this.y - this.radius); ctx.lineTo(this.x + this.radius, this.y);
+            ctx.lineTo(this.x, this.y + this.radius); ctx.lineTo(this.x - this.radius, this.y);
+            ctx.closePath(); ctx.fill();
             
             ctx.shadowBlur = 0;
             ctx.fillStyle = 'white';
             ctx.font = '12px ' + fontFallback;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText('x2', this.x, this.y);
         }
-        isOutOfBounds() {
-            return this.y > canvas.height + 20;
-        }
+        isOutOfBounds() { return this.y > canvas.height + 20; }
     }
 
     class Enemy {
@@ -847,28 +993,21 @@
             this.isGallery = isGallery;
             
             const bd = bossDataList[this.bossType];
-            this.name = bd.name;
-            this.color = bd.color;
-            this.radius = bd.radius;
-            this.maxHp = bd.hp * (1 + wave * 0.15);
+            this.name = bd.name; this.color = bd.color;
+            this.radius = bd.radius; this.maxHp = bd.hp * (1 + wave * 0.15);
             this.hp = this.maxHp;
 
             this.x = canvas.width / 2;
-            this.timer = 0; 
-            this.phase = 0;
-            this.angle = 0; 
+            this.timer = 0; this.phase = 0; this.angle = 0; 
             this.rot1 = 0; this.rot2 = 0;
             
-            this.isDying = false;
-            this.dyingTimer = 0;
-            this.dead = false;
+            this.isDying = false; this.dyingTimer = 0; this.dead = false;
             
-            this.itemDropTimer = Math.floor(Math.random() * 300) + 300; // 5〜10秒でアイテム出現
-            this.hpItemDropped = false; // HP10%アイテムのドロップフラグ
+            this.itemDropTimer = Math.floor(Math.random() * 300) + 300; 
+            this.hpItemDropped = false; 
 
             if (this.isGallery) {
-                this.y = canvas.height * 0.35; 
-                this.isEntering = false;
+                this.y = canvas.height * 0.35; this.isEntering = false;
             } else {
                 this.y = -60; 
                 this.targetY = (this.bossType === 9) ? canvas.height * 0.2 : canvas.height * 0.15;
@@ -881,10 +1020,7 @@
         }
 
         update() {
-            if (this.isGallery) {
-                this.timer++;
-                return;
-            }
+            if (this.isGallery) { this.timer++; return; }
 
             if (this.isEntering) {
                 this.y += (this.targetY - this.y) * 0.05;
@@ -894,27 +1030,18 @@
 
             if (this.isDying) {
                 this.dyingTimer--;
-                
                 if (this.timer % 5 === 0) {
                     createParticles(this.x + (Math.random()-0.5)*80, this.y + (Math.random()-0.5)*80, this.color, 15);
                     if(sound) sound.seSmallExplosion();
                 }
-                this.x += (Math.random()-0.5)*15;
-                this.y += (Math.random()-0.5)*15;
-                
-                if (this.dyingTimer <= 0) {
-                    this.dead = true;
-                }
+                this.x += (Math.random()-0.5)*15; this.y += (Math.random()-0.5)*15;
+                if (this.dyingTimer <= 0) this.dead = true;
                 this.timer++;
                 return;
             }
 
             this.timer++;
-            
-            // アイテムドロップ
-            if (this.timer === this.itemDropTimer) {
-                items.push(new Item(this.x, this.y));
-            }
+            if (this.timer === this.itemDropTimer) items.push(new Item(this.x, this.y));
 
             // --- ボスごとの動き ---
             if (this.bossType === 1 || this.bossType === 7) {
@@ -923,20 +1050,16 @@
                 if (this.phase === 0) {
                     const tx = canvas.width/2 + Math.sin(this.timer*0.03)*(canvas.width/2.5);
                     const ty = this.targetY + Math.sin(this.timer*0.02)*40;
-                    this.x += (tx - this.x) * 0.05;
-                    this.y += (ty - this.y) * 0.05;
+                    this.x += (tx - this.x) * 0.05; this.y += (ty - this.y) * 0.05;
                 } else {
-                    this.x += (canvas.width/2 - this.x) * 0.05;
-                    this.y += (this.targetY - this.y) * 0.05;
+                    this.x += (canvas.width/2 - this.x) * 0.05; this.y += (this.targetY - this.y) * 0.05;
                 }
             } else if (this.bossType === 9) { 
                 if (this.phase === 2 || this.phase === 4 || this.phase === 8) { 
-                    this.x += (canvas.width/2 - this.x) * 0.05;
-                    this.y += (this.targetY - this.y) * 0.05;
+                    this.x += (canvas.width/2 - this.x) * 0.05; this.y += (this.targetY - this.y) * 0.05;
                 } else {
                     const tx = canvas.width/2 + Math.sin(this.timer*0.01)*(canvas.width/4);
-                    this.x += (tx - this.x) * 0.05;
-                    this.y += (this.targetY - this.y) * 0.05;
+                    this.x += (tx - this.x) * 0.05; this.y += (this.targetY - this.y) * 0.05;
                 }
             } else if (this.bossType === 6) {
                 this.x = canvas.width/2 + Math.sin(this.timer*0.01)*(canvas.width/4);
@@ -1003,7 +1126,6 @@
             }
             else if (this.bossType === 3) { // ILLUSION
                 if (this.timer % 400 === 0) this.phase = (this.phase + 1) % 2;
-                
                 if (this.timer % Math.max(5, 15 - diff) === 0) {
                     const a = Math.random() * Math.PI * 2; const sign = Math.random() < 0.5 ? 1 : -1;
                     for (let i = 0; i < 2; i++) {
@@ -1013,7 +1135,6 @@
                         });
                     }
                 }
-
                 if (this.phase === 0) {
                     if (this.timer % Math.max(35, 75 - diff*3) === 0) {
                         const way = 12 + diff * 2;
@@ -1045,8 +1166,7 @@
                 }
             }
             else if (this.bossType === 4) { // BLASTER
-                if (this.timer % 300 === 0) this.phase = (this.phase + 1) % 4; // 4フェーズに拡張
-                
+                if (this.timer % 300 === 0) this.phase = (this.phase + 1) % 4; 
                 if (this.phase === 0) {
                     if (this.timer % 150 === 0) {
                         const a = Math.atan2(player.y - this.y, player.x - this.x);
@@ -1064,7 +1184,6 @@
                         }
                     }
                     if (this.timer % 150 > 60) this.angle += 0.01; 
-                    
                     if (this.timer % 8 === 0) {
                         this.fire(this.x, this.y, 4, this.timer * 0.1, '#ffffff', 4);
                         this.fire(this.x, this.y, 4, this.timer * 0.1 + Math.PI, '#ffffff', 4);
@@ -1081,11 +1200,8 @@
                         }
                     }
                     if (this.timer % 150 > 60) this.angle += 0.009; 
-                    
                     if (this.timer % 10 === 0) {
-                        for (let i=0; i<5; i++) {
-                            this.fire(this.x, this.y, 2 + Math.random()*2.5, Math.random()*Math.PI*2, '#ffffff', 4);
-                        }
+                        for (let i=0; i<5; i++) this.fire(this.x, this.y, 2 + Math.random()*2.5, Math.random()*Math.PI*2, '#ffffff', 4);
                     }
                     if (this.timer % 40 === 0) {
                         const a = Math.atan2(player.y - this.y, player.x - this.x);
@@ -1099,11 +1215,8 @@
                         }
                     }
                     if (this.timer % 150 > 60) this.angle += 0.007;
-                    
                     if (this.timer % 15 === 0) {
-                        for (let i=0; i<3; i++) {
-                            this.fire(this.x, this.y, 3 + Math.random()*2, Math.random()*Math.PI*2, '#ffff00', 4);
-                        }
+                        for (let i=0; i<3; i++) this.fire(this.x, this.y, 3 + Math.random()*2, Math.random()*Math.PI*2, '#ffff00', 4);
                     }
                     if (this.timer % 20 === 0) {
                         const a = Math.atan2(player.y - this.y, player.x - this.x);
@@ -1131,8 +1244,7 @@
                         const count = 6;
                         for (let i=0; i<count; i++) {
                             const angle = (Math.PI*2/count)*i;
-                            const tx = player.x + Math.cos(angle)*100;
-                            const ty = player.y + Math.sin(angle)*100;
+                            const tx = player.x + Math.cos(angle)*100; const ty = player.y + Math.sin(angle)*100;
                             const fireAngle = Math.atan2(ty - this.y, tx - this.x);
                             const dist = Math.hypot(tx - this.x, ty - this.y);
                             this.fire(this.x, this.y, dist/30, fireAngle, this.color, 10, (b) => {
@@ -1237,13 +1349,8 @@
             else if (this.bossType === 9) { // SYSTEM CORE
                 if (this.timer % 450 === 0) {
                     this.phase = (this.phase + 1) % 9; 
-                    if (this.phase === 4 || this.phase === 8) {
-                        this.targetY = canvas.height * 0.4; 
-                    } else {
-                        this.targetY = canvas.height * 0.2;
-                    }
+                    this.targetY = (this.phase === 4 || this.phase === 8) ? canvas.height * 0.4 : canvas.height * 0.2;
                 }
-
                 if (this.phase === 0) { 
                     if (this.timer % 4 === 0) {
                         for(let i=0; i<4; i++) this.fire(this.x, this.y, 6, this.angle + (Math.PI/2)*i, '#ff007f');
@@ -1304,13 +1411,10 @@
                             const baseAngle = this.angle + (Math.PI*2/arms)*i;
                             const hue = (this.timer % 360);
                             const color = `hsl(${hue}, 100%, 70%)`;
-                            
                             this.fire(this.x, this.y, 4.5, baseAngle, color, 5, (b) => {
-                                const cAngle = Math.atan2(b.vy, b.vx);
-                                const spd = Math.hypot(b.vx, b.vy);
+                                const cAngle = Math.atan2(b.vy, b.vx); const spd = Math.hypot(b.vx, b.vy);
                                 const newAngle = cAngle + Math.sin(b.life * 0.1) * 0.08;
-                                b.vx = Math.cos(newAngle) * spd;
-                                b.vy = Math.sin(newAngle) * spd;
+                                b.vx = Math.cos(newAngle) * spd; b.vy = Math.sin(newAngle) * spd;
                             });
                         }
                         this.angle += 0.05; 
@@ -1321,10 +1425,7 @@
                         this.fire(this.x, this.y, 0, 0, '#00aaff', 30, (b) => { b.x = enemy.x; b.y = enemy.y; b.beamAngle = enemy.angle; if(b.life>=120) b.dead=true; }, {isBeam: true, chargeTime: 30});
                     }
                     if (this.timer % 150 > 30) this.angle += 0.02; 
-                    
-                    if (this.timer % 8 === 0) {
-                        this.fire(Math.random() * canvas.width, 0, 4.5, Math.PI/2, '#ffaa00', 5);
-                    }
+                    if (this.timer % 8 === 0) this.fire(Math.random() * canvas.width, 0, 4.5, Math.PI/2, '#ffaa00', 5);
                 } else if (this.phase === 6) { 
                     if (this.timer % 15 === 0) {
                         this.fire(this.x, this.y, 7, this.angle, '#aaff00', 5, null, {bounce: 2});
@@ -1334,8 +1435,7 @@
                         const count = 4;
                         for (let i=0; i<count; i++) {
                             const angle = (Math.PI*2/count)*i;
-                            const tx = player.x + Math.cos(angle)*100;
-                            const ty = player.y + Math.sin(angle)*100;
+                            const tx = player.x + Math.cos(angle)*100; const ty = player.y + Math.sin(angle)*100;
                             const fireAngle = Math.atan2(ty - this.y, tx - this.x);
                             const dist = Math.hypot(tx - this.x, ty - this.y);
                             this.fire(this.x, this.y, dist/30, fireAngle, '#ffff00', 10, (b) => {
@@ -1351,9 +1451,7 @@
                 } else if (this.phase === 7) { 
                     if (this.timer % 35 === 0) {
                         const gap = Math.floor(Math.random() * 8); 
-                        for(let i=0; i<8; i++) {
-                            if (i !== gap) this.fire(canvas.width * (i+0.5)/8, 0, 6, Math.PI/2, '#aaffff', 6);
-                        }
+                        for(let i=0; i<8; i++) if (i !== gap) this.fire(canvas.width * (i+0.5)/8, 0, 6, Math.PI/2, '#aaffff', 6);
                     }
                     if (this.timer % 90 === 0) {
                         const way = 14;
@@ -1375,23 +1473,17 @@
                             const baseAngle = this.angle + (Math.PI*2/arms)*i;
                             const hue = (this.timer % 360);
                             const color = `hsl(${hue}, 100%, 70%)`;
-                            
                             this.fire(this.x, this.y, 5, baseAngle, color, 5, (b) => {
-                                const cAngle = Math.atan2(b.vy, b.vx);
-                                const spd = Math.hypot(b.vx, b.vy);
+                                const cAngle = Math.atan2(b.vy, b.vx); const spd = Math.hypot(b.vx, b.vy);
                                 const newAngle = cAngle + Math.sin(b.life * 0.15) * 0.1;
-                                b.vx = Math.cos(newAngle) * spd;
-                                b.vy = Math.sin(newAngle) * spd;
+                                b.vx = Math.cos(newAngle) * spd; b.vy = Math.sin(newAngle) * spd;
                             });
                         }
                         this.angle -= 0.07; 
                     }
-                    
                     if (this.timer % 20 === 0) {
                         const a = Math.atan2(player.y - this.y, player.x - this.x);
-                        for(let i=-1; i<=1; i+=2) {
-                            this.fire(this.x, this.y, 8, a + i*0.15, '#ffffff', 6);
-                        }
+                        for(let i=-1; i<=1; i+=2) this.fire(this.x, this.y, 8, a + i*0.15, '#ffffff', 6);
                     }
                 }
             }
@@ -1401,9 +1493,7 @@
             if (this.isDying) {
                 ctx.globalAlpha = (Math.floor(Date.now() / 50) % 2 === 0) ? 0.8 : 0.3;
                 ctx.strokeStyle = '#ffffff';
-            } else {
-                ctx.strokeStyle = this.color;
-            }
+            } else { ctx.strokeStyle = this.color; }
 
             this.rot1 += 0.02; this.rot2 -= 0.05;
 
@@ -1450,22 +1540,16 @@
             else if (this.bossType === 6) { 
                 ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.stroke();
                 ctx.fillStyle = this.isDying ? '#ffffff' : this.color;
-                ctx.fillRect(-75, -10 + Math.sin(this.timer*0.1)*5, 15, 20);
-                ctx.fillRect(60, -10 + Math.sin(this.timer*0.1)*5, 15, 20);
+                ctx.fillRect(-75, -10 + Math.sin(this.timer*0.1)*5, 15, 20); ctx.fillRect(60, -10 + Math.sin(this.timer*0.1)*5, 15, 20);
             }
             else if (this.bossType === 7) { 
-                ctx.rotate(this.rot2);
-                ctx.strokeRect(-this.radius*0.7, -this.radius*0.7, this.radius*1.4, this.radius*1.4);
-                ctx.rotate(Math.PI/4);
-                ctx.strokeRect(-this.radius*0.8, -this.radius*0.8, this.radius*1.6, this.radius*1.6);
+                ctx.rotate(this.rot2); ctx.strokeRect(-this.radius*0.7, -this.radius*0.7, this.radius*1.4, this.radius*1.4);
+                ctx.rotate(Math.PI/4); ctx.strokeRect(-this.radius*0.8, -this.radius*0.8, this.radius*1.6, this.radius*1.6);
             }
             else if (this.bossType === 8) { 
                 ctx.beginPath(); ctx.arc(0, 0, this.radius*0.8, 0, Math.PI*2); ctx.stroke();
                 ctx.rotate(this.rot1);
-                for(let i=0; i<12; i++) {
-                    ctx.beginPath(); ctx.moveTo(0, this.radius*0.8); ctx.lineTo(0, this.radius*1.1); ctx.stroke();
-                    ctx.rotate(Math.PI*2/12);
-                }
+                for(let i=0; i<12; i++) { ctx.beginPath(); ctx.moveTo(0, this.radius*0.8); ctx.lineTo(0, this.radius*1.1); ctx.stroke(); ctx.rotate(Math.PI*2/12); }
             }
             else if (this.bossType === 9) { 
                 ctx.rotate(this.rot1);
@@ -1485,16 +1569,13 @@
             
             ctx.shadowBlur = 20 * corePulse; ctx.shadowColor = this.isDying ? '#ffffff' : this.color;
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * 0.3, 0, Math.PI * 2); ctx.fill();
-            ctx.globalAlpha = 1.0;
-            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
 
             if (!this.isEntering && !this.isGallery && !this.isDying) {
-                const barWidth = canvas.width * 0.8; const barHeight = 6;
-                const barY = 45; 
+                const barWidth = canvas.width * 0.8; const barHeight = 6; const barY = 45; 
                 ctx.fillStyle = 'rgba(50, 0, 20, 0.8)';
                 ctx.fillRect(canvas.width*0.1, barY, barWidth, barHeight);
-                ctx.fillStyle = this.color;
-                ctx.shadowBlur = 5; ctx.shadowColor = this.color;
+                ctx.fillStyle = this.color; ctx.shadowBlur = 5; ctx.shadowColor = this.color;
                 ctx.fillRect(canvas.width*0.1, barY, barWidth * Math.max(0, this.hp / this.maxHp), barHeight);
                 ctx.shadowBlur = 0;
             }
@@ -1504,24 +1585,16 @@
     class Bullet {
         constructor(x, y, vx, vy, type, color, size = null, behavior = null, options = {}) {
             this.x = x; this.y = y; this.vx = vx; this.vy = vy;
-            this.type = type; 
-            this.radius = size || (type === 'player' ? 3 : 5); 
-            this.color = color;
-            this.behavior = behavior;
-            this.isLaser = options.isLaser || false;
-            this.isBeam = options.isBeam || false;
-            this.beamAngle = options.beamAngle || 0;
-            this.chargeTime = options.chargeTime || 45; 
-            this.bounce = options.bounce || 0;
-            this.life = 0; 
-            this.dead = false;
-            
+            this.type = type; this.radius = size || (type === 'player' ? 3 : 5); 
+            this.color = color; this.behavior = behavior;
+            this.isLaser = options.isLaser || false; this.isBeam = options.isBeam || false;
+            this.beamAngle = options.beamAngle || 0; this.chargeTime = options.chargeTime || 45; 
+            this.bounce = options.bounce || 0; this.life = 0; this.dead = false;
             if (this.isLaser) this.history = [];
         }
         update() { 
             this.life++;
             if (this.behavior) this.behavior(this);
-
             if (!this.isBeam) {
                 this.x += this.vx; this.y += this.vy; 
                 if (this.bounce > 0) {
@@ -1530,7 +1603,6 @@
                     if (this.y < 0) { this.y = 0; this.vy *= -1; this.bounce--; }
                 }
             }
-            
             if (this.isLaser) {
                 this.history.push({x: this.x, y: this.y});
                 if (this.history.length > 15) this.history.shift(); 
@@ -1538,39 +1610,27 @@
         }
         draw() {
             if (this.isBeam) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.beamAngle);
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.beamAngle);
                 if (this.life < this.chargeTime) { 
                     ctx.strokeStyle = `rgba(255, 255, 255, ${this.life / this.chargeTime})`;
-                    ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(1500, 0); ctx.stroke();
+                    ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(1500, 0); ctx.stroke();
                 } else { 
-                    ctx.shadowBlur = 20; ctx.shadowColor = this.color;
-                    ctx.strokeStyle = this.color;
-                    ctx.lineWidth = this.radius * 2;
-                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(1500, 0); ctx.stroke();
-                    ctx.strokeStyle = 'white';
-                    ctx.lineWidth = this.radius * 0.8;
-                    ctx.stroke();
+                    ctx.shadowBlur = 20; ctx.shadowColor = this.color; ctx.strokeStyle = this.color;
+                    ctx.lineWidth = this.radius * 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(1500, 0); ctx.stroke();
+                    ctx.strokeStyle = 'white'; ctx.lineWidth = this.radius * 0.8; ctx.stroke();
                 }
                 ctx.restore();
             } else if (this.isLaser && this.history.length > 1) {
-                ctx.shadowBlur = 10; ctx.shadowColor = this.color;
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = this.radius * 2;
-                ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.radius * 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
                 ctx.beginPath(); ctx.moveTo(this.x, this.y);
                 for(let i = this.history.length-1; i>=0; i--) ctx.lineTo(this.history[i].x, this.history[i].y);
                 ctx.stroke();
-                ctx.shadowBlur = 0;
-                ctx.strokeStyle = 'white'; ctx.lineWidth = this.radius * 0.8; ctx.stroke();
+                ctx.shadowBlur = 0; ctx.strokeStyle = 'white'; ctx.lineWidth = this.radius * 0.8; ctx.stroke();
             } else {
-                ctx.shadowBlur = 8; ctx.shadowColor = this.color;
-                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 8; ctx.shadowColor = this.color; ctx.fillStyle = this.color;
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = 'white';
+                ctx.shadowBlur = 0; ctx.fillStyle = 'white';
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * 0.4, 0, Math.PI * 2); ctx.fill();
             }
         }
@@ -1589,8 +1649,7 @@
         }
         update() { this.x += this.vx; this.y += this.vy; this.life -= 0.04; }
         draw() {
-            ctx.globalAlpha = Math.max(0, this.life);
-            ctx.fillStyle = this.color;
+            ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color;
             ctx.beginPath(); ctx.arc(this.x, this.y, 2, 0, Math.PI * 2); ctx.fill();
             ctx.globalAlpha = 1.0;
         }
@@ -1604,37 +1663,24 @@
         player = new Player(); 
         playerBullets = []; enemyBullets = []; particles = []; items = [];
         score = 0; currentWave = 1;
-        isPractice = false;
-        isPaused = false;
+        isPractice = false; isPaused = false; calculatedFinalScore = 0;
         startWave();
         uiEl.style.display = 'flex'; 
     }
 
     function startWave() {
         enemy = new Enemy(currentWave);
-        state = 'playing';
-        updateUI();
-        
-        if (sound) {
-            sound.playWaveBGM(currentWave, isPractice);
-        }
-        
+        state = 'playing'; updateUI();
+        if (sound) sound.playWaveBGM(currentWave, isPractice);
         announceWaveEl.innerText = currentWave === 10 ? 'FINAL WAVE' : `WAVE ${currentWave}`;
-        announceBossEl.innerText = enemy.name;
-        announceBossEl.style.color = enemy.color;
-        
+        announceBossEl.innerText = enemy.name; announceBossEl.style.color = enemy.color;
         waveAnnounceEl.style.opacity = 1;
         setTimeout(() => { waveAnnounceEl.style.opacity = 0; }, 2500);
     }
 
     function updateUI() { 
-        deathsEl.innerText = player.deaths; 
-        waveEl.innerText = currentWave; scoreEl.innerText = score; 
-        if (player && player.scoreMultiplierTimer > 0) {
-            scoreBonusEl.style.display = 'inline';
-        } else {
-            scoreBonusEl.style.display = 'none';
-        }
+        deathsEl.innerText = player.deaths; waveEl.innerText = currentWave; scoreEl.innerText = score; 
+        scoreBonusEl.style.display = (player && player.scoreMultiplierTimer > 0) ? 'inline' : 'none';
     }
     
     function createParticles(x, y, color, count = 5) { 
@@ -1644,88 +1690,63 @@
     function checkCollisions() {
         if (state !== 'playing' || enemy.isEntering) return;
 
-        // アイテム取得
         for (let i = items.length - 1; i >= 0; i--) {
             const item = items[i];
             if (player.state === 'normal' && Math.hypot(item.x - player.x, item.y - player.y) < player.radius + item.radius + 15) {
                 if(sound) sound.seItemGet();
-                player.scoreMultiplierTimer = 600; // 10秒間スコア2倍
-                const hue = (item.life * 8) % 360;
-                createParticles(item.x, item.y, `hsl(${hue}, 100%, 60%)`, 20); // 取った瞬間の色でパーティクル発生
-                items.splice(i, 1);
-                updateUI();
+                player.scoreMultiplierTimer = 600; 
+                createParticles(item.x, item.y, `hsl(${(item.life * 8) % 360}, 100%, 60%)`, 20); 
+                items.splice(i, 1); updateUI();
             }
         }
 
-        // 自機弾 -> 敵
         for (let i = playerBullets.length - 1; i >= 0; i--) {
             const b = playerBullets[i];
             if (!enemy.isDying && Math.hypot(b.x - enemy.x, b.y - enemy.y) < enemy.radius + b.radius) {
                 enemy.hp -= 10; 
                 if (sound) sound.seEnemyHit();
                 
-                if (!isPractice) {
-                    score += (player.scoreMultiplierTimer > 0) ? 20 : 10;
-                }
+                if (!isPractice) score += (player.scoreMultiplierTimer > 0) ? 20 : 10;
                 createParticles(b.x, b.y, '#39ff14', 2);
                 playerBullets.splice(i, 1);
                 
-                // ボスHPが規定値以下になったら確定でアイテムをドロップ（Wave 4 以降のみ）
                 let hpThreshold = 0;
                 if (currentWave >= 4 && currentWave <= 6) hpThreshold = 0.15;
                 else if (currentWave >= 7) hpThreshold = 0.10;
 
                 if (!enemy.isDying && hpThreshold > 0 && enemy.hp <= enemy.maxHp * hpThreshold && !enemy.hpItemDropped) {
-                    items.push(new Item(enemy.x, enemy.y));
-                    enemy.hpItemDropped = true;
+                    items.push(new Item(enemy.x, enemy.y)); enemy.hpItemDropped = true;
                 }
                 
                 if (enemy.hp <= 0 && !enemy.isDying) {
-                    enemy.isDying = true;
-                    enemy.dyingTimer = 120; // 約2秒間爆発し続ける
-                    enemyBullets = []; 
-                    if (!isPractice) {
-                        const bossPoint = 50000 * currentWave;
-                        score += (player.scoreMultiplierTimer > 0) ? bossPoint * 2 : bossPoint;
-                    }
+                    enemy.isDying = true; enemy.dyingTimer = 120; enemyBullets = []; 
+                    if (!isPractice) score += (player.scoreMultiplierTimer > 0) ? 50000 * currentWave * 2 : 50000 * currentWave;
                 }
                 if (!enemy.isDying) updateUI();
             }
         }
         
-        // 敵弾 -> 自機
         if (player.invincible === 0 && !enemy.isDying && player.state === 'normal') {
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                const b = enemyBullets[i];
-                let hit = false;
+                const b = enemyBullets[i]; let hit = false;
                 
                 if (b.isBeam) {
                     if (b.life >= b.chargeTime) {
                         const dx = player.x - b.x; const dy = player.y - b.y;
                         const beamDx = Math.cos(b.beamAngle); const beamDy = Math.sin(b.beamAngle);
                         const dot = dx * beamDx + dy * beamDy;
-                        if (dot > 0) { 
-                            const dist = Math.abs(dy * beamDx - dx * beamDy);
-                            if (dist < player.radius + b.radius) hit = true;
-                        }
+                        if (dot > 0 && Math.abs(dy * beamDx - dx * beamDy) < player.radius + b.radius) hit = true;
                     }
                 } else {
                     if (Math.hypot(b.x - player.x, b.y - player.y) < player.radius + b.radius * 0.8) hit = true;
                 }
 
                 if (hit) {
-                    player.deaths += 1;
-                    player.invincible = 120; 
-                    
+                    player.deaths += 1; player.invincible = 120; 
                     if(sound) sound.sePlayerDeath();
                     createParticles(player.x, player.y, '#39ff14', 40);
-                    
-                    player.state = 'respawning';
-                    player.x = canvas.width / 2;
-                    player.y = canvas.height + 30;
-
-                    enemyBullets = []; 
-                    updateUI();
+                    player.state = 'respawning'; player.x = canvas.width / 2; player.y = canvas.height + 30;
+                    enemyBullets = []; updateUI();
                     break;
                 }
             }
@@ -1741,68 +1762,46 @@
             ctx.fillStyle = 'white'; ctx.font = '30px ' + fontFallback; ctx.textAlign = 'center';
             ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
             ctx.shadowBlur = 0;
-            requestAnimationFrame(loop);
-            return; 
+            requestAnimationFrame(loop); return; 
         }
 
-        // --- 背景描画 ---
         ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = 'rgba(2, 2, 5, 0.4)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(2, 2, 5, 0.4)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.strokeStyle = 'rgba(0, 255, 255, 0.08)'; 
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        const gridSize = 40;
-        bgOffset = (bgOffset + 2) % gridSize;
-        for (let x = 0; x <= canvas.width; x += gridSize) {
-            ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
-        }
-        for (let y = bgOffset - gridSize; y <= canvas.height; y += gridSize) {
-            ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
-        }
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.08)'; ctx.lineWidth = 1; ctx.beginPath();
+        const gridSize = 40; bgOffset = (bgOffset + 2) % gridSize;
+        for (let x = 0; x <= canvas.width; x += gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
+        for (let y = bgOffset - gridSize; y <= canvas.height; y += gridSize) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
         ctx.stroke();
-        // --------------
 
         if (state === 'title') {
-            titleControlsEl.style.display = 'flex';
-
             ctx.save();
-            ctx.fillStyle = '#39ff14'; 
-            ctx.font = '900 160px sans-serif'; 
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.translate(canvas.width / 2, canvas.height / 2 - 120);
-            ctx.scale(0.3, 1.2); // 横幅をギュッと狭く、縦に細長く
+            ctx.fillStyle = '#39ff14'; ctx.font = '900 160px sans-serif'; 
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.translate(canvas.width / 2, canvas.height / 2 - 140);
+            ctx.scale(0.3, 1.2); 
             ctx.fillText('DANMA-K', 0, 0);
             ctx.restore();
 
-            ctx.fillStyle = '#ff007f'; 
-            ctx.font = '14px ' + fontFallback;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'alphabetic';
-            ctx.fillText('10 WAVES / 10 BOSS TYPES', canvas.width / 2, canvas.height / 2 + 30);
+            ctx.fillStyle = '#ff007f'; ctx.font = '14px ' + fontFallback;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+            ctx.fillText('10 WAVES / 10 BOSS TYPES', canvas.width / 2, canvas.height / 2 + 10);
         }
-        else if (state === 'gallery') {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            if (galleryEnemy) {
-                galleryEnemy.update();
-                galleryEnemy.draw();
+        else if (state === 'gallery' || state === 'ranking' || state === 'nameEntry') {
+            if (state === 'gallery') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (galleryEnemy) { galleryEnemy.update(); galleryEnemy.draw(); }
             }
         }
         else if (state === 'rule') {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         else if (state === 'playing' || state === 'waveClear') {
             player.update(); 
             if(state === 'playing') enemy.update();
             
             playerBullets.forEach(b => b.update()); enemyBullets.forEach(b => b.update());
-            particles.forEach(p => p.update());
-            items.forEach(i => i.update());
+            particles.forEach(p => p.update()); items.forEach(i => i.update());
             
             playerBullets = playerBullets.filter(b => !b.isOutOfBounds() && !b.dead);
             enemyBullets = enemyBullets.filter(b => !b.isOutOfBounds() && !b.dead);
@@ -1811,27 +1810,24 @@
             
             checkCollisions();
             
-            items.forEach(i => i.draw());
-            particles.forEach(p => p.draw());
+            items.forEach(i => i.draw()); particles.forEach(p => p.draw());
             playerBullets.forEach(b => b.draw()); enemyBullets.forEach(b => b.draw());
             if(state === 'playing') enemy.draw();
             player.draw();
 
-            // 死亡演出が終わって完全に死んだとき
             if (state === 'playing' && enemy.dead) {
                 if(sound) { sound.seExplosion(); setTimeout(()=>sound.seWaveClear(), 500); }
                 createParticles(enemy.x, enemy.y, enemy.color, 150); 
                 
                 if (isPractice) {
-                    state = 'practiceClear';
-                    updateDOM();
+                    state = 'practiceClear'; updateDOM();
                 } else if (currentWave >= 10) {
-                    state = 'allClear';
-                    updateDOM();
+                    const penalty = player.deaths * 50000;
+                    calculatedFinalScore = Math.max(0, score - penalty);
+                    state = 'allClear'; updateDOM();
                     if(sound) setTimeout(()=>sound.stopBGM(), 2000);
                 } else {
-                    state = 'waveClear';
-                    waveClearTimer = 120; 
+                    state = 'waveClear'; waveClearTimer = 120; 
                 }
             }
 
@@ -1841,34 +1837,28 @@
             }
         } 
         else if (state === 'allClear') {
-            particles.forEach(p => p.update());
-            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => p.update()); particles = particles.filter(p => p.life > 0);
             particles.forEach(p => p.draw());
 
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            const titleColor = state === 'allClear' ? '#39ff14' : '#ff007f';
-            const titleText = state === 'allClear' ? 'ALL CLEAR!!' : 'GAME OVER';
-
-            ctx.shadowBlur = 10; ctx.shadowColor = titleColor;
-            ctx.fillStyle = titleColor; ctx.font = '40px ' + fontFallback; ctx.textAlign = 'center';
-            ctx.fillText(titleText, canvas.width / 2, canvas.height / 2 - 80);
+            ctx.shadowBlur = 10; ctx.shadowColor = '#39ff14';
+            ctx.fillStyle = '#39ff14'; ctx.font = '40px ' + fontFallback; ctx.textAlign = 'center';
+            ctx.fillText('ALL CLEAR!!', canvas.width / 2, canvas.height / 2 - 100);
             ctx.shadowBlur = 0;
 
             ctx.fillStyle = 'white'; ctx.font = '20px ' + fontFallback;
-            ctx.fillText(`BASE SCORE: ${score}`, canvas.width / 2, canvas.height / 2 - 20);
+            ctx.fillText(`BASE SCORE: ${score}`, canvas.width / 2, canvas.height / 2 - 30);
             
             const penalty = player.deaths * 50000;
             ctx.fillStyle = '#ff5555'; ctx.font = '20px ' + fontFallback;
-            ctx.fillText(`LOST: ${player.deaths} ( -${penalty} )`, canvas.width / 2, canvas.height / 2 + 20);
+            ctx.fillText(`LOST: ${player.deaths} ( -${penalty} )`, canvas.width / 2, canvas.height / 2 + 10);
 
-            const finalScore = Math.max(0, score - penalty);
             ctx.fillStyle = '#ff007f'; ctx.font = '26px ' + fontFallback;
-            ctx.fillText(`FINAL SCORE: ${finalScore}`, canvas.width / 2, canvas.height / 2 + 70);
+            ctx.fillText(`FINAL SCORE: ${calculatedFinalScore}`, canvas.width / 2, canvas.height / 2 + 60);
         }
         else if (state === 'practiceClear') {
-            particles.forEach(p => p.update());
-            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => p.update()); particles = particles.filter(p => p.life > 0);
             particles.forEach(p => p.draw());
 
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
