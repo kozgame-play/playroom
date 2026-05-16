@@ -243,7 +243,7 @@
             <div class="w-full max-w-2xl bg-white rounded-2xl border-4 border-sky-300 p-6 md:p-8 mb-8 solid-shadow-btn text-sky-800">
                 <h3 class="text-2xl md:text-3xl font-black italic text-rose-500 mb-3 border-b-2 border-sky-100 pb-2">1. CONTROLS & RULES</h3>
                 <ul class="list-disc pl-5 mb-8 font-bold text-sm md:text-base leading-relaxed space-y-2">
-                    <li>画面の<span class="text-rose-500">左半分・右半分をタップ＆ホールド（またはPCの左右矢印キー）</span>で機体を傾け、ドリフトを開始します。</li>
+                    <li>画面の<span class="text-rose-500">左半分・右半分をタップ＆ホールド（またはPCの左右矢印キー / A・Dキー）</span>で機体を傾け、ドリフトを開始します。</li>
                     <li>カーブに合わせて曲がり、直線に入るタイミングで指を離してドリフトを解除しましょう。</li>
                     <li>コースの壁に強くぶつかると大きく減速してしまうので、ライン取りが重要です！</li>
                 </ul>
@@ -1059,9 +1059,17 @@ class Game {
             if (e.type !== 'keydown' && e.cancelable) e.preventDefault();
             
             if (e.type === 'keydown') {
-                if (e.code === 'Space') this.lastInputX = window.innerWidth * 0.75; 
-                else if (e.code === 'Escape' || e.code === 'KeyP') { this.togglePause(); return; }
-                else return;
+                if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                    // 右方向入力として扱うため、画面右側をクリックしたのと同じ座標を擬似的に設定
+                    this.lastInputX = window.innerWidth * 0.75; 
+                } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                    // 左方向入力として扱うため、画面左側をクリックしたのと同じ座標を擬似的に設定
+                    this.lastInputX = window.innerWidth * 0.25;
+                } else if (e.code === 'Escape' || e.code === 'KeyP') { 
+                    this.togglePause(); return; 
+                } else {
+                    return; // その他のキーは無視
+                }
             } else {
                 this.lastInputX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
             }
@@ -1071,14 +1079,22 @@ class Game {
         const handleUp = (e) => {
             if (this.state !== 'playing' && this.state !== 'countdown') return;
 
-            // ★修正ポイント: ボタン上で指を離したりクリックした場合は preventDefault を実行せず、クリックイベントを発生させる
+            // ボタン上で指を離したりクリックした場合は preventDefault を実行せず、クリックイベントを発生させる
             if (e.target && e.target.closest && (e.target.closest('button') || (e.target.tagName && e.target.tagName.toLowerCase() === 'input'))) {
                 this.isActionDown = false;
                 return;
             }
 
             if (e.type !== 'keyup' && e.cancelable) e.preventDefault();
-            if (e.type === 'keyup' && e.code !== 'Space') return;
+            
+            if (e.type === 'keyup') {
+                // 左右のキーを離したときのみ操作終了とする
+                if (e.code === 'ArrowRight' || e.code === 'KeyD' || e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                    this.isActionDown = false;
+                }
+                return;
+            }
+            
             this.isActionDown = false;
         };
 
@@ -1089,7 +1105,7 @@ class Game {
         window.addEventListener('touchend', handleUp, {passive: false});
         window.addEventListener('keyup', handleUp, {passive: false});
 
-        // ★追加: バックグラウンド時に音を止め、ゲームをポーズする処理
+        // バックグラウンド時に音を止め、ゲームをポーズする処理
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 // バックグラウンドに回った時
