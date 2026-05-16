@@ -22,9 +22,9 @@
     </style>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB5esz6oPFT7YI9VBFnitFmNzLNvKs6RBE",
@@ -36,21 +36,43 @@
             measurementId: "G-MGP9LN5C6K"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        let db = null;
+        let auth = null;
+        let user = null;
+
+        // SKYDRIFTと同じく、ページ読み込み時に初期化とログインを済ませておく
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                await signInAnonymously(auth);
+
+                // ログイン状態を監視して、確実にユーザー情報を保持する
+                onAuthStateChanged(auth, (currentUser) => {
+                    user = currentUser;
+                });
+            } catch (e) {
+                console.error("Firebase Init Error:", e);
+            }
+        }
+        
+        initFirebase();
 
         // グローバルスコープから呼び出せるように window に関数を登録
         window.submitScoreToFirebase = async function(name, stage, waveNum) {
+            if (!user || !db) {
+                console.error("Firebase is not ready. (まだログインが完了していません)");
+                return false;
+            }
             try {
-                // スコア送信の直前に自動で匿名ログインを実行
-                await signInAnonymously(auth);
-
                 await addDoc(collection(db, "leaderboard_03"), {
-                    name: name,
+                    name: name || "名無し司令官",
                     stage: stage,
                     wave: waveNum,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    userId: user.uid // SKYDRIFTと同じくuserIdも含める
                 });
                 return true;
             } catch (e) {
@@ -60,6 +82,7 @@
         };
 
         window.getLeaderboardFromFirebase = async function(stage) {
+            if (!db) return null;
             try {
                 const q = query(collection(db, "leaderboard_03"), where("stage", "==", stage), orderBy("wave", "desc"), limit(10));
                 const querySnapshot = await getDocs(q);
@@ -380,7 +403,11 @@ document.addEventListener('click', initAudio, { once: true });
 document.addEventListener('touchstart', initAudio, { once: true });
 
 function playSound(type) {
-    if (!audioCtx || audioCtx.state === 'suspended') return;
+    if (!audioCtx) return;
+    
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
     
     if (type === 'attack') {
         const currentMs = Date.now();
@@ -397,44 +424,99 @@ function playSound(type) {
     
     switch(type) {
         case 'select': 
-            osc.type = 'sine'; osc.frequency.setValueAtTime(880, now);
-            gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            osc.start(now); osc.stop(now + 0.1); break;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, now);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            break;
         case 'place': 
-            osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
-            gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            osc.start(now); osc.stop(now + 0.1); break;
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            break;
         case 'sell': 
-            osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(10, now + 0.15);
-            gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            osc.start(now); osc.stop(now + 0.15); break;
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(10, now + 0.15);
+            gainNode.gain.setValueAtTime(0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+            break;
         case 'attack': 
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(200, now + 0.06);
-            gainNode.gain.setValueAtTime(0.025, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-            osc.start(now); osc.stop(now + 0.06); break;
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(700, now);
+            osc.frequency.exponentialRampToValueAtTime(200, now + 0.06);
+            gainNode.gain.setValueAtTime(0.025, now); 
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+            osc.start(now);
+            osc.stop(now + 0.06);
+            break;
         case 'damage': 
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
-            gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-            osc.start(now); osc.stop(now + 0.1); break;
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+            gainNode.gain.setValueAtTime(0.05, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            break;
         case 'enemyDestroy': 
-            osc.type = 'square'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.15);
-            gainNode.gain.setValueAtTime(0.08, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            osc.start(now); osc.stop(now + 0.15); break;
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.exponentialRampToValueAtTime(20, now + 0.15);
+            gainNode.gain.setValueAtTime(0.08, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+            break;
         case 'towerDestroy': 
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
-            gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-            osc.start(now); osc.stop(now + 0.3); break;
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+            gainNode.gain.setValueAtTime(0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+            break;
         case 'baseHit': 
-            osc.type = 'square'; osc.frequency.setValueAtTime(80, now); osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
-            gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-            osc.start(now); osc.stop(now + 0.5); break;
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(80, now);
+            osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc.start(now);
+            osc.stop(now + 0.5);
+            break;
         case 'animStart': 
             for (let i = 0; i < 3; i++) {
-                const o1 = audioCtx.createOscillator(); const o2 = audioCtx.createOscillator(); const g = audioCtx.createGain();
-                o1.type = 'square'; o1.frequency.value = 600; o2.type = 'sawtooth'; o2.frequency.value = 610; 
-                g.gain.setValueAtTime(0, now + i * 0.3); g.gain.linearRampToValueAtTime(0.08, now + i * 0.3 + 0.02); g.gain.linearRampToValueAtTime(0, now + i * 0.3 + 0.15);
-                o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
-                o1.start(now + i * 0.3); o2.start(now + i * 0.3); o1.stop(now + i * 0.3 + 0.2); o2.stop(now + i * 0.3 + 0.2);
+                const o1 = audioCtx.createOscillator();
+                const o2 = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                
+                o1.type = 'square';
+                o1.frequency.value = 600;
+                o2.type = 'sawtooth';
+                o2.frequency.value = 610; 
+                
+                g.gain.setValueAtTime(0, now + i * 0.3);
+                g.gain.linearRampToValueAtTime(0.08, now + i * 0.3 + 0.02);
+                g.gain.linearRampToValueAtTime(0, now + i * 0.3 + 0.15);
+                
+                o1.connect(g);
+                o2.connect(g);
+                g.connect(audioCtx.destination);
+                
+                o1.start(now + i * 0.3);
+                o2.start(now + i * 0.3);
+                o1.stop(now + i * 0.3 + 0.2);
+                o2.stop(now + i * 0.3 + 0.2);
             }
             break;
     }
@@ -660,7 +742,10 @@ class Enemy {
                         }
                     }
                 }
-                if (activeShield) target = activeShield;
+                
+                if (activeShield) {
+                    target = activeShield;
+                }
 
                 enemyProjectiles.push(new EnemyProjectile(this.x, this.y, target, this.attackDamage));
                 this.attackCooldown = 60;
@@ -689,6 +774,7 @@ class Enemy {
     }
     draw(ctx) {
         ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rotation);
+        
         if (this.isArmed) {
             ctx.fillStyle = this.slowTimer > 0 ? '#4f46e5' : '#7e22ce'; 
             ctx.beginPath();
@@ -782,9 +868,13 @@ class Tower {
         if (this.type.type === 'shield') {
             ctx.beginPath();
             ctx.arc(0, 0, this.type.range, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(14, 165, 233, 0.05)'; ctx.fill();
-            ctx.strokeStyle = 'rgba(14, 165, 233, 0.2)'; ctx.lineWidth = 1;
-            ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(14, 165, 233, 0.05)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(14, 165, 233, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
         }
 
         drawTowerShape(ctx, this.type, this.angle, isPaused, gameSpeed);
