@@ -24,6 +24,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB5esz6oPFT7YI9VBFnitFmNzLNvKs6RBE",
@@ -37,10 +38,14 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         // グローバルスコープから呼び出せるように window に関数を登録
         window.submitScoreToFirebase = async function(name, stage, waveNum) {
             try {
+                // スコア送信の直前に自動で匿名ログインを実行
+                await signInAnonymously(auth);
+
                 await addDoc(collection(db, "leaderboard_03"), {
                     name: name,
                     stage: stage,
@@ -228,7 +233,7 @@
             <p class="text-slate-300 mb-6 font-bold">現在の進行状況は失われます。<br>よろしいですか？</p>
             <div class="flex gap-4 justify-center">
                 <button onclick="hideTitleConfirm()" class="flex-1 py-3 bg-slate-600 hover:bg-slate-500 rounded text-white font-bold transition border border-slate-500">キャンセル</button>
-                <button onclick="confirmTitle()" class="flex-1 py-3 bg-indigo-700 hover:bg-indigo-600 rounded text-white font-bold transition shadow border border-indigo-500">戻る</button>
+                <button onclick="confirmTitle()" class="flex-1 py-3 bg-indigo-700 hover:bg-indigo-600 rounded text-white font-bold transition shadow border border-indigo-700 text-indigo-200">戻る</button>
             </div>
         </div>
     </div>
@@ -315,7 +320,7 @@ const bgmBattle = new Audio('SPE-DEFE_BATTLE.mp3');
 bgmBattle.loop = true;
 bgmBattle.volume = 0.4;
 
-// タブ移動・ウィンドウ閉じの際のBGM停止処理
+// タブ移動・ウィンドウ閉じの際のBGMおよびAudioContext強制停止処理
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
         bgmReady.pause();
@@ -1241,7 +1246,6 @@ function gameOver() {
     document.getElementById('gameOverScreen').classList.remove('hidden'); 
     document.getElementById('finalScore').innerText = `生存wave: ${wave}`;
     
-    // スコア送信UIの初期化
     document.getElementById('scoreSubmitArea').style.display = 'flex';
     const submitBtn = document.querySelector('#scoreSubmitArea button');
     submitBtn.disabled = false;
@@ -1494,7 +1498,6 @@ function spawnLogic() {
     }
 }
 
-// --- アニメーション更新・描画 ---
 function updateAnimations() {
     [missionAnim, waveAnim].forEach(anim => {
         if (anim.active) {
