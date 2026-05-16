@@ -23,7 +23,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -40,7 +40,6 @@
         let auth = null;
         let user = null;
 
-        // SKYDRIFTと同じく、ページ読み込み時に初期化とログインを済ませておく
         async function initFirebase() {
             try {
                 const app = initializeApp(firebaseConfig);
@@ -49,7 +48,6 @@
 
                 await signInAnonymously(auth);
 
-                // ログイン状態を監視して、確実にユーザー情報を保持する
                 onAuthStateChanged(auth, (currentUser) => {
                     user = currentUser;
                 });
@@ -60,19 +58,18 @@
         
         initFirebase();
 
-        // グローバルスコープから呼び出せるように window に関数を登録
         window.submitScoreToFirebase = async function(name, stage, waveNum) {
             if (!user || !db) {
-                console.error("Firebase is not ready. (まだログインが完了していません)");
+                console.error("Firebase is not ready.");
                 return false;
             }
             try {
                 await addDoc(collection(db, "leaderboard_03"), {
                     name: name || "名無し司令官",
-                    stage: stage,
+                    stage: stage, // stageを保存
                     wave: waveNum,
                     timestamp: Date.now(),
-                    userId: user.uid // SKYDRIFTと同じくuserIdも含める
+                    userId: user.uid
                 });
                 return true;
             } catch (e) {
@@ -84,13 +81,19 @@
         window.getLeaderboardFromFirebase = async function(stage) {
             if (!db) return null;
             try {
-                const q = query(collection(db, "leaderboard_03"), where("stage", "==", stage), orderBy("wave", "desc"), limit(10));
+                // 複合インデックスエラーを避けるため、stageの絞り込みのみFirestoreで行う
+                const q = query(collection(db, "leaderboard_03"), where("stage", "==", stage));
                 const querySnapshot = await getDocs(q);
                 let results = [];
                 querySnapshot.forEach((doc) => {
                     results.push(doc.data());
                 });
-                return results;
+                
+                // JavaScript側でwaveが多い順（降順）にソートする
+                results.sort((a, b) => b.wave - a.wave);
+                
+                // 上位10件だけを返す
+                return results.slice(0, 10);
             } catch (error) {
                 console.error("Error getting leaderboard: ", error);
                 return null;
@@ -329,12 +332,10 @@ const TILE_SIZE = 50;
 const COLS = canvas.width / TILE_SIZE;
 const ROWS = canvas.height / TILE_SIZE;
 
-// --- オーディオ設定 (Web Audio API) ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 let lastAttackSoundTime = 0;
 
-// --- BGM設定 ---
 const bgmReady = new Audio('SPE-DEFE_READY.mp3');
 bgmReady.loop = true;
 bgmReady.volume = 0.4;
@@ -343,7 +344,6 @@ const bgmBattle = new Audio('SPE-DEFE_BATTLE.mp3');
 bgmBattle.loop = true;
 bgmBattle.volume = 0.4;
 
-// タブ移動・ウィンドウ閉じの際のBGMおよびAudioContext強制停止処理
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
         bgmReady.pause();
@@ -614,7 +614,6 @@ function lineIntersectsCircle(x1, y1, x2, y2, cx, cy, r) {
     return (dist_x * dist_x + dist_y * dist_y) <= r * r;
 }
 
-// --- 描画共通関数 ---
 function drawPolygon(ctx, x, y, radius, sides) {
     ctx.beginPath();
     for (let i = 0; i < sides; i++) {
@@ -703,7 +702,6 @@ function drawTowerShape(ctx, typeInfo, angle, isPaused, gameSpeed) {
     }
 }
 
-// --- クラス群 ---
 class Enemy {
     constructor(hp, speed, reward, isArmed = false) {
         let dx = waypoints[0].x - waypoints[1].x;
