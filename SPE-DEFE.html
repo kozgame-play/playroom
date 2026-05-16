@@ -20,35 +20,85 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5esz6oPFT7YI9VBFnitFmNzLNvKs6RBE",
+            authDomain: "kozgame.firebaseapp.com",
+            projectId: "kozgame",
+            storageBucket: "kozgame.firebasestorage.app",
+            messagingSenderId: "613372363405",
+            appId: "1:613372363405:web:8e68ca71c1b2e97db418c4",
+            measurementId: "G-MGP9LN5C6K"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // グローバルスコープから呼び出せるように window に関数を登録
+        window.submitScoreToFirebase = async function(name, stage, waveNum) {
+            try {
+                await addDoc(collection(db, "leaderboard_03"), {
+                    name: name,
+                    stage: stage,
+                    wave: waveNum,
+                    timestamp: Date.now()
+                });
+                return true;
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                return false;
+            }
+        };
+
+        window.getLeaderboardFromFirebase = async function(stage) {
+            try {
+                const q = query(collection(db, "leaderboard_03"), where("stage", "==", stage), orderBy("wave", "desc"), limit(10));
+                const querySnapshot = await getDocs(q);
+                let results = [];
+                querySnapshot.forEach((doc) => {
+                    results.push(doc.data());
+                });
+                return results;
+            } catch (error) {
+                console.error("Error getting leaderboard: ", error);
+                return null;
+            }
+        };
+    </script>
 </head>
 <body class="flex flex-col h-[100dvh] overflow-hidden w-full max-w-3xl mx-auto relative bg-[#0f172a]">
 
-    <!-- タイトル画面 -->
     <div id="titleScreen" class="absolute inset-0 bg-[#0f172a]/70 flex flex-col items-center justify-start z-[60] p-4 text-center overflow-y-auto no-scrollbar transition-opacity duration-300">
         
-        <!-- タイトルビュー -->
         <div id="titleView" class="w-full flex flex-col items-center justify-center min-h-full">
             <div class="mb-12">
                 <h1 class="text-5xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)] tracking-wider font-[Orbitron]">SPA-DEFE</h1>
                 <p class="text-cyan-300 font-bold tracking-widest text-xs sm:text-sm neon-text">SPACE DEFENSE FRONT</p>
             </div>
             
-            <div class="flex flex-col gap-6 w-full max-w-xs">
+            <div class="flex flex-col gap-4 w-full max-w-xs">
                 <button onclick="showStageSelect()" class="w-full py-4 bg-cyan-700 active:bg-cyan-600 rounded-lg text-white font-black text-lg sm:text-xl tracking-widest transition-all shadow-[0_0_20px_rgba(34,211,238,0.5)] border-2 border-cyan-400 active:scale-95 font-[Orbitron]">
                     GAME START
                 </button>
-                <button onclick="showRuleBook()" class="w-full py-3 bg-slate-800 active:bg-slate-700 active:scale-95 rounded-lg text-amber-400 font-bold transition-all shadow-[0_0_10px_rgba(251,191,36,0.3)] border border-amber-600/50 flex items-center justify-center gap-2">
-                    <span class="text-xl">📖</span> ルールブックを確認
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="showRuleBook()" class="flex-1 py-3 bg-slate-800 active:bg-slate-700 active:scale-95 rounded-lg text-slate-300 font-bold transition-all border border-slate-600 shadow-lg flex items-center justify-center gap-1">
+                        <span class="text-lg">📖</span> ルール
+                    </button>
+                    <button onclick="showLeaderboardModal(1)" class="flex-1 py-3 bg-slate-800 active:bg-slate-700 active:scale-95 rounded-lg text-amber-400 font-bold transition-all shadow-[0_0_10px_rgba(251,191,36,0.3)] border border-amber-600/50 flex items-center justify-center gap-1">
+                        <span class="text-lg">🏆</span> ランキング
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- ステージ選択ビュー -->
         <div id="stageSelectView" class="w-full flex flex-col items-center hidden py-8 min-h-full justify-center">
             <h2 class="text-2xl sm:text-3xl font-black text-cyan-400 mb-8 tracking-widest neon-text font-[Orbitron]">SELECT MISSION</h2>
             
             <div class="flex flex-col sm:flex-row w-full max-w-2xl gap-4 sm:gap-6 px-2">
-                <!-- STAGE 1 -->
                 <div class="relative bg-slate-800/90 p-5 sm:p-6 rounded-2xl border-2 border-cyan-800/50 shadow-[0_0_15px_rgba(34,211,238,0.1)] flex flex-col w-full flex-1 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer" onclick="startGame(1)">
                     <div class="absolute top-0 right-0 bg-cyan-900/50 text-cyan-400 text-[10px] font-black px-3 py-1.5 rounded-bl-lg border-b border-l border-cyan-800/50">CASUAL</div>
                     <h2 class="text-xl sm:text-2xl font-black text-cyan-400 mb-3 tracking-widest neon-text text-left font-[Orbitron]">STAGE 1 <span class="text-sm font-bold text-slate-300 neon-text-none block mt-1 font-sans">アルファ星域</span></h2>
@@ -65,7 +115,6 @@
                     </div>
                 </div>
 
-                <!-- STAGE 2 -->
                 <div class="relative bg-slate-900/90 p-5 sm:p-6 rounded-2xl border-2 border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)] flex flex-col w-full flex-1 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer" onclick="startGame(2)">
                     <div class="absolute top-0 right-0 bg-rose-900/50 text-rose-400 text-[10px] font-black px-3 py-1.5 rounded-bl-lg border-b border-l border-rose-800/50 animate-pulse">NIGHTMARE</div>
                     <h2 class="text-xl sm:text-2xl font-black text-rose-500 mb-3 tracking-widest neon-text text-left font-[Orbitron]">STAGE 2 <span class="text-sm font-bold text-slate-300 neon-text-none block mt-1 font-sans">ベータ星域</span></h2>
@@ -89,9 +138,7 @@
         </div>
     </div>
 
-    <!-- トップバー -->
     <div id="topBar" class="hidden flex-col gap-1 bg-slate-900 px-1 py-1 sm:p-2 border-b border-slate-700 shadow-lg shrink-0 relative z-20">
-        <!-- 上段：ステータス -->
         <div class="flex justify-around items-center bg-slate-800 rounded py-0.5 px-1 border border-slate-700">
             <div class="flex flex-col items-center w-1/4">
                 <span class="text-[9px] text-slate-400 font-bold mb-[-3px]">LIFE</span>
@@ -119,7 +166,6 @@
             </div>
         </div>
         
-        <!-- 下段：ボタン群 -->
         <div class="grid grid-cols-4 gap-1">
             <button id="pauseBtn" onclick="togglePause()" class="py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200">一時停止</button>
             <button id="fastForwardBtn" onclick="toggleFastForward()" class="py-1 bg-slate-700 hover:bg-slate-600 rounded text-[10px] sm:text-xs font-bold transition shadow border border-slate-500 text-slate-200">1倍速</button>
@@ -128,18 +174,25 @@
         </div>
     </div>
 
-    <!-- ゲームキャンバス -->
     <div class="relative flex-1 w-full flex items-center justify-center bg-[#0f172a] min-h-0">
         <canvas id="gameCanvas" width="800" height="600" class="w-full h-full object-contain"></canvas>
 
-        <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center hidden z-10 backdrop-blur-sm">
+        <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center hidden z-10 backdrop-blur-sm p-4">
             <h1 class="text-4xl sm:text-5xl font-bold text-red-500 mb-2 neon-text">GAME OVER</h1>
             <p id="finalScore" class="text-xl sm:text-2xl mb-6 text-white">生存wave: 1</p>
-            <button onclick="resetCurrentGame()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-lg font-bold transition shadow-[0_0_15px_rgba(79,70,229,0.5)] border border-indigo-400">再挑戦</button>
+            
+            <div id="scoreSubmitArea" class="flex flex-col items-center w-full max-w-xs mb-6 gap-3">
+                <input type="text" id="playerName" maxlength="10" placeholder="司令官名 (10文字以内)" class="w-full px-3 py-2 bg-slate-800 text-white border border-slate-500 rounded text-center focus:outline-none focus:border-amber-400">
+                <button onclick="submitScore()" class="w-full px-4 py-3 bg-amber-600 hover:bg-amber-500 rounded font-bold text-white shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-amber-400 transition">スコアを送信してランキングへ</button>
+            </div>
+            
+            <div class="flex gap-4 w-full max-w-xs">
+                <button onclick="resetCurrentGame()" class="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold text-white transition shadow-[0_0_15px_rgba(79,70,229,0.5)] border border-indigo-400">再挑戦</button>
+                <button onclick="showLeaderboardModal(currentStage)" class="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold text-white transition border border-slate-500 shadow-lg">ランキング</button>
+            </div>
         </div>
     </div>
 
-    <!-- コントロールパネル -->
     <div id="controlPanel" class="hidden flex-col gap-1 bg-slate-900 p-1.5 sm:p-2 border-t border-slate-700 shadow-lg shrink-0 z-20">
         <div id="infoMessage" class="text-center text-[10px] sm:text-xs font-bold text-slate-400 h-4 transition-colors leading-none">
             ユニット選択・破壊
@@ -152,8 +205,7 @@
             </button>
 
             <div id="towerButtons" class="flex-1 flex gap-1.5 overflow-x-auto pb-1 no-scrollbar snap-x">
-                <!-- JSで動的生成 -->
-            </div>
+                </div>
         </div>
         
         <button id="startWaveBtn" class="w-full py-2 bg-cyan-700 hover:bg-cyan-600 rounded text-sm sm:text-base font-bold transition shadow-[0_0_10px_rgba(6,182,212,0.3)] border border-cyan-400 flex items-center justify-center gap-2 mt-0.5" onclick="startWave()">
@@ -161,7 +213,6 @@
         </button>
     </div>
 
-    <!-- 各種モーダル -->
     <div id="unlockModal" class="absolute inset-0 bg-black/80 flex items-center justify-center hidden z-[70] backdrop-blur-sm p-4">
         <div class="bg-slate-800 p-6 rounded-lg border-2 border-amber-500 text-center max-w-sm w-full mx-4 shadow-[0_0_30px_rgba(245,158,11,0.5)] flex flex-col max-h-[90vh]">
             <h2 class="text-2xl font-bold text-amber-400 mb-2 neon-text">UNIT UNLOCKED!</h2>
@@ -220,6 +271,28 @@
         </div>
     </div>
 
+    <div id="leaderboardModal" class="absolute inset-0 bg-black/80 flex items-center justify-center hidden z-[80] backdrop-blur-sm p-4">
+        <div class="bg-slate-900 p-6 rounded-lg border-2 border-amber-500 text-center w-full max-w-sm mx-4 shadow-[0_0_30px_rgba(245,158,11,0.5)] flex flex-col max-h-[90vh]">
+            <h2 class="text-2xl font-bold text-amber-400 mb-4 neon-text font-[Orbitron]">LEADERBOARD</h2>
+            
+            <div class="flex gap-2 mb-4">
+                <button id="tabStage1" onclick="switchLeaderboardTab(1)" class="flex-1 py-2 rounded bg-cyan-800 text-white font-bold border border-cyan-400">STAGE 1</button>
+                <button id="tabStage2" onclick="switchLeaderboardTab(2)" class="flex-1 py-2 rounded bg-slate-700 text-slate-300 font-bold border border-slate-600">STAGE 2</button>
+            </div>
+
+            <div class="flex justify-between px-2 mb-2 border-b border-slate-600 pb-1 text-xs text-slate-400 font-bold">
+                <span class="w-8 text-left">RANK</span>
+                <span class="flex-1 text-left px-2">NAME</span>
+                <span class="text-right">SCORE</span>
+            </div>
+
+            <div id="leaderboardList" class="flex-1 overflow-y-auto mb-4 no-scrollbar flex flex-col gap-1 min-h-[250px]">
+                </div>
+            
+            <button onclick="closeLeaderboard()" class="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded text-white font-bold transition border border-slate-500">閉じる</button>
+        </div>
+    </div>
+
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -236,11 +309,41 @@ let lastAttackSoundTime = 0;
 // --- BGM設定 ---
 const bgmReady = new Audio('SPE-DEFE_READY.mp3');
 bgmReady.loop = true;
-bgmReady.volume = 0.4; // 音量は適宜調整してください
+bgmReady.volume = 0.4;
 
 const bgmBattle = new Audio('SPE-DEFE_BATTLE.mp3');
 bgmBattle.loop = true;
-bgmBattle.volume = 0.4; // 音量は適宜調整してください
+bgmBattle.volume = 0.4;
+
+// タブ移動・ウィンドウ閉じの際のBGM停止処理
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        bgmReady.pause();
+        bgmBattle.pause();
+        if (audioCtx && audioCtx.state === 'running') {
+            audioCtx.suspend();
+        }
+    } else {
+        if (!isTitleScreen && !isGameOver && !isPaused && !isModalOpen) {
+            if (waveActive) bgmBattle.play().catch(e => console.log(e));
+            else bgmReady.play().catch(e => console.log(e));
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+});
+
+window.addEventListener('pagehide', () => {
+    bgmReady.pause();
+    bgmBattle.pause();
+});
+
+window.addEventListener('beforeunload', () => {
+    bgmReady.pause();
+    bgmBattle.pause();
+    if (audioCtx) audioCtx.close();
+});
 
 function playBGM(type) {
     if (type === 'ready') {
@@ -268,23 +371,15 @@ function initAudio() {
     }
 }
 
-// ユーザーアクションでAudioContextを有効化
 document.addEventListener('click', initAudio, { once: true });
 document.addEventListener('touchstart', initAudio, { once: true });
 
 function playSound(type) {
-    if (!audioCtx) return;
+    if (!audioCtx || audioCtx.state === 'suspended') return;
     
-    // ブラウザの制限などでサスペンド状態になっていたら復帰させる
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-    
-    // 攻撃音は複数同時に鳴りすぎてうるさくならないように間引く
-    // AudioContextの時間ではなく、Date.now()（実時間）ベースで確実に判定する
     if (type === 'attack') {
         const currentMs = Date.now();
-        if (currentMs - lastAttackSoundTime < 40) return; // 40ms以内の連続再生は防ぐ
+        if (currentMs - lastAttackSoundTime < 40) return; 
         lastAttackSoundTime = currentMs;
     }
     
@@ -296,102 +391,45 @@ function playSound(type) {
     gainNode.connect(audioCtx.destination);
     
     switch(type) {
-        case 'select': // ピッ
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, now);
-            gainNode.gain.setValueAtTime(0.1, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            osc.start(now);
-            osc.stop(now + 0.1);
-            break;
-        case 'place': // カチャッ
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(440, now);
-            osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
-            gainNode.gain.setValueAtTime(0.1, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            osc.start(now);
-            osc.stop(now + 0.1);
-            break;
-        case 'sell': // ガシュッ（破壊・解体）
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(150, now);
-            osc.frequency.exponentialRampToValueAtTime(10, now + 0.15);
-            gainNode.gain.setValueAtTime(0.15, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            osc.start(now);
-            osc.stop(now + 0.15);
-            break;
-        case 'attack': // チュン
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(700, now);
-            osc.frequency.exponentialRampToValueAtTime(200, now + 0.06);
-            gainNode.gain.setValueAtTime(0.025, now); // 少しだけ音量と減衰時間を調整
-            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-            osc.start(now);
-            osc.stop(now + 0.06);
-            break;
-        case 'damage': // ザシュ
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, now);
-            osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
-            gainNode.gain.setValueAtTime(0.05, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-            osc.start(now);
-            osc.stop(now + 0.1);
-            break;
-        case 'enemyDestroy': // ボンッ
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(100, now);
-            osc.frequency.exponentialRampToValueAtTime(20, now + 0.15);
-            gainNode.gain.setValueAtTime(0.08, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            osc.start(now);
-            osc.stop(now + 0.15);
-            break;
-        case 'towerDestroy': // ガシャン
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(100, now);
-            osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
-            gainNode.gain.setValueAtTime(0.15, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-            osc.start(now);
-            osc.stop(now + 0.3);
-            break;
-        case 'baseHit': // ドゴォォン
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(80, now);
-            osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
-            gainNode.gain.setValueAtTime(0.3, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-            osc.start(now);
-            osc.stop(now + 0.5);
-            break;
-        case 'animStart': // 警告音（アラート）
+        case 'select': 
+            osc.type = 'sine'; osc.frequency.setValueAtTime(880, now);
+            gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1); break;
+        case 'place': 
+            osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+            gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1); break;
+        case 'sell': 
+            osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(10, now + 0.15);
+            gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc.start(now); osc.stop(now + 0.15); break;
+        case 'attack': 
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(200, now + 0.06);
+            gainNode.gain.setValueAtTime(0.025, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+            osc.start(now); osc.stop(now + 0.06); break;
+        case 'damage': 
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+            gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1); break;
+        case 'enemyDestroy': 
+            osc.type = 'square'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.15);
+            gainNode.gain.setValueAtTime(0.08, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc.start(now); osc.stop(now + 0.15); break;
+        case 'towerDestroy': 
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+            gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            osc.start(now); osc.stop(now + 0.3); break;
+        case 'baseHit': 
+            osc.type = 'square'; osc.frequency.setValueAtTime(80, now); osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+            gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc.start(now); osc.stop(now + 0.5); break;
+        case 'animStart': 
             for (let i = 0; i < 3; i++) {
-                const o1 = audioCtx.createOscillator();
-                const o2 = audioCtx.createOscillator();
-                const g = audioCtx.createGain();
-                
-                // 矩形波とノコギリ波を組み合わせ、少し周波数をずらして不協和音（うなり）を作る
-                o1.type = 'square';
-                o1.frequency.value = 600;
-                o2.type = 'sawtooth';
-                o2.frequency.value = 610; 
-                
-                // 音量のエンベロープ（立ち上がりと減衰）
-                g.gain.setValueAtTime(0, now + i * 0.3);
-                g.gain.linearRampToValueAtTime(0.08, now + i * 0.3 + 0.02);
-                g.gain.linearRampToValueAtTime(0, now + i * 0.3 + 0.15);
-                
-                o1.connect(g);
-                o2.connect(g);
-                g.connect(audioCtx.destination);
-                
-                o1.start(now + i * 0.3);
-                o2.start(now + i * 0.3);
-                o1.stop(now + i * 0.3 + 0.2);
-                o2.stop(now + i * 0.3 + 0.2);
+                const o1 = audioCtx.createOscillator(); const o2 = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                o1.type = 'square'; o1.frequency.value = 600; o2.type = 'sawtooth'; o2.frequency.value = 610; 
+                g.gain.setValueAtTime(0, now + i * 0.3); g.gain.linearRampToValueAtTime(0.08, now + i * 0.3 + 0.02); g.gain.linearRampToValueAtTime(0, now + i * 0.3 + 0.15);
+                o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
+                o1.start(now + i * 0.3); o2.start(now + i * 0.3); o1.stop(now + i * 0.3 + 0.2); o2.stop(now + i * 0.3 + 0.2);
             }
             break;
     }
@@ -436,7 +474,6 @@ let grid = Array(ROWS).fill().map(() => Array(COLS).fill(0));
 let pathPoints = [];
 let waypoints = [];
 
-// アニメーション用状態
 let missionAnim = { active: false, timer: 0, text: "", type: "mission" };
 let waveAnim = { active: false, timer: 0, text: "", type: "wave" };
 
@@ -618,10 +655,7 @@ class Enemy {
                         }
                     }
                 }
-                
-                if (activeShield) {
-                    target = activeShield;
-                }
+                if (activeShield) target = activeShield;
 
                 enemyProjectiles.push(new EnemyProjectile(this.x, this.y, target, this.attackDamage));
                 this.attackCooldown = 60;
@@ -650,7 +684,6 @@ class Enemy {
     }
     draw(ctx) {
         ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rotation);
-        
         if (this.isArmed) {
             ctx.fillStyle = this.slowTimer > 0 ? '#4f46e5' : '#7e22ce'; 
             ctx.beginPath();
@@ -744,13 +777,9 @@ class Tower {
         if (this.type.type === 'shield') {
             ctx.beginPath();
             ctx.arc(0, 0, this.type.range, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(14, 165, 233, 0.05)';
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(14, 165, 233, 0.2)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([5, 5]);
-            ctx.stroke();
-            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(14, 165, 233, 0.05)'; ctx.fill();
+            ctx.strokeStyle = 'rgba(14, 165, 233, 0.2)'; ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
         }
 
         drawTowerShape(ctx, this.type, this.angle, isPaused, gameSpeed);
@@ -972,7 +1001,6 @@ function updateUIState() {
     const isEndless1 = (currentStage === 1 && wave > 50);
     const btnSell = document.getElementById('btnSell');
 
-    // 破壊ボタンのハイライト処理
     if (isEndless1) {
         btnSell.classList.add('opacity-30', 'grayscale', 'cursor-not-allowed');
         btnSell.classList.remove('border-rose-500', 'bg-slate-700', 'shadow-[0_0_10px_rgba(244,63,94,0.4)]');
@@ -988,7 +1016,6 @@ function updateUIState() {
         }
     }
 
-    // 各タワーボタンのハイライト処理
     document.querySelectorAll('.tower-btn:not(#btnSell)').forEach(btn => {
         const typeIdx = btn.dataset.type;
         if (isEndless1) {
@@ -1071,6 +1098,79 @@ function toggleFastForward() {
     }
 }
 
+// --- ランキング関連関数 ---
+async function submitScore() {
+    const nameInput = document.getElementById('playerName').value.trim() || '名無し司令官';
+    const btn = document.querySelector('#scoreSubmitArea button');
+    
+    btn.disabled = true;
+    btn.innerText = "送信中...";
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+    if (window.submitScoreToFirebase) {
+        const success = await window.submitScoreToFirebase(nameInput, currentStage, wave);
+        if (success) {
+            document.getElementById('scoreSubmitArea').style.display = 'none';
+            showLeaderboardModal(currentStage);
+        } else {
+            btn.innerText = "送信失敗(再試行)";
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    } else {
+        alert("ランキング機能がまだ読み込まれていません。");
+        btn.innerText = "スコアを送信してランキングへ";
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+function showLeaderboardModal(stageNum = 1) {
+    document.getElementById('leaderboardModal').classList.remove('hidden');
+    switchLeaderboardTab(stageNum);
+}
+
+function closeLeaderboard() {
+    document.getElementById('leaderboardModal').classList.add('hidden');
+}
+
+async function switchLeaderboardTab(stage) {
+    const tab1 = document.getElementById('tabStage1');
+    const tab2 = document.getElementById('tabStage2');
+    
+    if (stage === 1) {
+        tab1.className = "flex-1 py-2 rounded bg-cyan-700 text-white font-bold border border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]";
+        tab2.className = "flex-1 py-2 rounded bg-slate-800 text-slate-400 font-bold border border-slate-600";
+    } else {
+        tab1.className = "flex-1 py-2 rounded bg-slate-800 text-slate-400 font-bold border border-slate-600";
+        tab2.className = "flex-1 py-2 rounded bg-rose-700 text-white font-bold border border-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.5)]";
+    }
+    
+    const listContainer = document.getElementById('leaderboardList');
+    listContainer.innerHTML = '<p class="text-center text-slate-400 mt-8">読み込み中...</p>';
+    
+    if(window.getLeaderboardFromFirebase) {
+        const data = await window.getLeaderboardFromFirebase(stage);
+        if (data && data.length > 0) {
+            let html = '';
+            data.forEach((entry, idx) => {
+                const rankColor = idx === 0 ? 'text-yellow-400 text-lg' : idx === 1 ? 'text-gray-300' : idx === 2 ? 'text-orange-400' : 'text-slate-400';
+                html += `
+                <div class="flex justify-between items-center bg-slate-800 p-2 rounded border border-slate-600">
+                    <span class="font-bold ${rankColor} w-8">${idx + 1}</span>
+                    <span class="flex-1 text-left text-slate-200 truncate px-2 text-sm">${entry.name}</span>
+                    <span class="font-bold text-cyan-400 text-sm">W ${entry.wave}</span>
+                </div>`;
+            });
+            listContainer.innerHTML = html;
+        } else {
+            listContainer.innerHTML = '<p class="text-center text-slate-400 mt-8">まだ記録がありません</p>';
+        }
+    } else {
+        listContainer.innerHTML = '<p class="text-center text-red-400 mt-8">データの取得に失敗しました</p>';
+    }
+}
+
 // --- ビュー切り替え関数 ---
 function showStageSelect() {
     initAudio();
@@ -1088,15 +1188,12 @@ function backToTitle() {
 }
 
 function startGame(stage) {
-    initAudio(); // スタート時にもオーディオを有効化
-    playBGM('ready'); // 準備BGMを再生
+    initAudio(); 
+    playBGM('ready'); 
     currentStage = stage; 
     isTitleScreen = false;
     
-    // タイトル画面全体を隠す
     document.getElementById('titleScreen').classList.add('hidden');
-    
-    // ゲーム用UIを表示
     document.getElementById('topBar').classList.remove('hidden');
     document.getElementById('topBar').classList.add('flex');
     document.getElementById('controlPanel').classList.remove('hidden');
@@ -1115,7 +1212,6 @@ function startGame(stage) {
     lives = 20; money = 100;
     resetBase();
 
-    // MISSION START アニメーションの起動
     missionAnim.active = true;
     missionAnim.timer = 0;
     missionAnim.text = "MISSION START";
@@ -1127,11 +1223,11 @@ function startGame(stage) {
 }
 
 function startWave() {
-    initAudio(); // ウェーブ開始時にもオーディオを確実化
+    initAudio(); 
     if (waveActive || isGameOver) return;
     waveActive = true; enemiesSpawned = 0;
     
-    playBGM('battle'); // 戦闘BGMに切り替え
+    playBGM('battle'); 
     
     totalEnemiesToSpawn = Math.floor(5 + wave * 3);
     spawnTimer = 9999; 
@@ -1141,8 +1237,19 @@ function startWave() {
 }
 
 function gameOver() {
-    isGameOver = true; document.getElementById('gameOverScreen').classList.remove('hidden'); document.getElementById('finalScore').innerText = `生存wave: ${wave}`;
-    playBGM('stop'); // ゲームオーバー時にBGMを止める
+    isGameOver = true; 
+    document.getElementById('gameOverScreen').classList.remove('hidden'); 
+    document.getElementById('finalScore').innerText = `生存wave: ${wave}`;
+    
+    // スコア送信UIの初期化
+    document.getElementById('scoreSubmitArea').style.display = 'flex';
+    const submitBtn = document.querySelector('#scoreSubmitArea button');
+    submitBtn.disabled = false;
+    submitBtn.innerText = "スコアを送信してランキングへ";
+    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    document.getElementById('playerName').value = "";
+
+    playBGM('stop'); 
 }
 
 function checkUnlocks() {
@@ -1182,19 +1289,17 @@ function confirmTitle() {
     hideTitleConfirm(); 
     isTitleScreen = true; 
     
-    // UIを隠す
     document.getElementById('topBar').classList.add('hidden');
     document.getElementById('topBar').classList.remove('flex');
     document.getElementById('controlPanel').classList.add('hidden');
     document.getElementById('controlPanel').classList.remove('flex');
 
-    // タイトル画面の状態をリセットして表示
     document.getElementById('titleScreen').classList.remove('hidden'); 
     document.getElementById('stageSelectView').classList.add('hidden');
     document.getElementById('stageSelectView').classList.remove('flex');
     document.getElementById('titleView').classList.remove('hidden');
     
-    playBGM('stop'); // タイトルに戻る際にBGMを止める
+    playBGM('stop'); 
 }
 
 function showRuleBook() { document.getElementById('ruleBookModal').classList.remove('hidden'); }
@@ -1252,7 +1357,6 @@ function resetBase() {
     isPaused = false; isModalOpen = false; hasShownEnding = false; gameSpeed = 1; screenShake = 0; flashAlpha = 0; flashColor = '255, 255, 255';
     enemies = []; towers = []; projectiles = []; laserBlasts = []; explosions = []; enemyProjectiles = []; selectedTowerType = null; previewPos = null;
     
-    // アニメーションのリセット
     missionAnim.active = false;
     waveAnim.active = false;
 
@@ -1277,7 +1381,7 @@ function resetBase() {
 
 function resetCurrentGame() {
     initAudio();
-    playBGM('ready'); // 再挑戦時に準備BGMを再生
+    playBGM('ready'); 
     lives = 20; money = 100;
     resetBase();
     missionAnim.active = true;
@@ -1310,14 +1414,14 @@ canvas.addEventListener('click', (e) => {
 
     const pos = getScaledPos(e), c = Math.floor(pos.x / TILE_SIZE), r = Math.floor(pos.y / TILE_SIZE);
     if (c >= 0 && c < COLS && r >= 0 && r < ROWS) {
-        initAudio(); // クリック時にAudioを確実化
+        initAudio(); 
         if (selectedTowerType === 'sell') {
             if (grid[r][c] === 2) {
                 let tIdx = towers.findIndex(t => t.c === c && t.r === r);
                 if (tIdx !== -1) {
                     let t = towers[tIdx]; money += Math.floor(t.type.cost / 2);
                     explosions.push(new Explosion(t.x, t.y, 40, 'rgba(148, 163, 184, 0.8)'));
-                    playSound('sell'); // 破壊専用の音に変更
+                    playSound('sell'); 
                     towers.splice(tIdx, 1); grid[r][c] = 0; updateUI();
                 }
             }
@@ -1366,7 +1470,7 @@ function spawnLogic() {
             enemiesSpawned++; spawnTimer = 0; updateUI(); 
         } else if (enemies.length === 0) {
             waveActive = false;
-            playBGM('ready'); // ウェーブ終了時（敵全滅時）に準備BGMに切り替え
+            playBGM('ready'); 
             
             if (wave === 50 && !hasShownEnding) { showEndingModal(); hasShownEnding = true; }
             wave++; 
@@ -1382,7 +1486,6 @@ function spawnLogic() {
             btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); btn.innerHTML = "▶ START";
             checkUnlocks();
 
-            // ここで次のWAVEアニメーションを起動
             waveAnim.active = true;
             waveAnim.timer = 0;
             waveAnim.text = "WAVE " + wave;
@@ -1413,7 +1516,6 @@ function drawAnimations(ctx) {
         let canvasH = canvas.height;
         let x = canvasW / 2;
         
-        // 0~30: 右外から中央へ, 30~90: 中央で停止, 90~120: 中央から左外へ
         if (timer < 30) {
             let t = timer / 30;
             let ease = 1 - Math.pow(1 - t, 3);
@@ -1445,7 +1547,6 @@ function drawAnimations(ctx) {
         if (anim.type === 'mission') {
             y -= 40;
         } else {
-            // missionAnimがアクティブな場合は下にずらす
             if (missionAnim.active) {
                 y += 40;
             }
@@ -1553,7 +1654,6 @@ function drawGame() {
     explosions.forEach(e => e.draw(ctx));
     enemyProjectiles.forEach(ep => ep.draw(ctx));
 
-    // アニメーションの描画（一番手前）
     drawAnimations(ctx);
     
     ctx.restore();
@@ -1570,7 +1670,7 @@ function gameLoop() {
         drawBackgroundOnly();
     } else if (!isGameOver) {
         if (!isPaused && !isModalOpen) {
-            updateAnimations(); // 倍速の影響を受けないよう別でタイマーを進める
+            updateAnimations(); 
             for (let i = 0; i < gameSpeed; i++) { updateGameLogic(); }
         }
         drawGame();
