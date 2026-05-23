@@ -287,7 +287,7 @@
                 </div>
 
                 <button id="btn-mode-ranking" class="hidden w-full cyber-button py-2 sm:py-3 rounded text-sm font-bold tracking-widest text-yellow-400 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.2)]">
-                    TOP 10 RANKING
+                    TOP 10 RANKING はここから確認
                 </button>
                 
                 <div class="bg-blue-950/40 p-3 border border-blue-500/50 rounded flex justify-between items-center text-sm shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
@@ -441,6 +441,22 @@
     </div>
 
     <script type="module">
+
+        // ---------------- スマホのダブルタップ拡大防止 ----------------
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // PCブラウザ等のダブルクリック選択も念のため防止
+        document.addEventListener('dblclick', function(event) {
+            event.preventDefault();
+        }, { passive: false });
+        
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
