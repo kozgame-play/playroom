@@ -129,7 +129,6 @@
 
     <div id="ui-layer" class="absolute inset-0 z-50 pointer-events-none">
         
-        <!-- === タイトル(モード選択)画面 === -->
         <div id="mode-screen" class="absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/60 backdrop-blur-sm p-4 z-[60]">
             <div class="cyber-panel p-8 sm:p-10 w-full max-w-md flex flex-col gap-8 text-center border-t-2 border-t-yellow-400 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-yellow-400 opacity-50 m-2"></div>
@@ -155,18 +154,19 @@
                         <span class="text-[10px] sm:text-xs font-bold mt-1 text-yellow-200 tracking-[0.3em]">フリーモード</span>
                         <span class="text-[9px] sm:text-[10px] font-normal mt-3 text-yellow-300 opacity-80 tracking-widest">制限なしの無限飛行・美しい星空へ</span>
                     </button>
+                    
+                    <button id="btn-mode-ranking" class="cyber-button py-3 sm:py-4 flex flex-col items-center group relative border-cyan-400 mt-2">
+                        <span class="text-xl sm:text-2xl font-black tracking-[0.2em] font-mono group-hover:scale-105 transition-transform duration-200">TOP 10 RANKING</span>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- === フライトHUD === -->
         <div id="hud-container" class="hidden w-full h-full relative pointer-events-none">
             
-            <!-- 上部集約ステータスパネル -->
             <div class="absolute top-0 left-0 w-full z-10 pointer-events-none p-1 sm:p-2">
                 <div class="hud-panel bg-black/60 backdrop-blur-md rounded border border-cyan-500/50 w-full max-w-2xl mx-auto flex flex-col pointer-events-auto shadow-lg">
                     
-                    <!-- 1段目: ミッション・環境・ABORT -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-2 py-1.5 sm:py-1 border-b border-cyan-800/50 gap-1.5 sm:gap-2">
                         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-3 flex-1 w-full sm:w-auto">
                             <span class="text-yellow-400 font-black whitespace-nowrap text-[10px] sm:text-xs" id="hud-mission-title">MISSION 1</span>
@@ -184,10 +184,8 @@
                         </div>
                     </div>
 
-                    <!-- 2段目: 飛行ステータス (目標値＆現在値・下段に速度等) -->
                     <div class="flex flex-col px-2 py-1.5 gap-1.5">
                         <div class="flex justify-between items-center w-full">
-                            <!-- ① 左側: TARGET ALT -->
                             <div class="flex-1 flex justify-start">
                                 <div class="text-left flex flex-col justify-center">
                                     <div class="text-[6px] sm:text-[7px] text-yellow-500 font-bold tracking-widest drop-shadow-[0_0_2px_rgba(234,179,8,0.3)]">TGT ALT</div>
@@ -195,7 +193,6 @@
                                 </div>
                             </div>
 
-                            <!-- 中央: 現在高度と距離 -->
                             <div class="flex gap-4 sm:gap-6 justify-center shrink-0">
                                 <div class="text-center min-w-[50px] sm:min-w-[60px]">
                                     <div class="text-[7px] sm:text-[8px] text-cyan-500 font-bold tracking-widest drop-shadow-[0_0_2px_#0ff]">ALTITUDE</div>
@@ -208,7 +205,6 @@
                                 </div>
                             </div>
 
-                            <!-- ② 右側: TARGET DIST -->
                             <div class="flex-1 flex justify-end">
                                 <div class="text-right flex flex-col justify-center">
                                     <div class="text-[6px] sm:text-[7px] text-yellow-500 font-bold tracking-widest drop-shadow-[0_0_2px_rgba(234,179,8,0.3)]">TGT DIST</div>
@@ -217,7 +213,6 @@
                             </div>
                         </div>
 
-                        <!-- 下段: V-SPD, H-SPD, PITCH, G-FORCE -->
                         <div class="flex gap-3 sm:gap-6 w-full justify-center text-[9px] sm:text-[11px] font-mono mt-1">
                             <div class="flex gap-1 items-baseline">
                                 <div class="text-[6px] sm:text-[7px] text-cyan-500 font-sans font-bold">V-SPD</div>
@@ -238,7 +233,6 @@
                         </div>
                     </div>
 
-                    <!-- 3段目: 燃料 -->
                     <div class="px-2 pb-1.5 pt-0.5 flex items-center gap-2">
                         <span class="text-[7px] sm:text-[8px] text-cyan-500 font-bold tracking-widest">FUEL</span>
                         <div class="flex-1 h-1.5 bg-black/80 border border-cyan-800 rounded-sm p-[1px]">
@@ -249,7 +243,6 @@
                 </div>
             </div>
 
-            <!-- アクションボタン群 (右下) -->
             <div class="absolute bottom-6 sm:bottom-8 right-2 sm:right-4 flex gap-2 sm:gap-3 items-end pointer-events-auto z-10">
                 <button id="btn-parachute" class="cyber-button btn-yellow w-12 h-12 sm:w-16 sm:h-16 rounded-full font-bold flex flex-col items-center justify-center relative overflow-hidden">
                     <span id="parachute-icon" class="text-lg sm:text-2xl mb-0.5 block relative z-10">🪂</span>
@@ -261,7 +254,6 @@
                 </button>
             </div>
 
-            <!-- アクションボタン (左下) -->
             <div class="absolute bottom-6 sm:bottom-8 left-2 sm:left-4 pointer-events-auto z-10">
                 <button id="btn-turn" class="cyber-button btn-purple w-12 h-12 sm:w-14 sm:h-14 rounded-full font-bold flex flex-col items-center justify-center">
                     <span id="turn-icon" class="text-lg sm:text-xl mb-0.5 transform transition-transform -rotate-45 block">🚀</span>
@@ -269,10 +261,8 @@
                 </button>
             </div>
 
-            <!-- 中央メッセージ -->
             <div id="hud-message" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center w-full pointer-events-none z-10">
-                <!-- Javascriptで差し替え -->
-            </div>
+                </div>
             
             <div id="hud-fast-forward" class="hidden absolute top-[60%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center w-full pointer-events-none z-10">
                 <div class="text-xl sm:text-2xl cyber-digit text-blue-400 font-bold tracking-widest animate-pulse-fast bg-black/60 px-4 py-1 rounded">⏩ TIME ACCEL</div>
@@ -280,7 +270,6 @@
 
         </div>
 
-        <!-- === ミッション設定(ガレージ) === -->
         <div id="garage-screen" class="hidden absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/80 backdrop-blur-sm p-4 z-[50]">
             <div class="cyber-panel p-6 sm:p-8 w-full max-w-md flex flex-col gap-5 relative border-t-2 border-t-cyan-500">
                 <button id="btn-back-title" class="absolute -top-12 left-0 cyber-button px-4 py-2 rounded text-xs font-bold tracking-widest text-cyan-200">
@@ -358,7 +347,6 @@
             </div>
         </div>
 
-        <!-- === リザルト画面 === -->
         <div id="result-screen" class="hidden absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/80 backdrop-blur-sm p-4 z-[70]">
             <div class="cyber-panel p-6 sm:p-8 w-full max-w-md flex flex-col gap-5 text-center relative border-t-4 border-t-cyan-500">
                 <h2 id="result-title" class="text-3xl sm:text-4xl font-black tracking-widest border-b border-cyan-800/50 pb-3 cyber-text mt-2">クリア！</h2>
@@ -412,6 +400,9 @@
                     <button id="btn-result-title" class="flex-1 cyber-button border-gray-500 text-gray-300 font-bold py-3 rounded text-xs tracking-widest min-w-[25%] shadow-none bg-transparent">
                         TITLE
                     </button>
+                    <button id="btn-register-score" class="flex-1 cyber-button btn-yellow font-bold py-3 rounded text-xs tracking-widest hidden min-w-[25%]">
+                        REGISTER
+                    </button>
                     <button id="btn-retry" class="flex-1 cyber-button border-cyan-600 text-cyan-200 font-bold py-3 rounded text-sm tracking-widest hidden">
                         RETRY
                     </button>
@@ -425,9 +416,150 @@
             </div>
         </div>
 
+        <div id="ranking-screen" class="hidden absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/80 backdrop-blur-sm p-4 z-[80]">
+            <div class="cyber-panel p-6 sm:p-8 w-full max-w-md flex flex-col gap-4 text-center relative border-t-4 border-t-cyan-400 h-[70vh]">
+                <h2 class="text-2xl sm:text-3xl font-black tracking-widest cyber-text text-cyan-400 font-mono">TOP 10 RANKING</h2>
+                <div id="ranking-list" class="flex-1 overflow-y-auto pr-2 flex flex-col gap-2 text-left mt-2">
+                    <div class="text-cyan-300 text-center">LOADING...</div>
+                </div>
+                <button id="btn-close-ranking" class="cyber-button py-3 mt-2 rounded font-bold tracking-widest">CLOSE</button>
+            </div>
+        </div>
+
+        <div id="name-entry-screen" class="hidden absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/90 backdrop-blur-sm p-4 z-[90]">
+            <div class="cyber-panel p-6 sm:p-8 w-full max-w-sm flex flex-col gap-5 text-center relative border-t-4 border-t-yellow-400">
+                <h2 class="text-2xl font-black tracking-widest cyber-text text-yellow-400">SCORE REGISTER</h2>
+                <div class="text-3xl cyber-digit text-white my-2"><span id="entry-score-display">0</span> <span class="text-sm text-yellow-500">PT</span></div>
+                <input type="text" id="player-name-input" maxlength="10" placeholder="ENTER NAME" class="bg-black/50 border border-yellow-500/50 text-white text-center text-xl py-2 focus:outline-none focus:border-yellow-400 font-mono rounded">
+                <div class="flex gap-3 mt-2">
+                    <button id="btn-submit-score" class="flex-1 cyber-button btn-yellow font-bold py-3 rounded tracking-widest">SUBMIT</button>
+                    <button id="btn-cancel-score" class="flex-1 cyber-button border-gray-600 text-gray-400 font-bold py-3 rounded tracking-widest bg-transparent shadow-none">CANCEL</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5esz6oPFT7YI9VBFnitFmNzLNvKs6RBE",
+            authDomain: "kozgame.firebaseapp.com",
+            projectId: "kozgame",
+            storageBucket: "kozgame.firebasestorage.app",
+            messagingSenderId: "613372363405",
+            appId: "1:613372363405:web:8e68ca71c1b2e97db418c4",
+            measurementId: "G-MGP9LN5C6K"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        let isAuthReady = false;
+        let authUser = null;
+
+        // 匿名認証
+        signInAnonymously(auth).then((userCredential) => {
+            isAuthReady = true;
+            authUser = userCredential.user;
+        }).catch(err => {
+            console.error("Firebase Auth Error", err);
+        });
+
+        // ---------------- ランキング機能 ----------------
+        let calculatedFinalScore = 0; // グローバルでスコアを保持
+
+        async function openRanking() {
+            document.getElementById('ranking-screen').classList.remove('hidden');
+            const listEl = document.getElementById('ranking-list');
+            listEl.innerHTML = '<div class="text-cyan-300 text-center py-4">LOADING DATA...</div>';
+
+            if (!isAuthReady || !authUser) {
+                 listEl.innerHTML = '<div class="text-red-400 text-center py-4">AUTH ERROR</div>';
+                 return;
+            }
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "leaderboard_04"));
+                let scores = [];
+                querySnapshot.forEach((doc) => {
+                    scores.push(doc.data());
+                });
+
+                // 降順ソート＆トップ10を抽出
+                scores.sort((a, b) => b.score - a.score);
+                scores = scores.slice(0, 10);
+
+                listEl.innerHTML = '';
+                if (scores.length === 0) {
+                    listEl.innerHTML = '<div class="text-gray-400 text-center py-4">NO DATA</div>';
+                } else {
+                    scores.forEach((s, index) => {
+                        const item = document.createElement('div');
+                        item.className = 'flex justify-between items-center bg-black/40 p-2 sm:p-3 border border-cyan-900 rounded';
+                        
+                        let rankColor = 'text-gray-300';
+                        if (index === 0) rankColor = 'text-yellow-400 font-black drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]';
+                        else if (index === 1) rankColor = 'text-gray-200 font-bold drop-shadow-[0_0_5px_rgba(229,231,235,0.8)]';
+                        else if (index === 2) rankColor = 'text-orange-400 font-bold drop-shadow-[0_0_5px_rgba(251,146,60,0.8)]';
+
+                        item.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <span class="${rankColor} w-6 text-right font-mono text-lg">${index + 1}.</span>
+                                <span class="text-white font-bold tracking-wider">${s.name || 'UNKNOWN'}</span>
+                            </div>
+                            <div class="text-cyan-400 font-mono font-bold text-lg">${s.score} <span class="text-xs text-cyan-600">PT</span></div>
+                        `;
+                        listEl.appendChild(item);
+                    });
+                }
+            } catch (e) {
+                listEl.innerHTML = '<div class="text-red-400 text-center py-4">ERROR LOADING DATA</div>';
+                console.error(e);
+            }
+        }
+
+        function closeRanking() {
+            document.getElementById('ranking-screen').classList.add('hidden');
+        }
+
+        function promptNameEntry() {
+            document.getElementById('name-entry-screen').classList.remove('hidden');
+            document.getElementById('entry-score-display').innerText = calculatedFinalScore;
+            document.getElementById('player-name-input').value = '';
+        }
+
+        async function submitScore() {
+            const nameInput = document.getElementById('player-name-input').value.trim();
+            const name = nameInput || 'ANONYMOUS';
+            const btn = document.getElementById('btn-submit-score');
+            btn.innerText = 'SAVING...';
+            btn.style.pointerEvents = 'none';
+
+            try {
+                if (isAuthReady && authUser) {
+                    await addDoc(collection(db, "leaderboard_04"), {
+                        name: name,
+                        score: calculatedFinalScore,
+                        timestamp: Date.now()
+                    });
+                }
+            } catch(e) {
+                console.error(e);
+            }
+            
+            btn.innerText = 'SUBMIT';
+            btn.style.pointerEvents = 'auto';
+            document.getElementById('name-entry-screen').classList.add('hidden');
+            openRanking();
+        }
+
+        // ---------------- ゲーム本体のコード ----------------
+
         const missions = [
             {id:1, title:"MISSION 1: はじめての空", desc:"高度 5km に到達後、安全に着陸せよ", type:"altitude", target:5000, points:10, weather:'clear', wind:0},
             {id:2, title:"MISSION 2: 少し遠くへ", desc:"飛距離 10km を突破せよ", type:"distance", target:10000, points:10, weather:'clear', wind:1},
@@ -582,6 +714,15 @@
             }
         }
 
+        // イベントリスナーの登録
+        document.getElementById('btn-mode-ranking').onclick = openRanking;
+        document.getElementById('btn-close-ranking').onclick = closeRanking;
+        document.getElementById('btn-register-score').onclick = promptNameEntry;
+        document.getElementById('btn-submit-score').onclick = submitScore;
+        document.getElementById('btn-cancel-score').onclick = () => {
+            document.getElementById('name-entry-screen').classList.add('hidden');
+        };
+
         document.getElementById('btn-mode-mission').onclick = () => {
             gameMode = 'mission';
             gameState = 'garage';
@@ -591,7 +732,6 @@
             document.getElementById('garage-score-header').style.display = 'none';
             loadMission(currentMissionIdx);
             
-            // BGM再生開始
             bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
         };
 
@@ -606,7 +746,6 @@
             document.getElementById('score-header-desc').innerText = '50PTで限界飛距離と宇宙滞在時間に挑め！';
             loadScoreMode();
             
-            // BGM再生開始
             bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
         };
 
@@ -621,7 +760,6 @@
             document.getElementById('score-header-desc').innerText = '50PTで最強の機体を作り、美しい星空へ';
             loadFreeMode();
             
-            // BGM再生開始
             bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
         };
 
@@ -630,7 +768,6 @@
             uiGarage.classList.add('hidden');
             uiMode.classList.remove('hidden');
             
-            // BGM停止とリセット
             bgm.pause();
             bgm.currentTime = 0;
         };
@@ -640,7 +777,6 @@
             uiResult.classList.add('hidden');
             uiMode.classList.remove('hidden');
             
-            // BGM停止とリセット
             bgm.pause();
             bgm.currentTime = 0;
         };
@@ -935,6 +1071,9 @@
                 document.getElementById('btn-score-retry').classList.remove('hidden');
             }
 
+            // --- スコアをグローバル変数に記録 ---
+            calculatedFinalScore = totalScore;
+
             document.getElementById('result-title').innerText = statusText;
             document.getElementById('result-title').className = `text-3xl sm:text-4xl font-black tracking-widest border-b pb-3 cyber-text mt-2 ${statusClass}`;
             document.getElementById('result-reason').innerText = reason;
@@ -952,6 +1091,13 @@
             elMult.innerText = `x${multiplier.toFixed(1)}`;
             elMult.className = multiplier >= 1 ? "text-green-400 font-bold text-base font-mono" : "text-red-500 font-bold text-base font-mono";
             document.getElementById('result-total-score').innerText = totalScore;
+
+            // --- スコア登録ボタンの表示判定 ---
+            if (calculatedFinalScore > 0) {
+                document.getElementById('btn-register-score').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-register-score').classList.add('hidden');
+            }
         }
 
         document.getElementById('btn-launch').onclick = startFlight;
@@ -1465,7 +1611,6 @@
 
             // === 500km毎の美しい宇宙演出 ===
             if (gameMode === 'free' && altMeters >= EVENT_INTERVAL && gameState !== 'menu') {
-                // ガタつきの原因だった % width / % height を削除し、滑らかにスクロールする値を使用
                 let bgScrollX = (rocket.x * WORLD_SCALE * -0.0005);
                 let bgScrollY = (altMeters * 0.0005);
                 
@@ -1512,12 +1657,10 @@
                     }
                     
                     nebulas.forEach(n => {
-                        // bgScrollの影響でY座標が上にずれていくので、描画位置を調整
-                        // base Yにフェーズ開始時からの相対移動量を足す
                         let phaseAlt = altMeters - altPhase * EVENT_INTERVAL; 
                         let localScrollY = phaseAlt * 0.0005;
                         let nx = n.x + bgScrollX;
-                        let ny = n.y + localScrollY; // 下にスクロールさせる
+                        let ny = n.y + localScrollY; 
                         
                         let grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, n.r);
                         grad.addColorStop(0, n.c1);
@@ -1532,14 +1675,13 @@
                     ctx.globalCompositeOperation = 'screen';
                     
                     let phaseAlt = altMeters - altPhase * EVENT_INTERVAL;
-                    let mwScrollX = -(rocket.x * WORLD_SCALE * 0.0002); // 天の川は遠いのでスクロールを遅く
+                    let mwScrollX = -(rocket.x * WORLD_SCALE * 0.0002); 
                     let mwScrollY = phaseAlt * 0.0002;
                     
                     ctx.save();
                     ctx.translate(width/2 + mwScrollX, height/2 + mwScrollY);
-                    ctx.rotate(-Math.PI/4); // 斜めに配置
+                    ctx.rotate(-Math.PI/4);
                     
-                    // 帯のグラデーション
                     let grad = ctx.createLinearGradient(0, -height*1.5, 0, height*1.5);
                     grad.addColorStop(0, 'rgba(0,0,0,0)');
                     grad.addColorStop(0.4, 'rgba(50, 0, 100, 0.2)');
@@ -1552,10 +1694,9 @@
                     ctx.fillStyle = grad;
                     ctx.fillRect(-width*2, -height*1.5, width*4, height*3);
                     
-                    // 天の川の中の星くず
                     for(let i=0; i<100; i++) {
                         let px = (Math.sin(i * 123.45)) * width * 1.5;
-                        let py = (Math.cos(i * 678.90)) * height * 0.2; // 帯の中心付近に密集
+                        let py = (Math.cos(i * 678.90)) * height * 0.2; 
                         let pr = 0.5 + Math.abs(Math.sin(i)) * 2;
                         ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + Math.abs(Math.cos(i+time))*0.5})`;
                         ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI*2); ctx.fill();
@@ -1566,7 +1707,6 @@
                     // ブラックホール (4000km ~ 4500km)
                     ctx.globalAlpha = eventAlpha;
                     
-                    // ブラックホールは背景の奥にあるため、パララックス効果でスクロールを非常に遅くする
                     let phaseAlt = altMeters - altPhase * EVENT_INTERVAL;
                     let bhScrollX = -(rocket.x * WORLD_SCALE * 0.0001);
                     let bhScrollY = phaseAlt * 0.0003; 
@@ -1575,7 +1715,6 @@
                     let by = height*0.1 + bhScrollY;
                     let bRadius = Math.min(width, height) * 0.2;
 
-                    // 降着円盤 (裏)
                     ctx.globalCompositeOperation = 'screen';
                     ctx.save();
                     ctx.translate(bx, by);
@@ -1589,7 +1728,6 @@
                     ctx.beginPath(); ctx.arc(0, 0, bRadius * 2.5, 0, Math.PI*2); ctx.fill();
                     ctx.restore();
 
-                    // 歪曲光輪 (フォトンリング)
                     ctx.save();
                     ctx.translate(bx, by);
                     let gradRing = ctx.createRadialGradient(0, 0, bRadius*0.9, 0, 0, bRadius*1.5);
@@ -1601,13 +1739,12 @@
                     ctx.beginPath(); ctx.arc(0, 0, bRadius*1.5, 0, Math.PI*2); ctx.fill();
                     ctx.restore();
 
-                    // 特異点
                     ctx.globalCompositeOperation = 'source-over';
                     ctx.fillStyle = '#000';
                     ctx.beginPath(); ctx.arc(bx, by, bRadius, 0, Math.PI*2); ctx.fill();
                 }
                 else if (altPhase >= 10) {
-                    // 無の世界 (5000km ~) : 完全な暗黒に、デジタルなシアンの無限グリッド線だけが走るシミュレーションの果て
+                    // 無の世界
                     let voidProg = Math.min(1.0, (altMeters - 5000000) / 100000);
                     ctx.globalAlpha = voidProg;
                     
