@@ -154,10 +154,6 @@
                         <span class="text-[10px] sm:text-xs font-bold mt-1 text-yellow-200 tracking-[0.3em]">フリーモード</span>
                         <span class="text-[9px] sm:text-[10px] font-normal mt-3 text-yellow-300 opacity-80 tracking-widest">制限なしの無限飛行・美しい星空へ</span>
                     </button>
-                    
-                    <button id="btn-mode-ranking" class="cyber-button py-3 sm:py-4 flex flex-col items-center group relative border-cyan-400 mt-2">
-                        <span class="text-xl sm:text-2xl font-black tracking-[0.2em] font-mono group-hover:scale-105 transition-transform duration-200">TOP 10 RANKING</span>
-                    </button>
                 </div>
             </div>
         </div>
@@ -289,6 +285,10 @@
                     <div id="score-header-title" class="text-yellow-400 font-black text-lg tracking-widest cyber-text">スコアリングモード</div>
                     <div id="score-header-desc" class="text-[11px] sm:text-xs text-purple-200 font-bold mt-1">限界の飛距離と宇宙滞在時間に挑め！</div>
                 </div>
+
+                <button id="btn-mode-ranking" class="hidden self-end cyber-button px-4 py-2 rounded text-xs font-bold tracking-widest text-yellow-400 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.2)]">
+                    TOP 10 RANKING
+                </button>
                 
                 <div class="bg-blue-950/40 p-3 border border-blue-500/50 rounded flex justify-between items-center text-sm shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
                     <div class="flex flex-col"><span class="text-[9px] sm:text-[10px] text-blue-400 font-bold tracking-widest mb-1">天候</span><span id="env-weather-garage" class="text-sm sm:text-base font-black tracking-widest">晴れ</span></div>
@@ -731,6 +731,7 @@
             uiGarage.classList.remove('hidden');
             document.getElementById('garage-mission-nav').style.display = 'flex';
             document.getElementById('garage-score-header').style.display = 'none';
+            document.getElementById('btn-mode-ranking').classList.add('hidden');
             loadMission(currentMissionIdx);
             
             bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
@@ -745,6 +746,7 @@
             document.getElementById('garage-score-header').style.display = 'block';
             document.getElementById('score-header-title').innerText = 'スコアリングモード';
             document.getElementById('score-header-desc').innerText = '50PTで限界飛距離と宇宙滞在時間に挑め！';
+            document.getElementById('btn-mode-ranking').classList.remove('hidden');
             loadScoreMode();
             
             bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
@@ -759,6 +761,7 @@
             document.getElementById('garage-score-header').style.display = 'block';
             document.getElementById('score-header-title').innerText = 'FREE MODE';
             document.getElementById('score-header-desc').innerText = '50PTで最強の機体を作り、美しい星空へ';
+            document.getElementById('btn-mode-ranking').classList.add('hidden');
             loadFreeMode();
             
             bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
