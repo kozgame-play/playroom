@@ -456,6 +456,25 @@
         document.addEventListener('dblclick', function(event) {
             event.preventDefault();
         }, { passive: false });
+
+        // ---------------- BGMのバックグラウンド再生防止 ----------------
+        // タブ切り替えや最小化を検知
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // 画面が隠れたら一時停止
+                bgm.pause();
+            } else {
+                // 画面が戻ってきた時、メニュー画面以外なら再開
+                if (gameState !== 'menu') {
+                    bgm.play().catch(e => console.log("BGMの再開がブロックされました:", e));
+                }
+            }
+        });
+
+        // 画面を閉じた時（ブラウザバックやタブ閉じ）を検知
+        window.addEventListener('pagehide', () => {
+            bgm.pause();
+        });
         
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
