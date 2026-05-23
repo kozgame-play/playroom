@@ -16,11 +16,6 @@
             font-family: 'Rajdhani', 'Noto Sans JP', sans-serif;
             color: #0ff;
         }
-        
-        button, input {
-            touch-action: manipulation; /* ダブルタップズーム防止 */
-        }
-
         canvas { 
             display: block; 
             position: absolute; 
@@ -135,8 +130,8 @@
     <div id="ui-layer" class="absolute inset-0 z-50 pointer-events-none">
         
         <!-- === タイトル(モード選択)画面 === -->
-        <div id="mode-screen" class="absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/60 backdrop-blur-sm p-4 z-[60] overflow-y-auto">
-            <div class="cyber-panel p-8 sm:p-10 w-full max-w-md flex flex-col gap-6 text-center border-t-2 border-t-yellow-400 relative overflow-hidden my-auto">
+        <div id="mode-screen" class="absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/60 backdrop-blur-sm p-4 z-[60]">
+            <div class="cyber-panel p-8 sm:p-10 w-full max-w-md flex flex-col gap-8 text-center border-t-2 border-t-yellow-400 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-yellow-400 opacity-50 m-2"></div>
                 <div class="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-cyan-400 opacity-50 m-2"></div>
                 
@@ -144,54 +139,22 @@
                     <h1 class="text-5xl sm:text-6xl font-black cyber-text tracking-[0.15em] text-yellow-400 font-mono drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">THE ROCKET</h1>
                 </div>
                 
-                <div class="flex flex-col gap-3 mt-2">
+                <div class="flex flex-col gap-4 mt-4">
                     <button id="btn-mode-mission" class="cyber-button py-4 sm:py-5 flex flex-col items-center group relative">
                         <span class="text-2xl sm:text-3xl font-black tracking-[0.2em] font-mono group-hover:scale-105 transition-transform duration-200">MISSION</span>
                         <span class="text-[10px] sm:text-xs font-bold mt-1 text-cyan-200 tracking-[0.3em]">ミッションモード</span>
-                        <span class="text-[9px] sm:text-[10px] font-normal mt-2 text-cyan-300 opacity-80 tracking-widest">全50ステージの課題を攻略せよ</span>
+                        <span class="text-[9px] sm:text-[10px] font-normal mt-3 text-cyan-300 opacity-80 tracking-widest">全50ステージの課題を攻略せよ</span>
                     </button>
                     <button id="btn-mode-score" class="cyber-button btn-purple py-4 sm:py-5 flex flex-col items-center group relative">
                         <span class="text-2xl sm:text-3xl font-black tracking-[0.2em] font-mono group-hover:scale-105 transition-transform duration-200">SCORING</span>
                         <span class="text-[10px] sm:text-xs font-bold mt-1 text-purple-200 tracking-[0.3em]">スコアリングモード</span>
-                        <span class="text-[9px] sm:text-[10px] font-normal mt-2 text-purple-300 opacity-80 tracking-widest">50PTで限界飛距離と宇宙滞在に挑め</span>
+                        <span class="text-[9px] sm:text-[10px] font-normal mt-3 text-purple-300 opacity-80 tracking-widest">50PTで限界飛距離と宇宙滞在に挑め</span>
                     </button>
                     <button id="btn-mode-free" class="cyber-button btn-yellow py-4 sm:py-5 flex flex-col items-center group relative">
                         <span class="text-2xl sm:text-3xl font-black tracking-[0.2em] font-mono group-hover:scale-105 transition-transform duration-200">FREE FLIGHT</span>
                         <span class="text-[10px] sm:text-xs font-bold mt-1 text-yellow-200 tracking-[0.3em]">フリーモード</span>
-                        <span class="text-[9px] sm:text-[10px] font-normal mt-2 text-yellow-300 opacity-80 tracking-widest">制限なしの無限飛行・美しい星空へ</span>
+                        <span class="text-[9px] sm:text-[10px] font-normal mt-3 text-yellow-300 opacity-80 tracking-widest">制限なしの無限飛行・美しい星空へ</span>
                     </button>
-                    
-                    <!-- リーダーボードボタン -->
-                    <button id="btn-mode-ranking" class="cyber-button py-3 sm:py-4 flex flex-col items-center group relative mt-2 border-gray-400 text-gray-300">
-                        <span class="text-xl sm:text-2xl font-black tracking-[0.2em] font-mono text-gray-200 group-hover:scale-105 transition-transform duration-200">LEADERBOARD</span>
-                        <span class="text-[10px] sm:text-xs font-bold mt-1 text-gray-400 tracking-[0.3em]">ランキング</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- === ランキング画面 === -->
-        <div id="ranking-screen" class="hidden absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/90 backdrop-blur-md p-4 z-[80]">
-            <div class="cyber-panel p-6 sm:p-8 w-full max-w-md flex flex-col gap-4 relative border-t-2 border-t-cyan-500 h-[80vh]">
-                <button id="btn-ranking-back" class="absolute -top-12 left-0 cyber-button px-4 py-2 rounded text-xs font-bold tracking-widest text-cyan-200">
-                    ← タイトルへ
-                </button>
-                
-                <h2 class="text-2xl font-black cyber-text tracking-[0.1em] text-cyan-400 font-mono text-center shrink-0">LEADERBOARD</h2>
-
-                <div class="relative bg-black/60 p-1 border border-cyan-800 rounded shrink-0">
-                    <select id="ranking-mode-select" class="w-full bg-transparent text-yellow-400 font-black text-sm sm:text-base tracking-widest cyber-text text-center p-2 pr-8 focus:outline-none appearance-none cursor-pointer outline-none">
-                        <!-- JSでoption追加 -->
-                    </select>
-                    <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                        <span class="text-cyan-500 font-bold text-xs">▼</span>
-                    </div>
-                </div>
-
-                <div class="flex-1 bg-black/60 border border-cyan-900/50 rounded p-3 overflow-y-auto min-h-0">
-                    <div id="main-ranking-list" class="flex flex-col gap-2 text-xs sm:text-sm font-mono text-gray-200">
-                        <!-- JSで追加 -->
-                    </div>
                 </div>
             </div>
         </div>
@@ -396,76 +359,56 @@
         </div>
 
         <!-- === リザルト画面 === -->
-        <div id="result-screen" class="hidden absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/80 backdrop-blur-sm p-4 z-[70] overflow-y-auto">
-            <div class="cyber-panel p-6 sm:p-8 w-full max-w-md flex flex-col gap-4 text-center relative border-t-4 border-t-cyan-500 my-auto">
-                <div id="result-details">
-                    <h2 id="result-title" class="text-3xl sm:text-4xl font-black tracking-widest border-b border-cyan-800/50 pb-3 cyber-text mt-2">クリア！</h2>
-                    <div id="result-reason" class="text-xs sm:text-sm font-bold text-gray-200 bg-black/50 p-3 rounded border border-gray-700 leading-relaxed min-h-[3rem] flex items-center justify-center my-3">
-                        目標を達成し、安全に着陸しました。
-                    </div>
+        <div id="result-screen" class="hidden absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/80 backdrop-blur-sm p-4 z-[70]">
+            <div class="cyber-panel p-6 sm:p-8 w-full max-w-md flex flex-col gap-5 text-center relative border-t-4 border-t-cyan-500">
+                <h2 id="result-title" class="text-3xl sm:text-4xl font-black tracking-widest border-b border-cyan-800/50 pb-3 cyber-text mt-2">クリア！</h2>
+                <div id="result-reason" class="text-xs sm:text-sm font-bold text-gray-200 bg-black/50 p-3 rounded border border-gray-700 leading-relaxed min-h-[3rem] flex items-center justify-center">
+                    目標を達成し、安全に着陸しました。
+                </div>
 
-                    <div class="grid grid-cols-2 gap-3 text-left">
-                        <div class="bg-black/60 p-3 border border-cyan-900 rounded text-center">
-                            <div class="text-[9px] sm:text-[10px] text-cyan-500 font-bold tracking-widest mb-1">最高高度</div>
-                            <div class="text-xl sm:text-2xl cyber-text text-white font-mono"><span id="result-altitude">0.00</span><span class="text-xs ml-1 text-cyan-600">km</span></div>
-                        </div>
-                        <div class="bg-black/60 p-3 border border-cyan-900 rounded text-center">
-                            <div class="text-[9px] sm:text-[10px] text-cyan-500 font-bold tracking-widest mb-1">飛距離</div>
-                            <div class="text-xl sm:text-2xl cyber-text text-white font-mono"><span id="result-distance">0.00</span><span class="text-xs ml-1 text-cyan-600">km</span></div>
-                        </div>
+                <div class="grid grid-cols-2 gap-3 text-left">
+                    <div class="bg-black/60 p-3 border border-cyan-900 rounded text-center">
+                        <div class="text-[9px] sm:text-[10px] text-cyan-500 font-bold tracking-widest mb-1">最高高度</div>
+                        <div class="text-xl sm:text-2xl cyber-text text-white font-mono"><span id="result-altitude">0.00</span><span class="text-xs ml-1 text-cyan-600">km</span></div>
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-3 text-left mt-3">
-                        <div class="bg-black/40 p-2 border border-cyan-900/50 rounded flex justify-between items-center">
-                            <div class="text-[8px] sm:text-[9px] text-cyan-600 font-bold tracking-widest">着地 H-SPD</div>
-                            <div class="text-xs sm:text-sm font-bold text-gray-300 font-mono"><span id="result-vx">0</span><span class="text-[8px] text-gray-500 ml-1">m/s</span></div>
-                        </div>
-                        <div class="bg-black/40 p-2 border border-cyan-900/50 rounded flex justify-between items-center">
-                            <div class="text-[8px] sm:text-[9px] text-cyan-600 font-bold tracking-widest">着地 V-SPD</div>
-                            <div class="text-xs sm:text-sm font-bold text-gray-300 font-mono"><span id="result-vy">0</span><span class="text-[8px] text-gray-500 ml-1">m/s</span></div>
-                        </div>
+                    <div class="bg-black/60 p-3 border border-cyan-900 rounded text-center">
+                        <div class="text-[9px] sm:text-[10px] text-cyan-500 font-bold tracking-widest mb-1">飛距離</div>
+                        <div class="text-xl sm:text-2xl cyber-text text-white font-mono"><span id="result-distance">0.00</span><span class="text-xs ml-1 text-cyan-600">km</span></div>
                     </div>
-
-                    <div class="border border-cyan-500/50 p-4 bg-black/80 rounded mt-3">
-                        <div class="flex justify-between text-xs sm:text-sm mb-2 text-gray-300 font-bold">
-                            <span>飛距離スコア</span><span class="font-mono"><span id="score-dist">0</span> pt</span>
-                        </div>
-                        <div id="row-score-alt" class="flex justify-between text-xs sm:text-sm mb-2 text-gray-300 font-bold">
-                            <span>高度スコア</span><span class="font-mono"><span id="score-alt">0</span> pt</span>
-                        </div>
-                        <div id="row-score-space" class="hidden flex justify-between text-xs sm:text-sm mb-2 text-purple-300 font-bold">
-                            <span>宇宙滞在スコア</span><span class="font-mono"><span id="score-space">0</span> pt</span>
-                        </div>
-                        <div class="flex justify-between text-xs sm:text-sm mb-3 border-b border-cyan-800 pb-3">
-                            <span class="text-yellow-400 font-bold">着陸ボーナス</span>
-                            <span id="result-multiplier" class="text-yellow-400 font-black text-base font-mono">x1.0</span>
-                        </div>
-                        <div class="flex justify-between items-end pt-1">
-                            <span class="text-[10px] sm:text-xs font-bold text-cyan-500 tracking-widest">総合スコア</span>
-                            <span class="text-2xl sm:text-3xl cyber-text text-yellow-300 font-black font-mono"><span id="result-total-score">0</span></span>
-                        </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 text-left">
+                    <div class="bg-black/40 p-2 border border-cyan-900/50 rounded flex justify-between items-center">
+                        <div class="text-[8px] sm:text-[9px] text-cyan-600 font-bold tracking-widest">着地 H-SPD</div>
+                        <div class="text-xs sm:text-sm font-bold text-gray-300 font-mono"><span id="result-vx">0</span><span class="text-[8px] text-gray-500 ml-1">m/s</span></div>
+                    </div>
+                    <div class="bg-black/40 p-2 border border-cyan-900/50 rounded flex justify-between items-center">
+                        <div class="text-[8px] sm:text-[9px] text-cyan-600 font-bold tracking-widest">着地 V-SPD</div>
+                        <div class="text-xs sm:text-sm font-bold text-gray-300 font-mono"><span id="result-vy">0</span><span class="text-[8px] text-gray-500 ml-1">m/s</span></div>
                     </div>
                 </div>
 
-                <!-- スコア登録フォーム -->
-                <div id="score-submit-area" class="hidden border border-yellow-500/50 p-4 bg-black/80 rounded mt-2">
-                    <div class="text-xs sm:text-sm text-yellow-400 font-bold mb-2 tracking-widest">RANKING REGISTRATION</div>
-                    <input type="text" id="input-player-name" placeholder="PLAYER NAME" maxlength="10" class="w-full bg-black/50 border border-cyan-500 text-white font-mono p-2 rounded mb-3 text-center focus:outline-none focus:border-yellow-400">
-                    <div class="flex gap-2">
-                        <button id="btn-submit-score" class="flex-1 cyber-button btn-yellow font-bold py-3 rounded text-sm tracking-widest">SEND</button>
-                        <button id="btn-skip-score" class="flex-1 cyber-button border-gray-500 text-gray-300 font-bold py-3 rounded text-sm tracking-widest bg-transparent shadow-none">SKIP</button>
+                <div class="border border-cyan-500/50 p-4 bg-black/80 rounded mt-2">
+                    <div class="flex justify-between text-xs sm:text-sm mb-2 text-gray-300 font-bold">
+                        <span>飛距離スコア</span><span class="font-mono"><span id="score-dist">0</span> pt</span>
+                    </div>
+                    <div id="row-score-alt" class="flex justify-between text-xs sm:text-sm mb-2 text-gray-300 font-bold">
+                        <span>高度スコア</span><span class="font-mono"><span id="score-alt">0</span> pt</span>
+                    </div>
+                    <div id="row-score-space" class="hidden flex justify-between text-xs sm:text-sm mb-2 text-purple-300 font-bold">
+                        <span>宇宙滞在スコア</span><span class="font-mono"><span id="score-space">0</span> pt</span>
+                    </div>
+                    <div class="flex justify-between text-xs sm:text-sm mb-3 border-b border-cyan-800 pb-3">
+                        <span class="text-yellow-400 font-bold">着陸ボーナス</span>
+                        <span id="result-multiplier" class="text-yellow-400 font-black text-base font-mono">x1.0</span>
+                    </div>
+                    <div class="flex justify-between items-end pt-1">
+                        <span class="text-[10px] sm:text-xs font-bold text-cyan-500 tracking-widest">総合スコア</span>
+                        <span class="text-2xl sm:text-3xl cyber-text text-yellow-300 font-black font-mono"><span id="result-total-score">0</span></span>
                     </div>
                 </div>
 
-                <!-- ランキング表示エリア -->
-                <div id="result-ranking-area" class="hidden border border-cyan-500/50 p-3 bg-black/80 rounded mt-2 text-left">
-                    <div class="text-xs sm:text-sm text-cyan-400 font-bold mb-2 tracking-widest text-center">TOP 10 RANKING</div>
-                    <div id="result-ranking-list" class="flex flex-col gap-1 text-xs sm:text-sm font-mono text-gray-200 min-h-[100px] justify-center">
-                        <div class="text-center animate-pulse text-cyan-500">Loading...</div>
-                    </div>
-                </div>
-
-                <div id="result-buttons" class="flex flex-wrap gap-3 mt-2">
+                <div class="flex flex-wrap gap-3 mt-2">
                     <button id="btn-result-title" class="flex-1 cyber-button border-gray-500 text-gray-300 font-bold py-3 rounded text-xs tracking-widest min-w-[25%] shadow-none bg-transparent">
                         TITLE
                     </button>
@@ -484,133 +427,7 @@
 
     </div>
 
-    <!-- Firebaseの処理を含むためmoduleとして読み込む -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // ==========================================
-        // スマホ連打によるズーム・イベント伝播の防止
-        // ==========================================
-        document.addEventListener('dblclick', function(event) {
-            event.preventDefault();
-        }, { passive: false });
-
-        document.documentElement.addEventListener('touchstart', function (e) {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, {passive: false});
-
-        let lastTouchTime = 0;
-        document.documentElement.addEventListener('touchend', function (e) {
-            let now = Date.now();
-            if (now - lastTouchTime <= 300) {
-                // ボタンや入力フィールド以外ならデフォルトアクションをブロック
-                if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
-                    e.preventDefault();
-                }
-            }
-            lastTouchTime = now;
-        }, {passive: false});
-
-
-        // ==========================================
-        // Firebase 初期化
-        // ==========================================
-        // Canvasプレビュー環境か、外部(ご自身の)サーバー環境かを自動判定します
-        const isCanvasEnv = typeof __firebase_config !== 'undefined';
-        
-        const firebaseConfig = isCanvasEnv ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyB5esz6oPFT7YI9VBFnitFmNzLNvKs6RBE",
-            authDomain: "kozgame.firebaseapp.com",
-            projectId: "kozgame",
-            storageBucket: "kozgame.firebasestorage.app",
-            messagingSenderId: "613372363405",
-            appId: "1:613372363405:web:8e68ca71c1b2e97db418c4",
-            measurementId: "G-MGP9LN5C6K"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        let currentUser = null;
-        
-        // 認証の初期化 (Canvas環境用と外部環境用を分岐)
-        const initAuth = async () => {
-            try {
-                if (isCanvasEnv && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth Error:", error);
-            }
-        };
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-        });
-
-        // コレクションの参照パスを環境に合わせて取得する関数
-        function getCollectionRef(mode) {
-            if (isCanvasEnv) {
-                // Canvasプレビュー環境用のデータパス
-                return collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard_04_' + mode);
-            } else {
-                // ご自身のFirebase上のデータパス
-                return collection(db, "leaderboard_04", "ranking_" + mode, "entries");
-            }
-        }
-
-        async function saveScore(mode, playerName, score) {
-            if (!currentUser) return false;
-            try {
-                const colRef = getCollectionRef(mode);
-                await addDoc(colRef, {
-                    playerName: playerName || "GUEST",
-                    score: score,
-                    timestamp: serverTimestamp(),
-                    userId: currentUser.uid
-                });
-                return true;
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                return false;
-            }
-        }
-
-        async function fetchTopScores(mode) {
-            try {
-                const colRef = getCollectionRef(mode);
-                const querySnapshot = await getDocs(colRef);
-                let scores = [];
-                querySnapshot.forEach((doc) => {
-                    scores.push(doc.data());
-                });
-                // Javascript側でソートとトップ10の抽出を行う (Firestoreのインデックスエラー回避)
-                scores.sort((a, b) => b.score - a.score);
-                return scores.slice(0, 10);
-            } catch (e) {
-                console.error("Error fetching scores: ", e);
-                return [];
-            }
-        }
-
-        function sanitize(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        // ==========================================
-        // ゲームデータ
-        // ==========================================
+    <script>
         const missions = [
             {id:1, title:"MISSION 1: はじめての空", desc:"高度 5km に到達後、安全に着陸せよ", type:"altitude", target:5000, points:10, weather:'clear', wind:0},
             {id:2, title:"MISSION 2: 少し遠くへ", desc:"飛距離 10km を突破せよ", type:"distance", target:10000, points:10, weather:'clear', wind:1},
@@ -664,21 +481,8 @@
             {id:50, title:"FINAL: ロケット・マイスター", desc:"嵐の中 高度95km突破後、距離150〜155kmに精密着陸せよ", type:"target_alt", targetMin:150000, targetMax:155000, targetAlt:95000, points:15, weather:'storm', wind:-3}
         ];
 
-        // ランキングのモード一覧とセレクトボックス初期化
-        const rankingModes = [{id: 'score', name: 'SCORING MODE'}];
-        missions.forEach(m => rankingModes.push({id: 'mission_' + m.id, name: m.title}));
-        
-        const selectEl = document.getElementById('ranking-mode-select');
-        rankingModes.forEach((mode) => {
-            let option = document.createElement('option');
-            option.value = mode.id;
-            option.innerText = mode.name;
-            option.className = "bg-gray-900 text-cyan-300 text-xs sm:text-sm"; 
-            selectEl.appendChild(option);
-        });
-
-        const WORLD_SCALE = 3.3333; 
-        const EVENT_INTERVAL = 500000; 
+        const WORLD_SCALE = 3.3333; // 1ピクセル = 3.333m (カーマンライン100kmに合わせる)
+        const EVENT_INTERVAL = 500000; // 500kmごとのイベント間隔
 
         let gameMode = 'mission';
         let gameState = 'menu'; // menu, garage, flight, result
@@ -687,6 +491,7 @@
         let upgrades = { engine: 1, fuel: 1, weight: 1 };
         let weather = { type: 'clear', wind: 0, gravityMod: 1.0, dragMod: 1.0, name: 'CLEAR' };
 
+        // ズーム（カメラワーク用）
         let currentZoom = 1.0;
         let targetZoom = 1.0;
 
@@ -705,29 +510,15 @@
         const ctx = canvas.getContext('2d');
         let width = 800; let height = 600;
         let particles = []; let weatherParticles = []; let gridStars = [];
-        let clouds = []; let speedLines = [];
+        let clouds = []; let speedLines = []; let meteors = []; let asteroids = [];
 
-        // BGMオブジェクト
+        // BGMオブジェクトの準備
         const bgm = new Audio('THE_ROCKET_BGM.mp3');
-        bgm.loop = true; 
-
-        // ==========================================
-        // BGM バックグラウンド再生防止
-        // ==========================================
-        document.addEventListener("visibilitychange", () => {
-            if (document.hidden) {
-                bgm.pause();
-            } else {
-                if (gameState !== 'menu') {
-                    bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
-                }
-            }
-        });
+        bgm.loop = true; // ループ再生を有効化
 
         const uiMode = document.getElementById('mode-screen');
         const uiGarage = document.getElementById('garage-screen');
         const uiResult = document.getElementById('result-screen');
-        const uiRanking = document.getElementById('ranking-screen');
         const uiHudContainer = document.getElementById('hud-container');
         const btnBoost = document.getElementById('btn-boost');
         const btnParachute = document.getElementById('btn-parachute');
@@ -799,7 +590,9 @@
             document.getElementById('garage-mission-nav').style.display = 'flex';
             document.getElementById('garage-score-header').style.display = 'none';
             loadMission(currentMissionIdx);
-            bgm.play().catch(e => console.log(e));
+            
+            // BGM再生開始
+            bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
         };
 
         document.getElementById('btn-mode-score').onclick = () => {
@@ -812,7 +605,9 @@
             document.getElementById('score-header-title').innerText = 'スコアリングモード';
             document.getElementById('score-header-desc').innerText = '50PTで限界飛距離と宇宙滞在時間に挑め！';
             loadScoreMode();
-            bgm.play().catch(e => console.log(e));
+            
+            // BGM再生開始
+            bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
         };
 
         document.getElementById('btn-mode-free').onclick = () => {
@@ -825,119 +620,17 @@
             document.getElementById('score-header-title').innerText = 'FREE MODE';
             document.getElementById('score-header-desc').innerText = '50PTで最強の機体を作り、美しい星空へ';
             loadFreeMode();
-            bgm.play().catch(e => console.log(e));
+            
+            // BGM再生開始
+            bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
         };
-
-        // ==========================================
-        // リーダーボード(ランキング)関連
-        // ==========================================
-        selectEl.addEventListener('change', (e) => {
-            loadMainRanking(e.target.value);
-        });
-
-        document.getElementById('btn-mode-ranking').onclick = () => {
-            uiMode.classList.add('hidden');
-            uiRanking.classList.remove('hidden');
-            selectEl.value = 'score'; // 初期値はスコアリングモード
-            loadMainRanking('score');
-        };
-
-        document.getElementById('btn-ranking-back').onclick = () => {
-            uiRanking.classList.add('hidden');
-            uiMode.classList.remove('hidden');
-        };
-
-        async function loadMainRanking(modeId) {
-            const listEl = document.getElementById('main-ranking-list');
-            listEl.innerHTML = '<div class="text-center py-10 animate-pulse text-cyan-500">Loading Data...</div>';
-            
-            const scores = await fetchTopScores(modeId);
-            listEl.innerHTML = '';
-            if (scores.length === 0) {
-                listEl.innerHTML = '<div class="text-center py-10 text-gray-500">No Data</div>';
-                return;
-            }
-            scores.forEach((s, i) => {
-                let rankColor = "text-gray-400";
-                if (i === 0) rankColor = "text-yellow-400 font-bold text-base";
-                if (i === 1) rankColor = "text-gray-300 font-bold text-[15px]";
-                if (i === 2) rankColor = "text-orange-400 font-bold text-sm";
-                
-                listEl.innerHTML += `
-                    <div class="flex justify-between items-center border-b border-cyan-900/50 pb-1">
-                        <div class="flex items-center gap-3">
-                            <span class="w-6 text-center ${rankColor}">${i+1}</span>
-                            <span class="text-white">${sanitize(s.playerName)}</span>
-                        </div>
-                        <div class="text-cyan-300 font-bold">${s.score} <span class="text-[10px] text-cyan-600">PT</span></div>
-                    </div>
-                `;
-            });
-        }
-
-        async function showResultRanking(modeId) {
-            document.getElementById('score-submit-area').classList.add('hidden');
-            document.getElementById('result-ranking-area').classList.remove('hidden');
-            document.getElementById('result-buttons').classList.remove('hidden');
-            
-            const listEl = document.getElementById('result-ranking-list');
-            listEl.innerHTML = '<div class="animate-pulse text-cyan-500 text-center py-2">Loading...</div>';
-            
-            const scores = await fetchTopScores(modeId);
-            listEl.innerHTML = '';
-            if (scores.length === 0) {
-                listEl.innerHTML = '<div class="text-gray-500 text-center py-2">No Data</div>';
-                return;
-            }
-            scores.forEach((s, i) => {
-                let rankColor = "text-gray-400";
-                if (i === 0) rankColor = "text-yellow-400 font-bold";
-                if (i === 1) rankColor = "text-gray-300 font-bold";
-                if (i === 2) rankColor = "text-orange-400 font-bold";
-                
-                listEl.innerHTML += `
-                    <div class="flex justify-between items-center w-full px-2 border-b border-cyan-900/30 pb-0.5 pt-0.5">
-                        <div class="flex items-center gap-2">
-                            <span class="w-4 text-center ${rankColor}">${i+1}</span>
-                            <span class="text-white text-xs">${sanitize(s.playerName)}</span>
-                        </div>
-                        <div class="text-cyan-300 font-bold">${s.score}</div>
-                    </div>
-                `;
-            });
-        }
-
-        // ==========================================
-        // リザルト画面のスコア登録イベント (再チャレンジ時の重複・不具合防止のため1度だけ登録)
-        // ==========================================
-        let currentRankModeId = '';
-        let currentRankScore = 0;
-
-        document.getElementById('btn-submit-score').onclick = async () => {
-            const btnSubmit = document.getElementById('btn-submit-score');
-            const btnSkip = document.getElementById('btn-skip-score');
-            const inputName = document.getElementById('input-player-name');
-            
-            btnSubmit.disabled = true;
-            btnSkip.disabled = true;
-            btnSubmit.innerText = "SENDING...";
-            
-            let pName = inputName.value.trim() || "GUEST";
-            localStorage.setItem('rocket_player_name', pName);
-            
-            await saveScore(currentRankModeId, pName, currentRankScore);
-            showResultRanking(currentRankModeId);
-        };
-
-        document.getElementById('btn-skip-score').onclick = () => {
-            showResultRanking(currentRankModeId);
-        };
-
 
         document.getElementById('btn-back-title').onclick = () => {
             gameState = 'menu';
             uiGarage.classList.add('hidden');
             uiMode.classList.remove('hidden');
+            
+            // BGM停止とリセット
             bgm.pause();
             bgm.currentTime = 0;
         };
@@ -946,6 +639,8 @@
             gameState = 'menu';
             uiResult.classList.add('hidden');
             uiMode.classList.remove('hidden');
+            
+            // BGM停止とリセット
             bgm.pause();
             bgm.currentTime = 0;
         };
@@ -1154,15 +849,6 @@
             uiHudContainer.classList.add('hidden');
             uiResult.classList.remove('hidden');
 
-            // ランキングUI初期化
-            document.getElementById('score-submit-area').classList.add('hidden');
-            document.getElementById('result-ranking-area').classList.add('hidden');
-            document.getElementById('result-buttons').classList.add('hidden');
-            const btnSubmit = document.getElementById('btn-submit-score');
-            btnSubmit.disabled = false;
-            btnSubmit.innerText = "SEND";
-            document.getElementById('btn-skip-score').disabled = false;
-
             const distRaw = Math.max(0, rocket.x * WORLD_SCALE / 1000); 
             const altRaw = Math.max(0, rocket.highestAltitude * WORLD_SCALE / 1000); 
             const landingVyStr = (rocket.landingSpeed * WORLD_SCALE * 60).toFixed(0);
@@ -1195,13 +881,13 @@
             const scoreDist = Math.floor(distRaw * 10);
             const scoreAlt = Math.floor(altRaw * 15);
             const scoreSpace = Math.floor(rocket.spaceTime * 100);
-            let isCleared = false;
 
             if (gameMode === 'mission') {
                 document.getElementById('row-score-alt').style.display = 'flex';
                 document.getElementById('row-score-space').style.display = 'none';
                 
                 let m = missions[currentMissionIdx];
+                let isCleared = false;
                 const distMeters = rocket.x * WORLD_SCALE;
                 if (isSafelyLanded) {
                     if (m.type === 'altitude') {
@@ -1266,29 +952,6 @@
             elMult.innerText = `x${multiplier.toFixed(1)}`;
             elMult.className = multiplier >= 1 ? "text-green-400 font-bold text-base font-mono" : "text-red-500 font-bold text-base font-mono";
             document.getElementById('result-total-score').innerText = totalScore;
-
-            // --- ランキング登録フロー判定 ---
-            let isEligibleForRanking = false;
-            currentRankModeId = '';
-            currentRankScore = totalScore;
-
-            if (gameMode === 'score' && isSafelyLanded && !rocket.stalledInAir && totalScore > 0) {
-                isEligibleForRanking = true;
-                currentRankModeId = 'score';
-            } else if (gameMode === 'mission' && isCleared && totalScore > 0) {
-                isEligibleForRanking = true;
-                currentRankModeId = 'mission_' + missions[currentMissionIdx].id;
-            }
-
-            if (isEligibleForRanking) {
-                document.getElementById('score-submit-area').classList.remove('hidden');
-                const inputName = document.getElementById('input-player-name');
-                
-                const savedName = localStorage.getItem('rocket_player_name');
-                if(savedName) inputName.value = savedName;
-            } else {
-                document.getElementById('result-buttons').classList.remove('hidden');
-            }
         }
 
         document.getElementById('btn-launch').onclick = startFlight;
@@ -1723,12 +1386,12 @@
             
             let altPhase = Math.floor(altMeters / EVENT_INTERVAL);
             let phaseProgress = (altMeters % EVENT_INTERVAL) / EVENT_INTERVAL;
-            let eventAlpha = Math.sin(phaseProgress * Math.PI);
+            let eventAlpha = Math.sin(phaseProgress * Math.PI); // 山なりフェード
 
-            // 1. 背景色
+            // 1. 背景色 (スケール外)
             let bgGrad = ctx.createLinearGradient(0, 0, 0, height);
             
-            if (gameState === 'menu' || gameState === 'ranking') {
+            if (gameState === 'menu') {
                 bgGrad.addColorStop(0, '#020205');
                 bgGrad.addColorStop(1, '#0a1020');
             } else {
@@ -1746,11 +1409,12 @@
             ctx.fillStyle = bgGrad; 
             ctx.fillRect(0, 0, width, height);
 
-            // 2. 星空
+            // 2. 星空 (スケール外)
             let starBaseAlpha = Math.max(0, Math.min(1.0, (altMeters - 5000) / 35000));
             if (gameMode === 'free' && altMeters > 100000) starBaseAlpha = 1.0;
-            if (gameState === 'menu' || gameState === 'ranking') starBaseAlpha = 1.0; 
+            if (gameState === 'menu') starBaseAlpha = 1.0; 
 
+            // 4500km以降（フェーズ9）で星が消え「闇」になる演出
             if (gameMode === 'free' && altMeters >= 4500000) {
                 let fadeProgress = Math.min(1.0, (altMeters - 4500000) / 500000); 
                 starBaseAlpha *= (1.0 - fadeProgress);
@@ -1761,7 +1425,7 @@
                     if (gameState === 'flight') {
                         g.screenX -= camVx * 0.05 * g.speed;
                         g.screenY += camVy * 0.05 * g.speed; 
-                    } else if (gameState === 'menu' || gameState === 'ranking') {
+                    } else if (gameState === 'menu') {
                         g.screenX -= 0.05 * g.speed;
                         g.screenY += 0.1 * g.speed;
                     }
@@ -1772,10 +1436,11 @@
                     while(g.screenY > height) g.screenY -= height;
                     
                     let twinkle = 1.0;
-                    if (altMeters > 80000 || gameState === 'menu' || gameState === 'ranking') {
+                    if (altMeters > 80000 || gameState === 'menu') {
                         twinkle = Math.sin(time * 3 * g.speed + i) * 0.5 + 0.5;
                     }
 
+                    // 星の色づけ演出 (500km〜4000km)
                     let drawColor = g.color;
                     if (gameMode === 'free' && altPhase >= 1 && altPhase < 8) {
                         let colorTypes = ['#fff', '#facc15', '#60a5fa', '#f472b6', '#34d399', '#c084fc'];
@@ -1795,17 +1460,19 @@
                     ctx.arc(g.screenX, g.screenY, starSize, 0, Math.PI*2);
                     ctx.fill();
                 });
-                ctx.globalAlpha = 1.0;
+                ctx.globalAlpha = 1.0; // reset
             }
 
             // === 500km毎の美しい宇宙演出 ===
-            if (gameMode === 'free' && altMeters >= EVENT_INTERVAL && gameState === 'flight') {
+            if (gameMode === 'free' && altMeters >= EVENT_INTERVAL && gameState !== 'menu') {
+                // ガタつきの原因だった % width / % height を削除し、滑らかにスクロールする値を使用
                 let bgScrollX = (rocket.x * WORLD_SCALE * -0.0005);
                 let bgScrollY = (altMeters * 0.0005);
                 
                 ctx.save();
 
                 if (altPhase === 1 || altPhase === 2) {
+                    // 彩星宙域
                     ctx.globalAlpha = eventAlpha * (altPhase === 1 ? 0.3 : 0.6);
                     ctx.globalCompositeOperation = 'screen';
                     let grad = ctx.createLinearGradient(0, height, width, 0);
@@ -1816,27 +1483,28 @@
                     ctx.fillRect(0, 0, width, height);
                 }
                 else if (altPhase === 3 || altPhase === 4 || altPhase === 6 || altPhase === 7) {
+                    // 星雲系
                     ctx.globalAlpha = eventAlpha * 0.7;
                     ctx.globalCompositeOperation = 'screen';
                     let nebulas = [];
                     
-                    if (altPhase === 3) {
+                    if (altPhase === 3) { // 暗黒星雲
                         nebulas = [
                             {x: width*0.3, y: height*0.2, r: height*0.6, c1:'rgba(50,0,150,0.5)', c2:'rgba(0,0,50,0)'},
                             {x: width*0.7, y: height*0.5, r: height*0.5, c1:'rgba(0,100,200,0.4)', c2:'rgba(0,0,50,0)'}
                         ];
-                    } else if (altPhase === 4) {
+                    } else if (altPhase === 4) { // 散光星雲
                         nebulas = [
                             {x: width*0.5, y: height*0.3, r: height*0.8, c1:'rgba(150,30,50,0.5)', c2:'rgba(50,0,0,0)'},
                             {x: width*0.2, y: height*0.7, r: height*0.4, c1:'rgba(200,100,0,0.3)', c2:'rgba(0,0,0,0)'}
                         ];
-                    } else if (altPhase === 6) {
+                    } else if (altPhase === 6) { // 巨大星雲帯
                         nebulas = [
                             {x: width*0.5, y: height*0.2, r: height*0.6, c1:'rgba(200,0,150,0.4)', c2:'rgba(0,0,0,0)'},
                             {x: width*0.2, y: height*0.6, r: height*0.5, c1:'rgba(150,150,0,0.3)', c2:'rgba(0,0,0,0)'},
                             {x: width*0.8, y: height*0.7, r: height*0.5, c1:'rgba(0,150,200,0.3)', c2:'rgba(0,0,0,0)'}
                         ];
-                    } else if (altPhase === 7) {
+                    } else if (altPhase === 7) { // 銀河中心部
                         nebulas = [
                             {x: width*0.5, y: height*0.4, r: height, c1:'rgba(255,255,200,0.5)', c2:'rgba(255,150,50,0)'},
                             {x: width*0.5, y: height*0.4, r: height*0.4, c1:'rgba(255,255,255,0.7)', c2:'rgba(255,200,100,0)'}
@@ -1844,10 +1512,12 @@
                     }
                     
                     nebulas.forEach(n => {
+                        // bgScrollの影響でY座標が上にずれていくので、描画位置を調整
+                        // base Yにフェーズ開始時からの相対移動量を足す
                         let phaseAlt = altMeters - altPhase * EVENT_INTERVAL; 
                         let localScrollY = phaseAlt * 0.0005;
                         let nx = n.x + bgScrollX;
-                        let ny = n.y + localScrollY;
+                        let ny = n.y + localScrollY; // 下にスクロールさせる
                         
                         let grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, n.r);
                         grad.addColorStop(0, n.c1);
@@ -1857,17 +1527,19 @@
                     });
                 }
                 else if (altPhase === 5) {
+                    // 天の川銀河 (Milky Way)
                     ctx.globalAlpha = eventAlpha * 0.6;
                     ctx.globalCompositeOperation = 'screen';
                     
                     let phaseAlt = altMeters - altPhase * EVENT_INTERVAL;
-                    let mwScrollX = -(rocket.x * WORLD_SCALE * 0.0002);
+                    let mwScrollX = -(rocket.x * WORLD_SCALE * 0.0002); // 天の川は遠いのでスクロールを遅く
                     let mwScrollY = phaseAlt * 0.0002;
                     
                     ctx.save();
                     ctx.translate(width/2 + mwScrollX, height/2 + mwScrollY);
-                    ctx.rotate(-Math.PI/4);
+                    ctx.rotate(-Math.PI/4); // 斜めに配置
                     
+                    // 帯のグラデーション
                     let grad = ctx.createLinearGradient(0, -height*1.5, 0, height*1.5);
                     grad.addColorStop(0, 'rgba(0,0,0,0)');
                     grad.addColorStop(0.4, 'rgba(50, 0, 100, 0.2)');
@@ -1880,9 +1552,10 @@
                     ctx.fillStyle = grad;
                     ctx.fillRect(-width*2, -height*1.5, width*4, height*3);
                     
+                    // 天の川の中の星くず
                     for(let i=0; i<100; i++) {
                         let px = (Math.sin(i * 123.45)) * width * 1.5;
-                        let py = (Math.cos(i * 678.90)) * height * 0.2;
+                        let py = (Math.cos(i * 678.90)) * height * 0.2; // 帯の中心付近に密集
                         let pr = 0.5 + Math.abs(Math.sin(i)) * 2;
                         ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + Math.abs(Math.cos(i+time))*0.5})`;
                         ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI*2); ctx.fill();
@@ -1890,8 +1563,10 @@
                     ctx.restore();
                 }
                 else if (altPhase === 8) {
+                    // ブラックホール (4000km ~ 4500km)
                     ctx.globalAlpha = eventAlpha;
                     
+                    // ブラックホールは背景の奥にあるため、パララックス効果でスクロールを非常に遅くする
                     let phaseAlt = altMeters - altPhase * EVENT_INTERVAL;
                     let bhScrollX = -(rocket.x * WORLD_SCALE * 0.0001);
                     let bhScrollY = phaseAlt * 0.0003; 
@@ -1900,6 +1575,7 @@
                     let by = height*0.1 + bhScrollY;
                     let bRadius = Math.min(width, height) * 0.2;
 
+                    // 降着円盤 (裏)
                     ctx.globalCompositeOperation = 'screen';
                     ctx.save();
                     ctx.translate(bx, by);
@@ -1913,6 +1589,7 @@
                     ctx.beginPath(); ctx.arc(0, 0, bRadius * 2.5, 0, Math.PI*2); ctx.fill();
                     ctx.restore();
 
+                    // 歪曲光輪 (フォトンリング)
                     ctx.save();
                     ctx.translate(bx, by);
                     let gradRing = ctx.createRadialGradient(0, 0, bRadius*0.9, 0, 0, bRadius*1.5);
@@ -1924,11 +1601,13 @@
                     ctx.beginPath(); ctx.arc(0, 0, bRadius*1.5, 0, Math.PI*2); ctx.fill();
                     ctx.restore();
 
+                    // 特異点
                     ctx.globalCompositeOperation = 'source-over';
                     ctx.fillStyle = '#000';
                     ctx.beginPath(); ctx.arc(bx, by, bRadius, 0, Math.PI*2); ctx.fill();
                 }
                 else if (altPhase >= 10) {
+                    // 無の世界 (5000km ~) : 完全な暗黒に、デジタルなシアンの無限グリッド線だけが走るシミュレーションの果て
                     let voidProg = Math.min(1.0, (altMeters - 5000000) / 100000);
                     ctx.globalAlpha = voidProg;
                     
@@ -1946,10 +1625,10 @@
                 ctx.restore();
             }
 
-            // 3. 天候パーティクル
+            // 3. 天候パーティクル (スケール外)
             let weatherAlphaMod = Math.max(0, 1.0 - (altMeters / 15000));
             if (gameMode === 'free') weatherAlphaMod = 1.0;
-            if (weatherAlphaMod > 0 && gameState !== 'menu' && gameState !== 'ranking') {
+            if (weatherAlphaMod > 0 && gameState !== 'menu') {
                 ctx.strokeStyle = weather.type === 'storm' ? `rgba(200, 200, 255, ${0.06 * weatherAlphaMod})` : `rgba(100, 150, 255, ${0.03 * weatherAlphaMod})`;
                 ctx.lineWidth = weather.type === 'storm' ? 2 : 1;
                 ctx.beginPath();
@@ -1960,7 +1639,7 @@
                 ctx.stroke();
             }
 
-            // 4. スピード線
+            // 4. スピード線 (スケール外)
             let speed = Math.sqrt(rocket.vx*rocket.vx + rocket.vy*rocket.vy);
             let speedLineAlphaMod = Math.max(0, 1.0 - (altMeters / 30000));
             if (gameMode === 'free') speedLineAlphaMod = 1.0;
@@ -2029,7 +1708,7 @@
             // 7. 地面
             let groundY = getScreenY(0);
             if (groundY < height + viewH) {
-                let groundColor = (gameState === 'menu' || gameState === 'ranking') ? '#166534' : '#22c55e';
+                let groundColor = gameState === 'menu' ? '#166534' : '#22c55e'; // メニュー時は暗め
                 ctx.save(); ctx.strokeStyle = groundColor; ctx.lineWidth = 2 / currentZoom; ctx.shadowBlur = 10; ctx.shadowColor = groundColor;
                 ctx.beginPath(); ctx.moveTo(-viewW, groundY); ctx.lineTo(width + viewW*2, groundY); ctx.stroke();
                 let startFloorX = Math.floor((cx - viewW) / 50) * 50;
@@ -2059,7 +1738,7 @@
                 }
             }
 
-            // 8. ワールドパーティクル
+            // 8. ワールドパーティクル (爆発など)
             particles.forEach(p => {
                 ctx.save(); ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color;
                 ctx.shadowBlur = 10; ctx.shadowColor = p.color;
@@ -2134,8 +1813,8 @@
                 ctx.fillStyle = 'rgba(250, 204, 21, 0.15)'; ctx.fill();
             }
             
-            ctx.restore(); 
-            ctx.restore(); 
+            ctx.restore(); // ロケットリストア
+            ctx.restore(); // ズームレイヤーリストア
         }
 
         if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } 
