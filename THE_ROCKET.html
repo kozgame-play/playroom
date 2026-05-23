@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>THE ROCKET</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Noto+Sans+JP:wght@400;700;900&display=swap');
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #030308; 
+            touch-action: none; 
+            font-family: 'Rajdhani', 'Noto Sans JP', sans-serif;
+            color: #0ff;
+        }
+        canvas { 
+            display: block; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            z-index: 1; 
+        }
+        
+        .cyber-panel {
+            background: linear-gradient(135deg, rgba(5, 5, 16, 0.9), rgba(10, 20, 40, 0.8));
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-top: 1px solid rgba(0, 255, 255, 0.6);
+            border-bottom: 1px solid rgba(0, 150, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+
+        .hud-panel {
+            background: linear-gradient(135deg, rgba(10, 20, 30, 0.85), rgba(5, 10, 15, 0.75));
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(0, 255, 255, 0.15);
+            border-radius: 4px;
+            backdrop-filter: blur(6px);
+            position: relative;
+        }
+        .hud-panel::before {
+            content: ''; position: absolute; top: -1px; left: -1px; width: 8px; height: 8px;
+            border-top: 2px solid #0ff; border-left: 2px solid #0ff; border-top-left-radius: 4px;
+        }
+        .hud-panel::after {
+            content: ''; position: absolute; bottom: -1px; right: -1px; width: 8px; height: 8px;
+            border-bottom: 2px solid #0ff; border-right: 2px solid #0ff; border-bottom-right-radius: 4px;
+        }
+        
+        .font-mono { font-family: 'Rajdhani', monospace; }
+        .cyber-digit { font-family: 'Rajdhani', monospace; text-shadow: 0 0 8px currentColor; letter-spacing: 0.05em; }
+        .cyber-text { text-shadow: 0 0 8px currentColor; font-weight: 700; }
+        
+        .cyber-button {
+            background: linear-gradient(to bottom, rgba(0, 255, 255, 0.15), rgba(0, 150, 255, 0.05));
+            border: 1px solid #0ff;
+            color: #0ff;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2), inset 0 0 8px rgba(0, 255, 255, 0.1);
+            border-radius: 4px;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .cyber-button::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+            transform: skewX(-20deg);
+        }
+        .cyber-button:hover::after { left: 200%; transition: 0.5s ease-in-out; }
+        .cyber-button:active, .cyber-button.active-state {
+            background: rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6), inset 0 0 15px rgba(0, 255, 255, 0.4);
+            transform: translateY(2px) scale(0.96);
+            border-color: #fff; color: #fff;
+        }
+        .cyber-button:disabled {
+            border-color: #444 !important; color: #666 !important;
+            background: rgba(20, 20, 20, 0.8) !important;
+            box-shadow: none !important; text-shadow: none !important;
+            transform: none !important; cursor: not-allowed;
+        }
+        .cyber-button.btn-purple {
+            border-color: #c084fc; color: #c084fc; text-shadow: 0 0 8px rgba(192, 132, 252, 0.8);
+            box-shadow: 0 0 10px rgba(192, 132, 252, 0.2), inset 0 0 8px rgba(192, 132, 252, 0.1);
+        }
+        .cyber-button.btn-yellow {
+            border-color: #facc15; color: #facc15; text-shadow: 0 0 8px rgba(250, 204, 21, 0.8);
+            box-shadow: 0 0 10px rgba(250, 204, 21, 0.2), inset 0 0 8px rgba(250, 204, 21, 0.1);
+        }
+
+        .stat-btn {
+            background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.5);
+            color: #0ff; min-width: 32px; height: 32px; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 1.2rem; cursor: pointer; border-radius: 4px;
+            transition: all 0.1s;
+        }
+        @media (min-width: 640px) {
+            .stat-btn { min-width: 36px; height: 36px; font-size: 1.4rem; }
+        }
+        .stat-btn.btn-10 {
+            font-size: 0.8rem;
+            min-width: 36px;
+        }
+        @media (min-width: 640px) {
+            .stat-btn.btn-10 { min-width: 40px; font-size: 0.9rem; }
+        }
+        .stat-btn:active { background: rgba(0, 255, 255, 0.4); transform: scale(0.9); }
+        .stat-btn:disabled { border-color: #444; color: #555; background: transparent; cursor: not-allowed; }
+
+        @keyframes pulse-fast { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .animate-pulse-fast { animation: pulse-fast 0.6s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="select-none">
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer" class="absolute inset-0 z-50 pointer-events-none">
+        
+        <!-- === タイトル(モード選択)画面 === -->
+        <div id="mode-screen" class="absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/60 backdrop-blur-sm p-4 z-[60]">
+            <div class="cyber-panel p-8 sm:p-10 w-full max-w-md flex flex-col gap-8 text-center border-t-2 border-t-yellow-400 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-yellow-400 opacity-50 m-2"></div>
+                <div class="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-cyan-400 opacity-50 m-2"></div>
+                
+                <div>
+                    <h1 class="text-5xl sm:text-6xl font-black cyber-text tracking-[0.15em] text-yellow-400 font-mono drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">THE ROCKET</h1>
+                </div>
+                
+                <div class="flex flex-col gap-4 mt-4">
+                    <button id="btn-mode-mission" class="cyber-button py-4 sm:py-5 flex flex-col items-center group relative">
+                        <span class="text-2xl sm:text-3xl font-black tracking-[0.2em] font-mono group-hover:scale-105 transition-transform duration-200">MISSION</span>
+                        <span class="text-[10px] sm:text-xs font-bold mt-1 text-cyan-200 tracking-[0.3em]">ミッションモード</span>
+                        <span class="text-[9px] sm:text-[10px] font-normal mt-3 text-cyan-300 opacity-80 tracking-widest">全50ステージの課題を攻略せよ</span>
+                    </button>
+                    <button id="btn-mode-score" class="cyber-button btn-purple py-4 sm:py-5 flex flex-col items-center group relative">
+                        <span class="text-2xl sm:text-3xl font-black tracking-[0.2em] font-mono group-hover:scale-105 transition-transform duration-200">SCORING</span>
+                        <span class="text-[10px] sm:text-xs font-bold mt-1 text-purple-200 tracking-[0.3em]">スコアリングモード</span>
+                        <span class="text-[9px] sm:text-[10px] font-normal mt-3 text-purple-300 opacity-80 tracking-widest">50PTで限界飛距離と宇宙滞在に挑め</span>
+                    </button>
+                    <button id="btn-mode-free" class="cyber-button btn-yellow py-4 sm:py-5 flex flex-col items-center group relative">
+                        <span class="text-2xl sm:text-3xl font-black tracking-[0.2em] font-mono group-hover:scale-105 transition-transform duration-200">FREE FLIGHT</span>
+                        <span class="text-[10px] sm:text-xs font-bold mt-1 text-yellow-200 tracking-[0.3em]">フリーモード</span>
+                        <span class="text-[9px] sm:text-[10px] font-normal mt-3 text-yellow-300 opacity-80 tracking-widest">制限なしの無限飛行・美しい星空へ</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- === フライトHUD === -->
+        <div id="hud-container" class="hidden w-full h-full relative pointer-events-none">
+            
+            <!-- 上部集約ステータスパネル -->
+            <div class="absolute top-0 left-0 w-full z-10 pointer-events-none p-1 sm:p-2">
+                <div class="hud-panel bg-black/60 backdrop-blur-md rounded border border-cyan-500/50 w-full max-w-2xl mx-auto flex flex-col pointer-events-auto shadow-lg">
+                    
+                    <!-- 1段目: ミッション・環境・ABORT -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-2 py-1.5 sm:py-1 border-b border-cyan-800/50 gap-1.5 sm:gap-2">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-3 flex-1 w-full sm:w-auto">
+                            <span class="text-yellow-400 font-black whitespace-nowrap text-[10px] sm:text-xs" id="hud-mission-title">MISSION 1</span>
+                            <span class="text-gray-200 font-bold text-[9px] sm:text-[11px] leading-tight break-words" id="hud-mission-status">高度500m到達</span>
+                        </div>
+                        <div class="flex items-center gap-2 sm:gap-3 text-cyan-300 font-bold whitespace-nowrap w-full sm:w-auto justify-end sm:justify-start border-t border-cyan-900/50 sm:border-0 pt-1 sm:pt-0 mt-1 sm:mt-0">
+                            <span id="hud-env-layer" class="text-[9px] sm:text-[10px]">対流圏</span>
+                            <span class="text-cyan-600 hidden sm:inline">|</span>
+                            <span id="hud-env-weather" class="text-[9px] sm:text-[10px]">CLEAR</span>
+                            <div class="flex items-baseline gap-0.5">
+                                <span id="hud-env-wind-dir" class="text-gray-400 text-[8px] sm:text-[9px]">−</span>
+                                <span id="hud-env-wind" class="text-green-400 font-mono text-[10px] sm:text-[11px]">0.0</span>
+                            </div>
+                            <button id="btn-hud-retry" class="cyber-button px-2.5 py-1 ml-1 rounded text-[8px] sm:text-[10px] border-red-500/50 text-red-400 font-bold shadow-[0_0_5px_rgba(244,63,94,0.3)]">ABORT</button>
+                        </div>
+                    </div>
+
+                    <!-- 2段目: 飛行ステータス (目標値＆現在値・下段に速度等) -->
+                    <div class="flex flex-col px-2 py-1.5 gap-1.5">
+                        <div class="flex justify-between items-center w-full">
+                            <!-- ① 左側: TARGET ALT -->
+                            <div class="flex-1 flex justify-start">
+                                <div class="text-left flex flex-col justify-center">
+                                    <div class="text-[6px] sm:text-[7px] text-yellow-500 font-bold tracking-widest drop-shadow-[0_0_2px_rgba(234,179,8,0.3)]">TGT ALT</div>
+                                    <div class="text-[11px] sm:text-sm font-bold text-yellow-400 cyber-digit leading-none mt-0.5"><span id="hud-target-alt">---</span><span class="text-[6px] text-yellow-500 ml-0.5">km</span></div>
+                                </div>
+                            </div>
+
+                            <!-- 中央: 現在高度と距離 -->
+                            <div class="flex gap-4 sm:gap-6 justify-center shrink-0">
+                                <div class="text-center min-w-[50px] sm:min-w-[60px]">
+                                    <div class="text-[7px] sm:text-[8px] text-cyan-500 font-bold tracking-widest drop-shadow-[0_0_2px_#0ff]">ALTITUDE</div>
+                                    <div class="text-xl sm:text-2xl font-black text-white cyber-digit leading-none mt-0.5"><span id="hud-altitude">0.00</span><span class="text-[8px] text-cyan-600 ml-0.5">km</span></div>
+                                </div>
+                                <div class="w-px bg-cyan-800/50"></div>
+                                <div class="text-center min-w-[50px] sm:min-w-[60px]">
+                                    <div class="text-[7px] sm:text-[8px] text-cyan-500 font-bold tracking-widest drop-shadow-[0_0_2px_#0ff]">DISTANCE</div>
+                                    <div class="text-xl sm:text-2xl font-black text-white cyber-digit leading-none mt-0.5"><span id="hud-distance">0.00</span><span class="text-[8px] text-cyan-600 ml-0.5">km</span></div>
+                                </div>
+                            </div>
+
+                            <!-- ② 右側: TARGET DIST -->
+                            <div class="flex-1 flex justify-end">
+                                <div class="text-right flex flex-col justify-center">
+                                    <div class="text-[6px] sm:text-[7px] text-yellow-500 font-bold tracking-widest drop-shadow-[0_0_2px_rgba(234,179,8,0.3)]">TGT DIST</div>
+                                    <div class="text-[11px] sm:text-sm font-bold text-yellow-400 cyber-digit leading-none mt-0.5"><span id="hud-target-dist">---</span><span class="text-[6px] text-yellow-500 ml-0.5">km</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 下段: V-SPD, H-SPD, PITCH, G-FORCE -->
+                        <div class="flex gap-3 sm:gap-6 w-full justify-center text-[9px] sm:text-[11px] font-mono mt-1">
+                            <div class="flex gap-1 items-baseline">
+                                <div class="text-[6px] sm:text-[7px] text-cyan-500 font-sans font-bold">V-SPD</div>
+                                <div class="text-white font-bold leading-none"><span id="hud-vy">+0</span></div>
+                            </div>
+                            <div class="flex gap-1 items-baseline">
+                                <div class="text-[6px] sm:text-[7px] text-cyan-500 font-sans font-bold">H-SPD</div>
+                                <div class="text-white font-bold leading-none"><span id="hud-vx">+0</span></div>
+                            </div>
+                            <div class="flex gap-1 items-baseline">
+                                <div class="text-[6px] sm:text-[7px] text-cyan-500 font-sans font-bold">PITCH</div>
+                                <div class="text-yellow-400 font-bold leading-none"><span id="hud-angle-val">0°</span></div>
+                            </div>
+                            <div class="flex gap-1 items-baseline">
+                                <div class="text-[6px] sm:text-[7px] text-cyan-500 font-sans font-bold">G-FORCE</div>
+                                <div class="text-yellow-400 font-bold leading-none"><span id="hud-gravity">1.00G</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3段目: 燃料 -->
+                    <div class="px-2 pb-1.5 pt-0.5 flex items-center gap-2">
+                        <span class="text-[7px] sm:text-[8px] text-cyan-500 font-bold tracking-widest">FUEL</span>
+                        <div class="flex-1 h-1.5 bg-black/80 border border-cyan-800 rounded-sm p-[1px]">
+                            <div id="fuel-bar" class="h-full bg-cyan-400 shadow-[0_0_5px_#0ff] transition-all duration-75" style="width: 100%;"></div>
+                        </div>
+                        <span id="hud-fuel-text" class="text-[8px] sm:text-[10px] font-mono text-white font-bold min-w-[24px] text-right">100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アクションボタン群 (右下) -->
+            <div class="absolute bottom-6 sm:bottom-8 right-2 sm:right-4 flex gap-2 sm:gap-3 items-end pointer-events-auto z-10">
+                <button id="btn-parachute" class="cyber-button btn-yellow w-12 h-12 sm:w-16 sm:h-16 rounded-full font-bold flex flex-col items-center justify-center relative overflow-hidden">
+                    <span id="parachute-icon" class="text-lg sm:text-2xl mb-0.5 block relative z-10">🪂</span>
+                    <span id="parachute-text" class="text-[6px] sm:text-[7px] tracking-widest relative z-10 leading-none bg-black/40 px-1 rounded font-mono">OPEN</span>
+                </button>
+                <button id="btn-boost" class="cyber-button w-16 h-16 sm:w-20 sm:h-20 rounded-full font-bold flex flex-col items-center justify-center border-2 border-cyan-400 shadow-[0_0_15px_rgba(0,255,255,0.3)]">
+                    <span class="text-2xl sm:text-3xl mb-0.5 block">🔥</span>
+                    <span class="text-[7px] sm:text-[9px] tracking-[0.1em] font-black font-mono">IGNITE</span>
+                </button>
+            </div>
+
+            <!-- アクションボタン (左下) -->
+            <div class="absolute bottom-6 sm:bottom-8 left-2 sm:left-4 pointer-events-auto z-10">
+                <button id="btn-turn" class="cyber-button btn-purple w-12 h-12 sm:w-14 sm:h-14 rounded-full font-bold flex flex-col items-center justify-center">
+                    <span id="turn-icon" class="text-lg sm:text-xl mb-0.5 transform transition-transform -rotate-45 block">🚀</span>
+                    <span class="text-[6px] sm:text-[7px] tracking-widest font-mono">REVERSE</span>
+                </button>
+            </div>
+
+            <!-- 中央メッセージ -->
+            <div id="hud-message" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center w-full pointer-events-none z-10">
+                <!-- Javascriptで差し替え -->
+            </div>
+            
+            <div id="hud-fast-forward" class="hidden absolute top-[60%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center w-full pointer-events-none z-10">
+                <div class="text-xl sm:text-2xl cyber-digit text-blue-400 font-bold tracking-widest animate-pulse-fast bg-black/60 px-4 py-1 rounded">⏩ TIME ACCEL</div>
+            </div>
+
+        </div>
+
+        <!-- === ミッション設定(ガレージ) === -->
+        <div id="garage-screen" class="hidden absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/80 backdrop-blur-sm p-4 z-[50]">
+            <div class="cyber-panel p-6 sm:p-8 w-full max-w-md flex flex-col gap-5 relative border-t-2 border-t-cyan-500">
+                <button id="btn-back-title" class="absolute -top-12 left-0 cyber-button px-4 py-2 rounded text-xs font-bold tracking-widest text-cyan-200">
+                    ← タイトルへ
+                </button>
+
+                <div id="garage-mission-nav" class="flex items-center justify-between bg-black/60 p-2 sm:p-3 border border-cyan-800 rounded">
+                    <button id="btn-prev-mission" class="stat-btn border-none text-2xl hover:text-white">&lt;</button>
+                    <div class="text-center flex-1">
+                        <div id="garage-mission-title" class="text-yellow-400 font-black text-base sm:text-lg tracking-widest cyber-text">MISSION 1</div>
+                        <div id="garage-mission-desc" class="text-[10px] sm:text-xs text-cyan-200 font-bold mt-1 leading-relaxed min-h-[2rem] flex items-center justify-center">高度500mを突破して着陸せよ</div>
+                    </div>
+                    <button id="btn-next-mission" class="stat-btn border-none text-2xl hover:text-white">&gt;</button>
+                </div>
+
+                <div id="garage-score-header" class="hidden text-center bg-purple-900/30 p-3 border border-purple-500/50 rounded">
+                    <div id="score-header-title" class="text-yellow-400 font-black text-lg tracking-widest cyber-text">スコアリングモード</div>
+                    <div id="score-header-desc" class="text-[11px] sm:text-xs text-purple-200 font-bold mt-1">限界の飛距離と宇宙滞在時間に挑め！</div>
+                </div>
+                
+                <div class="bg-blue-950/40 p-3 border border-blue-500/50 rounded flex justify-between items-center text-sm shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
+                    <div class="flex flex-col"><span class="text-[9px] sm:text-[10px] text-blue-400 font-bold tracking-widest mb-1">天候</span><span id="env-weather-garage" class="text-sm sm:text-base font-black tracking-widest">晴れ</span></div>
+                    <div class="flex flex-col items-end"><span class="text-[9px] sm:text-[10px] text-blue-400 font-bold tracking-widest mb-1">風速</span><span id="env-wind-garage" class="text-sm sm:text-base font-black tracking-widest font-mono">無風</span></div>
+                </div>
+
+                <div class="flex justify-between items-end border-b border-cyan-800 pb-2 mt-2">
+                    <span class="text-[10px] sm:text-xs font-bold text-cyan-500 tracking-widest">残りポイント</span>
+                    <div class="text-2xl sm:text-3xl cyber-text font-black text-white font-mono"><span id="garage-points">0</span><span class="text-sm text-cyan-500 ml-1">PT</span></div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center bg-black/40 p-2 sm:p-3 border border-cyan-900 rounded hover:border-cyan-500 transition-colors">
+                        <div>
+                            <div class="font-bold text-xs sm:text-sm tracking-widest text-gray-200">メインエンジン</div>
+                            <div class="text-[10px] sm:text-xs text-cyan-600 mt-1 font-bold font-mono">レベル <span id="level-engine" class="text-white text-sm">1</span></div>
+                        </div>
+                        <div class="flex gap-0.5 sm:gap-1">
+                            <button id="btn-minus10-engine" class="stat-btn btn-10">-10</button>
+                            <button id="btn-minus-engine" class="stat-btn">-</button>
+                            <button id="btn-plus-engine" class="stat-btn">+</button>
+                            <button id="btn-plus10-engine" class="stat-btn btn-10">+10</button>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-black/40 p-2 sm:p-3 border border-cyan-900 rounded hover:border-cyan-500 transition-colors">
+                        <div>
+                            <div class="font-bold text-xs sm:text-sm tracking-widest text-gray-200">燃料タンク</div>
+                            <div class="text-[10px] sm:text-xs text-cyan-600 mt-1 font-bold font-mono">レベル <span id="level-fuel" class="text-white text-sm">1</span></div>
+                        </div>
+                        <div class="flex gap-0.5 sm:gap-1">
+                            <button id="btn-minus10-fuel" class="stat-btn btn-10">-10</button>
+                            <button id="btn-minus-fuel" class="stat-btn">-</button>
+                            <button id="btn-plus-fuel" class="stat-btn">+</button>
+                            <button id="btn-plus10-fuel" class="stat-btn btn-10">+10</button>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-black/40 p-2 sm:p-3 border border-cyan-900 rounded hover:border-cyan-500 transition-colors">
+                        <div>
+                            <div class="font-bold text-xs sm:text-sm tracking-widest text-gray-200">軽量化フレーム</div>
+                            <div class="text-[10px] sm:text-xs text-cyan-600 mt-1 font-bold font-mono">レベル <span id="level-weight" class="text-white text-sm">1</span></div>
+                        </div>
+                        <div class="flex gap-0.5 sm:gap-1">
+                            <button id="btn-minus10-weight" class="stat-btn btn-10">-10</button>
+                            <button id="btn-minus-weight" class="stat-btn">-</button>
+                            <button id="btn-plus-weight" class="stat-btn">+</button>
+                            <button id="btn-plus10-weight" class="stat-btn btn-10">+10</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btn-launch" class="mt-4 border-2 border-cyan-400 bg-cyan-900/80 text-white font-black text-xl py-4 rounded shadow-[0_0_15px_#0ff] hover:bg-cyan-800 transition-all tracking-[0.2em] active:scale-95">
+                    LAUNCH
+                </button>
+            </div>
+        </div>
+
+        <!-- === リザルト画面 === -->
+        <div id="result-screen" class="hidden absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/80 backdrop-blur-sm p-4 z-[70]">
+            <div class="cyber-panel p-6 sm:p-8 w-full max-w-md flex flex-col gap-5 text-center relative border-t-4 border-t-cyan-500">
+                <h2 id="result-title" class="text-3xl sm:text-4xl font-black tracking-widest border-b border-cyan-800/50 pb-3 cyber-text mt-2">クリア！</h2>
+                <div id="result-reason" class="text-xs sm:text-sm font-bold text-gray-200 bg-black/50 p-3 rounded border border-gray-700 leading-relaxed min-h-[3rem] flex items-center justify-center">
+                    目標を達成し、安全に着陸しました。
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-left">
+                    <div class="bg-black/60 p-3 border border-cyan-900 rounded text-center">
+                        <div class="text-[9px] sm:text-[10px] text-cyan-500 font-bold tracking-widest mb-1">最高高度</div>
+                        <div class="text-xl sm:text-2xl cyber-text text-white font-mono"><span id="result-altitude">0.00</span><span class="text-xs ml-1 text-cyan-600">km</span></div>
+                    </div>
+                    <div class="bg-black/60 p-3 border border-cyan-900 rounded text-center">
+                        <div class="text-[9px] sm:text-[10px] text-cyan-500 font-bold tracking-widest mb-1">飛距離</div>
+                        <div class="text-xl sm:text-2xl cyber-text text-white font-mono"><span id="result-distance">0.00</span><span class="text-xs ml-1 text-cyan-600">km</span></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 text-left">
+                    <div class="bg-black/40 p-2 border border-cyan-900/50 rounded flex justify-between items-center">
+                        <div class="text-[8px] sm:text-[9px] text-cyan-600 font-bold tracking-widest">着地 H-SPD</div>
+                        <div class="text-xs sm:text-sm font-bold text-gray-300 font-mono"><span id="result-vx">0</span><span class="text-[8px] text-gray-500 ml-1">m/s</span></div>
+                    </div>
+                    <div class="bg-black/40 p-2 border border-cyan-900/50 rounded flex justify-between items-center">
+                        <div class="text-[8px] sm:text-[9px] text-cyan-600 font-bold tracking-widest">着地 V-SPD</div>
+                        <div class="text-xs sm:text-sm font-bold text-gray-300 font-mono"><span id="result-vy">0</span><span class="text-[8px] text-gray-500 ml-1">m/s</span></div>
+                    </div>
+                </div>
+
+                <div class="border border-cyan-500/50 p-4 bg-black/80 rounded mt-2">
+                    <div class="flex justify-between text-xs sm:text-sm mb-2 text-gray-300 font-bold">
+                        <span>飛距離スコア</span><span class="font-mono"><span id="score-dist">0</span> pt</span>
+                    </div>
+                    <div id="row-score-alt" class="flex justify-between text-xs sm:text-sm mb-2 text-gray-300 font-bold">
+                        <span>高度スコア</span><span class="font-mono"><span id="score-alt">0</span> pt</span>
+                    </div>
+                    <div id="row-score-space" class="hidden flex justify-between text-xs sm:text-sm mb-2 text-purple-300 font-bold">
+                        <span>宇宙滞在スコア</span><span class="font-mono"><span id="score-space">0</span> pt</span>
+                    </div>
+                    <div class="flex justify-between text-xs sm:text-sm mb-3 border-b border-cyan-800 pb-3">
+                        <span class="text-yellow-400 font-bold">着陸ボーナス</span>
+                        <span id="result-multiplier" class="text-yellow-400 font-black text-base font-mono">x1.0</span>
+                    </div>
+                    <div class="flex justify-between items-end pt-1">
+                        <span class="text-[10px] sm:text-xs font-bold text-cyan-500 tracking-widest">総合スコア</span>
+                        <span class="text-2xl sm:text-3xl cyber-text text-yellow-300 font-black font-mono"><span id="result-total-score">0</span></span>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3 mt-2">
+                    <button id="btn-result-title" class="flex-1 cyber-button border-gray-500 text-gray-300 font-bold py-3 rounded text-xs tracking-widest min-w-[25%] shadow-none bg-transparent">
+                        TITLE
+                    </button>
+                    <button id="btn-retry" class="flex-1 cyber-button border-cyan-600 text-cyan-200 font-bold py-3 rounded text-sm tracking-widest hidden">
+                        RETRY
+                    </button>
+                    <button id="btn-next" class="flex-1 cyber-button bg-cyan-900 font-black py-3 rounded text-sm tracking-widest shadow-[0_0_10px_#0ff] text-white hidden border-2">
+                        NEXT
+                    </button>
+                    <button id="btn-score-retry" class="flex-1 cyber-button btn-purple font-bold py-3 rounded text-sm tracking-widest hidden">
+                        REPLAY
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const missions = [
+            {id:1, title:"MISSION 1: はじめての空", desc:"高度 5km に到達後、安全に着陸せよ", type:"altitude", target:5000, points:10, weather:'clear', wind:0},
+            {id:2, title:"MISSION 2: 少し遠くへ", desc:"飛距離 10km を突破せよ", type:"distance", target:10000, points:10, weather:'clear', wind:1},
+            {id:3, title:"MISSION 3: 高度10km", desc:"高度 10km を目指せ", type:"altitude", target:10000, points:10, weather:'clear', wind:0},
+            {id:4, title:"MISSION 4: 基礎ターゲット", desc:"距離 10km〜12km に精密着陸せよ", type:"target", targetMin:10000, targetMax:12000, points:10, weather:'clear', wind:0},
+            {id:5, title:"MISSION 5: はじめての雨", desc:"雨天の中、高度 15km を突破せよ", type:"altitude", target:15000, points:10, weather:'rain', wind:0},
+            {id:6, title:"MISSION 6: 追い風に乗って", desc:"飛距離 20km を突破せよ", type:"distance", target:20000, points:10, weather:'clear', wind:4},
+            {id:7, title:"MISSION 7: 向かい風の壁", desc:"向かい風の中、飛距離 15km を突破せよ", type:"distance", target:15000, points:10, weather:'clear', wind:-3},
+            {id:8, title:"MISSION 8: 対流圏ターゲット", desc:"距離 18km〜20km に精密着陸せよ", type:"target", targetMin:18000, targetMax:20000, points:10, weather:'clear', wind:2},
+            {id:9, title:"MISSION 9: 嵐の予感", desc:"嵐の中、高度 20km を突破せよ", type:"altitude", target:20000, points:10, weather:'storm', wind:-1},
+            {id:10, title:"MISSION 10: 対流圏突破", desc:"高度 25km を突破し、安全に着陸せよ", type:"altitude", target:25000, points:10, weather:'clear', wind:0},
+            {id:11, title:"MISSION 11: 荒天飛行", desc:"雨天の中、距離 25km を突破せよ", type:"distance", target:25000, points:10, weather:'rain', wind:2},
+            {id:12, title:"MISSION 12: 嵐のターゲット", desc:"嵐の中、距離 20km〜22km に精密着陸せよ", type:"target", targetMin:20000, targetMax:22000, points:10, weather:'storm', wind:-2},
+            {id:13, title:"MISSION 13: 高高度飛行", desc:"高度 30km を突破せよ", type:"altitude", target:30000, points:10, weather:'clear', wind:0},
+            {id:14, title:"MISSION 14: 中距離ターゲット", desc:"距離 35km〜38km に精密着陸せよ", type:"target", targetMin:35000, targetMax:38000, points:10, weather:'clear', wind:1},
+            {id:15, title:"MISSION 15: 強風に抗え", desc:"強い向かい風の中、距離 30km を突破せよ", type:"distance", target:30000, points:10, weather:'clear', wind:-5},
+            {id:16, title:"MISSION 16: 雨天ターゲット", desc:"雨天の中、距離 30km〜33km に精密着陸せよ", type:"target", targetMin:30000, targetMax:33000, points:10, weather:'rain', wind:-1},
+            {id:17, title:"MISSION 17: 成層圏へ", desc:"高度 40km を突破せよ", type:"altitude", target:40000, points:10, weather:'clear', wind:0},
+            {id:18, title:"MISSION 18: 長距離航行の始まり", desc:"飛距離 50km を突破せよ", type:"distance", target:50000, points:10, weather:'clear', wind:3},
+            {id:19, title:"MISSION 19: 嵐の長距離", desc:"嵐の中、飛距離 45km を突破せよ", type:"distance", target:45000, points:10, weather:'storm', wind:-3},
+            {id:20, title:"MISSION 20: 複合ミッション1", desc:"高度 30km 突破後、距離 40〜45km に精密着陸せよ", type:"target_alt", targetMin:40000, targetMax:45000, targetAlt:30000, points:10, weather:'clear', wind:2},
+            {id:21, title:"MISSION 21: 中間圏の扉", desc:"高度 50km を突破せよ", type:"altitude", target:50000, points:10, weather:'clear', wind:0},
+            {id:22, title:"MISSION 22: スナイパー", desc:"距離 50km〜52km に精密着陸せよ", type:"target", targetMin:50000, targetMax:52000, points:10, weather:'clear', wind:1},
+            {id:23, title:"MISSION 23: 追い風特急", desc:"強い追い風で、飛距離 70km を突破せよ", type:"distance", target:70000, points:10, weather:'clear', wind:6},
+            {id:24, title:"MISSION 24: 嵐の中間圏", desc:"嵐の中、高度 55km を突破せよ", type:"altitude", target:55000, points:10, weather:'storm', wind:0},
+            {id:25, title:"MISSION 25: 悪天候スナイパー", desc:"雨天の中、距離 60km〜63km に精密着陸せよ", type:"target", targetMin:60000, targetMax:63000, points:10, weather:'rain', wind:-2},
+            {id:26, title:"MISSION 26: 長距離ターゲット", desc:"距離 70km〜75km に精密着陸せよ", type:"target", targetMin:70000, targetMax:75000, points:10, weather:'clear', wind:3},
+            {id:27, title:"MISSION 27: 強烈な向かい風", desc:"猛風に逆らい、距離 50km を突破せよ", type:"distance", target:50000, points:10, weather:'clear', wind:-7},
+            {id:28, title:"MISSION 28: 複合ミッション2", desc:"高度 50km 突破後、距離 60〜65km に精密着陸せよ", type:"target_alt", targetMin:60000, targetMax:65000, targetAlt:50000, points:10, weather:'clear', wind:2},
+            {id:29, title:"MISSION 29: 熱圏の入り口", desc:"高度 70km を突破せよ", type:"altitude", target:70000, points:10, weather:'clear', wind:0},
+            {id:30, title:"MISSION 30: 嵐の大遠征", desc:"嵐の中、飛距離 80km を突破せよ", type:"distance", target:80000, points:10, weather:'storm', wind:-4},
+            {id:31, title:"MISSION 31: 限界スナイパー", desc:"距離 80km〜82km の極小領域に精密着陸せよ", type:"target", targetMin:80000, targetMax:82000, points:10, weather:'clear', wind:1},
+            {id:32, title:"MISSION 32: 重力からの解放", desc:"高度 80km を突破せよ", type:"altitude", target:80000, points:10, weather:'clear', wind:0},
+            {id:33, title:"MISSION 33: 神風の軌跡", desc:"猛烈な追い風で、飛距離 120km を突破せよ", type:"distance", target:120000, points:10, weather:'clear', wind:8},
+            {id:34, title:"MISSION 34: 嵐の複合ミッション", desc:"嵐の中、高度 60km 突破後、距離 70〜75km に精密着陸せよ", type:"target_alt", targetMin:70000, targetMax:75000, targetAlt:60000, points:10, weather:'storm', wind:-2},
+            {id:35, title:"MISSION 35: 大陸間飛行", desc:"飛距離 100km を突破せよ", type:"distance", target:100000, points:10, weather:'clear', wind:3},
+            {id:36, title:"MISSION 36: 宇宙への階段", desc:"高度 85km を突破せよ", type:"altitude", target:85000, points:10, weather:'clear', wind:0},
+            {id:37, title:"MISSION 37: 絶望の向かい風", desc:"強風を突っ切り、距離 80km を突破せよ", type:"distance", target:80000, points:10, weather:'clear', wind:-8},
+            {id:38, title:"MISSION 38: 精密長距離", desc:"距離 100km〜105km に精密着陸せよ", type:"target", targetMin:100000, targetMax:105000, points:10, weather:'clear', wind:2},
+            {id:39, title:"MISSION 39: 嵐の熱圏", desc:"嵐の中、高度 85km を突破せよ", type:"altitude", target:85000, points:10, weather:'storm', wind:-3},
+            {id:40, title:"MISSION 40: 複合ミッション3", desc:"高度 80km 突破後、距離 90〜95km に精密着陸せよ", type:"target_alt", targetMin:90000, targetMax:95000, targetAlt:80000, points:10, weather:'clear', wind:1},
+            {id:41, title:"MISSION 41: 大陸間スナイパー", desc:"距離 120km〜122km の極小領域に精密着陸せよ", type:"target", targetMin:120000, targetMax:122000, points:10, weather:'clear', wind:4},
+            {id:42, title:"MISSION 42: カーマンライン", desc:"高度 90km を突破せよ", type:"altitude", target:90000, points:10, weather:'clear', wind:0},
+            {id:43, title:"MISSION 43: 嵐の果てへ", desc:"猛烈な嵐の中、飛距離 110km を突破せよ", type:"distance", target:110000, points:10, weather:'storm', wind:-5},
+            {id:44, title:"MISSION 44: 超・神風", desc:"爆風に乗り、飛距離 180km を突破せよ", type:"distance", target:180000, points:10, weather:'clear', wind:10},
+            {id:45, title:"MISSION 45: 悪天候複合", desc:"雨天の中、高度 85km 突破後、距離 100〜105km に精密着陸せよ", type:"target_alt", targetMin:100000, targetMax:105000, targetAlt:85000, points:10, weather:'rain', wind:-2},
+            {id:46, title:"MISSION 46: 限界への挑戦", desc:"高度 95km を突破せよ", type:"altitude", target:95000, points:10, weather:'clear', wind:0},
+            {id:47, title:"MISSION 47: 針の穴", desc:"距離 150km〜151km の超極小領域に精密着陸せよ", type:"target", targetMin:150000, targetMax:151000, points:10, weather:'clear', wind:5},
+            {id:48, title:"MISSION 48: 絶望の嵐", desc:"極地的な嵐の中、高度 95km を突破せよ", type:"altitude", target:95000, points:10, weather:'storm', wind:-6},
+            {id:49, title:"MISSION 49: 最終弾道飛行", desc:"飛距離 200km を突破せよ", type:"distance", target:200000, points:10, weather:'clear', wind:4},
+            {id:50, title:"FINAL: ロケット・マイスター", desc:"嵐の中 高度95km突破後、距離150〜155kmに精密着陸せよ", type:"target_alt", targetMin:150000, targetMax:155000, targetAlt:95000, points:15, weather:'storm', wind:-3}
+        ];
+
+        const WORLD_SCALE = 3.3333; // 1ピクセル = 3.333m (カーマンライン100kmに合わせる)
+        const EVENT_INTERVAL = 500000; // 500kmごとのイベント間隔
+
+        let gameMode = 'mission';
+        let gameState = 'menu'; // menu, garage, flight, result
+        let currentMissionIdx = 0;
+        let pointsLeft = 0;
+        let upgrades = { engine: 1, fuel: 1, weight: 1 };
+        let weather = { type: 'clear', wind: 0, gravityMod: 1.0, dragMod: 1.0, name: 'CLEAR' };
+
+        // ズーム（カメラワーク用）
+        let currentZoom = 1.0;
+        let targetZoom = 1.0;
+
+        let rocket = {
+            x: 0, y: 0, vx: 0, vy: 0, 
+            fuel: 100, maxFuel: 100, thrustPower: 0, baseGravity: 0.15,
+            isThrusting: false, isParachuteOpen: false, isEmergencyReturn: false,
+            flightState: 'ready', angle: -Math.PI / 4, launchAngle: -Math.PI / 4, angleSwingDir: 1,     
+            highestAltitude: 0, landingSpeed: 0, landingVx: 0,      
+            timeScale: 1, isReversed: false, lostInSpace: false, currentGFactor: 1.0,
+            missionAchieved: false, spaceTime: 0, lastDistPhase: 0,
+            lostCameraX: 0, lostCameraY: 0, lostTimer: 0 
+        };
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = 800; let height = 600;
+        let particles = []; let weatherParticles = []; let gridStars = [];
+        let clouds = []; let speedLines = []; let meteors = []; let asteroids = [];
+
+        // BGMオブジェクトの準備
+        const bgm = new Audio('THE_ROCKET_BGM.mp3');
+        bgm.loop = true; // ループ再生を有効化
+
+        const uiMode = document.getElementById('mode-screen');
+        const uiGarage = document.getElementById('garage-screen');
+        const uiResult = document.getElementById('result-screen');
+        const uiHudContainer = document.getElementById('hud-container');
+        const btnBoost = document.getElementById('btn-boost');
+        const btnParachute = document.getElementById('btn-parachute');
+        const btnTurn = document.getElementById('btn-turn');
+        const btnHudRetry = document.getElementById('btn-hud-retry');
+        const turnIcon = document.getElementById('turn-icon');
+        const elFastForward = document.getElementById('hud-fast-forward');
+        const elHudStatus = document.getElementById('hud-mission-status');
+
+        function resizeCanvas() {
+            width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || 800;
+            height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || 600;
+            if (canvas) { canvas.width = width; canvas.height = height; }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function getScreenX(worldX) { 
+            let cx = rocket.flightState === 'lost_in_space' ? rocket.lostCameraX : rocket.x;
+            return worldX - cx + (width / 4); 
+        }
+        function getScreenY(worldY) {
+            let cy = rocket.flightState === 'lost_in_space' ? rocket.lostCameraY : rocket.y;
+            let cameraY = Math.max(0, cy - 200); 
+            return height - 100 - (worldY - cameraY);
+        }
+
+        function initApp() {
+            for(let i=0; i<200; i++) {
+                gridStars.push({
+                    screenX: Math.random() * width, screenY: Math.random() * height,
+                    speed: Math.random() * 2 + 0.5, 
+                    color: Math.random() > 0.8 ? (Math.random() > 0.5 ? '#facc15' : '#60a5fa') : '#fff'
+                });
+            }
+            initRocketPos();
+            requestAnimationFrame(update); 
+        }
+
+        function initRocketPos() {
+            rocket.x = 0; rocket.y = 0; rocket.vx = 0; rocket.vy = 0;
+            rocket.flightState = 'ready'; rocket.angle = -Math.PI / 4; rocket.launchAngle = -Math.PI / 4;
+            rocket.isReversed = false; rocket.lostInSpace = false; rocket.missionAchieved = false; rocket.spaceTime = 0;
+            rocket.isEmergencyReturn = false;
+            turnIcon.style.transform = 'rotate(-45deg)';
+            currentZoom = 1.0; targetZoom = 1.0;
+
+            clouds = [];
+            for(let i=0; i<50; i++) {
+                clouds.push({
+                    worldX: (Math.random() - 0.5) * 10000,
+                    worldY: 3000 + Math.random() * 12000,
+                    w: 150 + Math.random() * 300,
+                    h: 40 + Math.random() * 60,
+                    opacity: 0.05 + Math.random() * 0.15
+                });
+            }
+            speedLines = [];
+            for(let i=0; i<40; i++) {
+                speedLines.push({ x: Math.random()*width, y: Math.random()*height });
+            }
+        }
+
+        document.getElementById('btn-mode-mission').onclick = () => {
+            gameMode = 'mission';
+            gameState = 'garage';
+            uiMode.classList.add('hidden');
+            uiGarage.classList.remove('hidden');
+            document.getElementById('garage-mission-nav').style.display = 'flex';
+            document.getElementById('garage-score-header').style.display = 'none';
+            loadMission(currentMissionIdx);
+            
+            // BGM再生開始
+            bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
+        };
+
+        document.getElementById('btn-mode-score').onclick = () => {
+            gameMode = 'score';
+            gameState = 'garage';
+            uiMode.classList.add('hidden');
+            uiGarage.classList.remove('hidden');
+            document.getElementById('garage-mission-nav').style.display = 'none';
+            document.getElementById('garage-score-header').style.display = 'block';
+            document.getElementById('score-header-title').innerText = 'スコアリングモード';
+            document.getElementById('score-header-desc').innerText = '50PTで限界飛距離と宇宙滞在時間に挑め！';
+            loadScoreMode();
+            
+            // BGM再生開始
+            bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
+        };
+
+        document.getElementById('btn-mode-free').onclick = () => {
+            gameMode = 'free';
+            gameState = 'garage';
+            uiMode.classList.add('hidden');
+            uiGarage.classList.remove('hidden');
+            document.getElementById('garage-mission-nav').style.display = 'none';
+            document.getElementById('garage-score-header').style.display = 'block';
+            document.getElementById('score-header-title').innerText = 'FREE MODE';
+            document.getElementById('score-header-desc').innerText = '50PTで最強の機体を作り、美しい星空へ';
+            loadFreeMode();
+            
+            // BGM再生開始
+            bgm.play().catch(e => console.log("BGMの再生がブロックされました:", e));
+        };
+
+        document.getElementById('btn-back-title').onclick = () => {
+            gameState = 'menu';
+            uiGarage.classList.add('hidden');
+            uiMode.classList.remove('hidden');
+            
+            // BGM停止とリセット
+            bgm.pause();
+            bgm.currentTime = 0;
+        };
+
+        document.getElementById('btn-result-title').onclick = () => {
+            gameState = 'menu';
+            uiResult.classList.add('hidden');
+            uiMode.classList.remove('hidden');
+            
+            // BGM停止とリセット
+            bgm.pause();
+            bgm.currentTime = 0;
+        };
+
+        function loadMission(idx) {
+            let m = missions[idx];
+            document.getElementById('garage-mission-title').innerText = m.title;
+            document.getElementById('garage-mission-desc').innerText = m.desc;
+            
+            upgrades = { engine: 1, fuel: 1, weight: 1 };
+            pointsLeft = m.points;
+
+            weather.type = m.weather; weather.wind = m.wind;
+            if (m.weather === 'clear') { weather.name = 'CLEAR'; weather.gravityMod = 1.0; weather.dragMod = 1.0; } 
+            else if (m.weather === 'rain') { weather.name = 'RAIN'; weather.gravityMod = 1.05; weather.dragMod = 0.995; } 
+            else if (m.weather === 'storm') { weather.name = 'STORM'; weather.gravityMod = 1.1; weather.dragMod = 0.985; }
+
+            applyWeatherUI();
+            updateGarageUI();
+            initRocketPos(); 
+        }
+
+        function loadScoreMode() {
+            upgrades = { engine: 1, fuel: 1, weight: 1 };
+            pointsLeft = 50;
+
+            weather.type = 'clear'; weather.name = 'CLEAR'; weather.gravityMod = 1.0; weather.dragMod = 1.0;
+            weather.wind = 0;
+
+            applyWeatherUI();
+            updateGarageUI();
+            initRocketPos();
+        }
+
+        function loadFreeMode() {
+            upgrades = { engine: 1, fuel: 1, weight: 1 };
+            pointsLeft = 50;
+
+            weather.type = 'clear'; weather.name = 'CLEAR'; weather.gravityMod = 1.0; weather.dragMod = 1.0;
+            weather.wind = 0;
+            rocket.lastDistPhase = 0;
+
+            applyWeatherUI();
+            updateGarageUI();
+            initRocketPos();
+        }
+
+        function applyWeatherUI() {
+            let windText = weather.wind > 0 ? `+${weather.wind}m/s` : weather.wind < 0 ? `${weather.wind}m/s` : "0.0m/s";
+            let wColorClass = weather.wind > 0 ? "text-green-400" : weather.wind < 0 ? "text-red-400" : "text-gray-400";
+            let weatherJp = weather.type==='clear'?'晴れ':weather.type==='rain'?'雨':'嵐';
+            
+            document.getElementById('env-weather-garage').innerText = weatherJp;
+            document.getElementById('env-weather-garage').className = `text-sm sm:text-base font-black tracking-widest cyber-text ${weather.type==='clear'?'text-yellow-300':weather.type==='rain'?'text-blue-300':'text-purple-400'}`;
+            document.getElementById('env-wind-garage').innerText = windText;
+            document.getElementById('env-wind-garage').className = `text-sm sm:text-base font-black tracking-widest font-mono ${wColorClass}`;
+        }
+
+        document.getElementById('btn-prev-mission').onclick = () => {
+            if (currentMissionIdx > 0) { currentMissionIdx--; loadMission(currentMissionIdx); }
+        };
+        document.getElementById('btn-next-mission').onclick = () => {
+            if (currentMissionIdx < missions.length - 1) { currentMissionIdx++; loadMission(currentMissionIdx); }
+        };
+
+        function updateGarageUI() {
+            document.getElementById('garage-points').innerText = pointsLeft;
+            ['engine', 'fuel', 'weight'].forEach(type => {
+                let lvl = upgrades[type];
+                document.getElementById(`level-${type}`).innerText = lvl;
+                document.getElementById(`btn-minus-${type}`).disabled = (lvl <= 1);
+                document.getElementById(`btn-minus10-${type}`).disabled = (lvl <= 10);
+                document.getElementById(`btn-plus-${type}`).disabled = (pointsLeft <= 0);
+                document.getElementById(`btn-plus10-${type}`).disabled = (pointsLeft < 10);
+            });
+            document.getElementById('btn-prev-mission').style.opacity = currentMissionIdx === 0 ? "0.3" : "1";
+            document.getElementById('btn-next-mission').style.opacity = currentMissionIdx === missions.length - 1 ? "0.3" : "1";
+        }
+
+        ['engine', 'fuel', 'weight'].forEach(type => {
+            document.getElementById(`btn-plus-${type}`).onclick = () => {
+                if (pointsLeft > 0) { pointsLeft--; upgrades[type]++; updateGarageUI(); }
+            };
+            document.getElementById(`btn-plus10-${type}`).onclick = () => {
+                if (pointsLeft >= 10) { pointsLeft -= 10; upgrades[type] += 10; updateGarageUI(); }
+            };
+            document.getElementById(`btn-minus-${type}`).onclick = () => {
+                if (upgrades[type] > 1) { pointsLeft++; upgrades[type]--; updateGarageUI(); }
+            };
+            document.getElementById(`btn-minus10-${type}`).onclick = () => {
+                if (upgrades[type] > 10) { pointsLeft += 10; upgrades[type] -= 10; updateGarageUI(); }
+            };
+        });
+
+        function startFlight() {
+            gameState = 'flight';
+            uiGarage.classList.add('hidden');
+            uiResult.classList.add('hidden');
+            uiHudContainer.classList.remove('hidden');
+
+            initRocketPos();
+            rocket.highestAltitude = 0;
+            rocket.lostCameraX = 0;
+            rocket.lostCameraY = 0;
+            rocket.lostTimer = 0;
+            
+            rocket.maxFuel = 100 + (upgrades.fuel - 1) * 50; 
+            rocket.fuel = rocket.maxFuel;
+            rocket.thrustPower = 0.95 + (upgrades.engine - 1) * 0.20; 
+            let weightFactor = 1 - (upgrades.weight - 1) * 0.05;
+            rocket.baseGravity = 0.25 * Math.max(weightFactor, 0.5) * weather.gravityMod; 
+            rocket.currentGFactor = 1.0;
+            
+            rocket.isThrusting = false; rocket.isParachuteOpen = false; rocket.landingSpeed = 0; rocket.landingVx = 0;
+            rocket.timeScale = 1; rocket.isEmergencyReturn = false;
+            particles = []; weatherParticles = [];
+
+            btnBoost.disabled = false; btnBoost.classList.remove('active-state');
+            btnParachute.disabled = false; btnParachute.classList.remove('active-state');
+            btnTurn.disabled = false; elFastForward.classList.add('hidden');
+
+            if (gameMode === 'free') {
+                document.getElementById('parachute-icon').innerText = '⏬';
+                document.getElementById('parachute-text').innerText = 'RTN';
+            } else {
+                document.getElementById('parachute-icon').innerText = '🪂';
+                document.getElementById('parachute-text').innerText = 'OPEN';
+            }
+
+            document.getElementById('hud-message').classList.remove('hidden');
+            document.getElementById('hud-message').innerHTML = `
+                <div class="relative inline-block">
+                    <div class="absolute -inset-6 border border-cyan-500/30 rounded-full animate-[spin_10s_linear_infinite]">
+                        <div class="absolute top-0 left-1/2 w-2 h-2 bg-cyan-400 -translate-x-1/2 -translate-y-1/2"></div>
+                        <div class="absolute bottom-0 left-1/2 w-2 h-2 bg-cyan-400 -translate-x-1/2 translate-y-1/2"></div>
+                        <div class="absolute left-0 top-1/2 w-2 h-2 bg-cyan-400 -translate-x-1/2 -translate-y-1/2"></div>
+                        <div class="absolute right-0 top-1/2 w-2 h-2 bg-cyan-400 translate-x-1/2 -translate-y-1/2"></div>
+                    </div>
+                    <div class="text-2xl sm:text-4xl cyber-text text-yellow-400 font-black tracking-[0.2em] animate-pulse relative z-10 px-6 py-2 bg-black/40 backdrop-blur-sm rounded-lg border border-yellow-500/30">SYSTEM READY</div>
+                </div>
+                <div class="mt-8 text-[10px] sm:text-sm text-cyan-300 font-bold tracking-widest bg-black/80 inline-block px-5 py-2 rounded border border-cyan-500 shadow-[0_0_15px_rgba(0,255,255,0.4)]">
+                    右下の [IGNITE] を<span class="text-yellow-400 text-base sm:text-lg mx-1">長押し</span>して発射・上昇
+                </div>
+            `;
+
+            document.getElementById('hud-env-layer').innerText = "対流圏";
+            document.getElementById('hud-env-layer').className = "text-[9px] sm:text-[10px]";
+            document.getElementById('hud-env-weather').innerText = weather.name;
+            let windVal = parseFloat(weather.wind);
+            let elWind = document.getElementById('hud-env-wind');
+            let elWindDir = document.getElementById('hud-env-wind-dir');
+            if (windVal > 0) elWindDir.innerText = "▶";
+            else if (windVal < 0) elWindDir.innerText = "◀";
+            else elWindDir.innerText = "−";
+
+            elWind.innerText = Math.abs(windVal).toFixed(1);
+            if (windVal > 0) { elWind.className = "font-mono text-[10px] sm:text-[11px] text-green-400 font-bold leading-none"; }
+            else if (windVal < 0) { elWind.className = "font-mono text-[10px] sm:text-[11px] text-red-400 font-bold leading-none"; }
+            else { elWind.className = "font-mono text-[10px] sm:text-[11px] text-gray-400 font-bold leading-none"; }
+
+            if (gameMode === 'mission') {
+                let m = missions[currentMissionIdx];
+                document.getElementById('hud-mission-title').innerText = m.title;
+                elHudStatus.innerText = m.desc;
+                elHudStatus.className = "text-[9px] sm:text-[11px] font-bold text-gray-200 break-words leading-snug w-full sm:w-auto";
+
+                let targetAltStr = "---";
+                let targetDistStr = "---";
+                
+                if (m.type === 'altitude') {
+                    targetAltStr = (m.target / 1000).toFixed(1);
+                } else if (m.type === 'distance') {
+                    targetDistStr = (m.target / 1000).toFixed(1);
+                } else if (m.type === 'target') {
+                    targetDistStr = `${(m.targetMin / 1000).toFixed(0)}-${(m.targetMax / 1000).toFixed(0)}`;
+                } else if (m.type === 'target_alt') {
+                    targetAltStr = (m.targetAlt / 1000).toFixed(1);
+                    targetDistStr = `${(m.targetMin / 1000).toFixed(0)}-${(m.targetMax / 1000).toFixed(0)}`;
+                }
+
+                document.getElementById('hud-target-alt').innerText = targetAltStr;
+                document.getElementById('hud-target-dist').innerText = targetDistStr;
+
+            } else if (gameMode === 'free') {
+                document.getElementById('hud-mission-title').innerText = "FREE FLIGHT";
+                elHudStatus.innerText = "未知の宙域へ、どこまでも進め";
+                elHudStatus.className = "text-[9px] sm:text-[11px] font-bold text-yellow-300 break-words leading-snug w-full sm:w-auto";
+                
+                document.getElementById('hud-target-alt').innerText = "---";
+                document.getElementById('hud-target-dist').innerText = "---";
+            } else {
+                document.getElementById('hud-mission-title').innerText = "SCORING MODE";
+                elHudStatus.innerText = "限界の飛距離と宇宙滞時間を稼げ";
+                elHudStatus.className = "text-[9px] sm:text-[11px] font-bold text-purple-300 break-words leading-snug w-full sm:w-auto";
+                
+                document.getElementById('hud-target-alt').innerText = "---";
+                document.getElementById('hud-target-dist').innerText = "---";
+            }
+
+            updateHUD();
+        }
+
+        function endFlight() {
+            gameState = 'result';
+            rocket.isThrusting = false;
+            uiHudContainer.classList.add('hidden');
+            uiResult.classList.remove('hidden');
+
+            const distRaw = Math.max(0, rocket.x * WORLD_SCALE / 1000); 
+            const altRaw = Math.max(0, rocket.highestAltitude * WORLD_SCALE / 1000); 
+            const landingVyStr = (rocket.landingSpeed * WORLD_SCALE * 60).toFixed(0);
+            const landingVxStr = (rocket.landingVx * WORLD_SCALE * 60).toFixed(0);
+            
+            let isCrash = false;
+            if (!rocket.isEmergencyReturn) {
+                isCrash = rocket.landingSpeed <= -6.0 || Math.abs(rocket.landingVx) > 4.0;
+            }
+            let isSafelyLanded = !isCrash && !rocket.lostInSpace;
+
+            let multiplier = 1.0;
+            let statusText = "";
+            let statusClass = "";
+            let reason = "";
+
+            if (rocket.lostInSpace) {
+                statusText = "宇宙の塵"; statusClass = "text-red-500 border-red-500"; multiplier = 0.0;
+                reason = "宇宙の彼方へ消え去り帰還できなかった...";
+            } else if (!isSafelyLanded) {
+                if (rocket.landingSpeed <= -10.0) { statusText = "大破"; statusClass = "text-red-500 border-red-500"; multiplier = 0.2; reason = "縦の落下速度が速すぎて大破した"; }
+                else if (rocket.landingSpeed <= -6.0) { statusText = "激突着陸"; statusClass = "text-yellow-500 border-yellow-500"; multiplier = 0.5; reason = "ハードランディングにより機体が損壊した"; }
+                else if (Math.abs(rocket.landingVx) > 4.0) { statusText = "横転"; statusClass = "text-orange-500 border-orange-500"; multiplier = 0.4; reason = "横に滑りすぎて転倒・大破した"; }
+            } else {
+                if (rocket.stalledInAir && !rocket.isEmergencyReturn) { statusText = "空中失速"; statusClass = "text-blue-400 border-blue-400"; multiplier = 0.6; reason = "空中で失速し、墜落した"; }
+                else { statusText = "完璧な着陸！"; statusClass = "text-green-400 border-green-400"; multiplier = 3.0; }
+            }
+
+            let totalScore = 0;
+            const scoreDist = Math.floor(distRaw * 10);
+            const scoreAlt = Math.floor(altRaw * 15);
+            const scoreSpace = Math.floor(rocket.spaceTime * 100);
+
+            if (gameMode === 'mission') {
+                document.getElementById('row-score-alt').style.display = 'flex';
+                document.getElementById('row-score-space').style.display = 'none';
+                
+                let m = missions[currentMissionIdx];
+                let isCleared = false;
+                const distMeters = rocket.x * WORLD_SCALE;
+                if (isSafelyLanded) {
+                    if (m.type === 'altitude') {
+                        if (rocket.missionAchieved) { isCleared = true; reason = `目標高度 ${(m.target/1000).toFixed(0)}km を突破し安全に帰還！`; }
+                        else { reason = `目標高度 ${(m.target/1000).toFixed(0)}km に届きませんでした。`; }
+                    } else if (m.type === 'distance') {
+                        if (rocket.missionAchieved) { isCleared = true; reason = `目標飛距離 ${(m.target/1000).toFixed(0)}km を突破し安全に着陸！`; }
+                        else { reason = `目標飛距離 ${(m.target/1000).toFixed(0)}km に届きませんでした。`; }
+                    } else if (m.type === 'target') {
+                        if (distMeters >= m.targetMin && distMeters <= m.targetMax) { isCleared = true; reason = `ターゲットへの精密着陸に成功！`; }
+                        else { reason = `ターゲットエリア(${(m.targetMin/1000).toFixed(0)}km〜${(m.targetMax/1000).toFixed(0)}km)外でした。`; }
+                    } else if (m.type === 'target_alt') {
+                        if (rocket.missionAchieved && distMeters >= m.targetMin && distMeters <= m.targetMax) { isCleared = true; reason = `全ての目標を達成！見事な神業着陸です！`; }
+                        else if (rocket.missionAchieved) { reason = `高度目標は達成しましたが、ターゲットエリア外でした。`; }
+                        else { reason = `高度目標を達成できませんでした。`; }
+                    }
+                }
+
+                if (isCleared) {
+                    statusText = "ミッションクリア！";
+                    document.getElementById('btn-next').classList.remove('hidden');
+                    document.getElementById('btn-retry').classList.add('hidden');
+                } else {
+                    if (statusText === "完璧な着陸！") statusText = "ミッション失敗...";
+                    document.getElementById('btn-next').classList.add('hidden');
+                    document.getElementById('btn-retry').classList.remove('hidden');
+                }
+                
+                totalScore = Math.floor((scoreDist + scoreAlt) * multiplier);
+                document.getElementById('btn-score-retry').classList.add('hidden');
+                
+            } else {
+                document.getElementById('row-score-alt').style.display = 'none';
+                document.getElementById('row-score-space').style.display = 'flex';
+                
+                if (gameMode === 'free' && rocket.isEmergencyReturn) {
+                    reason = "強制着陸シーケンスが作動し、安全に帰還しました。限界に挑戦した記録を確認してください。";
+                } else if (isSafelyLanded && !rocket.stalledInAir) {
+                    reason = "無事帰還しました！限界に挑戦した記録を確認してください。";
+                }
+                totalScore = Math.floor((scoreDist + scoreSpace) * multiplier);
+                
+                document.getElementById('btn-retry').classList.add('hidden');
+                document.getElementById('btn-next').classList.add('hidden');
+                document.getElementById('btn-score-retry').classList.remove('hidden');
+            }
+
+            document.getElementById('result-title').innerText = statusText;
+            document.getElementById('result-title').className = `text-3xl sm:text-4xl font-black tracking-widest border-b pb-3 cyber-text mt-2 ${statusClass}`;
+            document.getElementById('result-reason').innerText = reason;
+            
+            document.getElementById('result-distance').innerText = distRaw.toFixed(2);
+            document.getElementById('result-altitude').innerText = altRaw.toFixed(2);
+            document.getElementById('result-vx').innerText = rocket.lostInSpace ? "---" : landingVxStr;
+            document.getElementById('result-vy').innerText = rocket.lostInSpace ? "---" : landingVyStr;
+            
+            document.getElementById('score-dist').innerText = scoreDist;
+            document.getElementById('score-alt').innerText = scoreAlt;
+            document.getElementById('score-space').innerText = scoreSpace;
+            
+            const elMult = document.getElementById('result-multiplier');
+            elMult.innerText = `x${multiplier.toFixed(1)}`;
+            elMult.className = multiplier >= 1 ? "text-green-400 font-bold text-base font-mono" : "text-red-500 font-bold text-base font-mono";
+            document.getElementById('result-total-score').innerText = totalScore;
+        }
+
+        document.getElementById('btn-launch').onclick = startFlight;
+        
+        document.getElementById('btn-retry').onclick = () => {
+            gameState = 'garage';
+            uiResult.classList.add('hidden');
+            uiGarage.classList.remove('hidden');
+            loadMission(currentMissionIdx);
+        };
+        
+        document.getElementById('btn-next').onclick = () => {
+            gameState = 'garage';
+            uiResult.classList.add('hidden');
+            uiGarage.classList.remove('hidden');
+            if (currentMissionIdx < missions.length - 1) currentMissionIdx++;
+            loadMission(currentMissionIdx);
+        };
+
+        document.getElementById('btn-score-retry').onclick = () => {
+            gameState = 'garage';
+            uiResult.classList.add('hidden');
+            uiGarage.classList.remove('hidden');
+            if (gameMode === 'free') loadFreeMode();
+            else loadScoreMode();
+        };
+
+        btnHudRetry.onclick = () => {
+            if (gameState === 'flight') {
+                gameState = 'garage';
+                rocket.isThrusting = false; 
+                uiHudContainer.classList.add('hidden');
+                uiGarage.classList.remove('hidden');
+                if (gameMode === 'mission') loadMission(currentMissionIdx);
+                else if (gameMode === 'free') loadFreeMode();
+                else loadScoreMode();
+            }
+        };
+
+        const handleBoostStart = (e) => { 
+            e.preventDefault(); 
+            if(gameState !== 'flight' || rocket.isParachuteOpen || rocket.isEmergencyReturn || rocket.fuel <= 0) return;
+
+            if (rocket.flightState === 'ready') {
+                rocket.flightState = 'flying';
+                rocket.launchAngle = rocket.angle; 
+                document.getElementById('hud-message').classList.add('hidden');
+            }
+            rocket.isThrusting = true; 
+            btnBoost.classList.add('active-state'); 
+        };
+
+        const handleBoostEnd = (e) => { 
+            e.preventDefault(); 
+            rocket.isThrusting = false; 
+            btnBoost.classList.remove('active-state'); 
+        };
+        
+        btnBoost.addEventListener('mousedown', handleBoostStart);
+        btnBoost.addEventListener('touchstart', handleBoostStart, {passive: false});
+        btnBoost.addEventListener('mouseup', handleBoostEnd);
+        btnBoost.addEventListener('mouseleave', handleBoostEnd);
+        btnBoost.addEventListener('touchend', handleBoostEnd, {passive: false});
+        btnBoost.addEventListener('touchcancel', handleBoostEnd, {passive: false});
+
+        const handleParachute = (e) => {
+            e.preventDefault();
+            if (gameState !== 'flight' || rocket.flightState !== 'flying' || rocket.isParachuteOpen || rocket.isEmergencyReturn || btnParachute.disabled) return;
+            executeParachute();
+        };
+
+        btnParachute.addEventListener('mousedown', handleParachute);
+        btnParachute.addEventListener('touchstart', handleParachute, {passive: false});
+
+        function executeParachute() {
+            if (gameMode === 'free') {
+                rocket.isEmergencyReturn = true;
+                rocket.isThrusting = false; 
+                btnBoost.classList.remove('active-state');
+                btnBoost.disabled = true;
+                btnTurn.disabled = true; 
+                
+                btnParachute.classList.add('active-state');
+                setTimeout(() => { btnParachute.classList.remove('active-state'); }, 100);
+                btnParachute.disabled = true;
+            } else {
+                rocket.isParachuteOpen = true;
+                rocket.isThrusting = false; 
+                btnBoost.classList.remove('active-state');
+                btnBoost.disabled = true;
+                btnTurn.disabled = true; 
+                
+                btnParachute.classList.add('active-state');
+                setTimeout(() => { btnParachute.classList.remove('active-state'); }, 100);
+                btnParachute.disabled = true;
+
+                for(let i=0; i<15; i++) {
+                    particles.push({
+                        x: rocket.x + (Math.random() - 0.5) * 20, y: rocket.y + 20 + (Math.random() - 0.5) * 20,
+                        vx: rocket.vx + (Math.random() - 0.5) * 10, vy: rocket.vy + (Math.random() - 0.5) * 10,
+                        life: 1.0, color: '#facc15', size: 3
+                    });
+                }
+            }
+        }
+
+        const handleTurn = (e) => {
+            e.preventDefault();
+            if (gameState !== 'flight' || rocket.flightState !== 'flying' || rocket.isParachuteOpen || rocket.isEmergencyReturn) return;
+            rocket.isReversed = !rocket.isReversed;
+            rocket.launchAngle = -rocket.launchAngle;
+            turnIcon.style.transform = rocket.isReversed ? 'rotate(45deg)' : 'rotate(-45deg)';
+        };
+        btnTurn.addEventListener('mousedown', handleTurn);
+        btnTurn.addEventListener('touchstart', handleTurn, {passive: false});
+
+        function update() {
+            requestAnimationFrame(update);
+
+            if (gameState === 'flight') {
+                let speed = Math.sqrt(rocket.vx * rocket.vx + rocket.vy * rocket.vy);
+                targetZoom = Math.max(0.4, 1.0 - (speed / 50) * 0.6);
+                currentZoom += (targetZoom - currentZoom) * 0.05;
+
+                if (rocket.flightState === 'ready') {
+                    let swingSpeed = 0.03;
+                    rocket.angle += swingSpeed * rocket.angleSwingDir;
+                    if (rocket.angle < -Math.PI/2) {
+                        rocket.angle = -Math.PI/2; rocket.angleSwingDir = 1;
+                    } else if (rocket.angle > -Math.PI/6) {
+                        rocket.angle = -Math.PI/6; rocket.angleSwingDir = -1;
+                    }
+                }
+
+                for (let ts = 0; ts < rocket.timeScale; ts++) {
+                    let altMeters = rocket.y * WORLD_SCALE;
+                    let distMeters = rocket.x * WORLD_SCALE;
+                    
+                    rocket.currentGFactor = Math.max(0, 1.0 - (altMeters / 100000));
+                    let currentGravity = rocket.baseGravity * rocket.currentGFactor;
+
+                    let windEffect = Math.max(0, 1.0 - (altMeters / 20000));
+
+                    if (altMeters >= 85000) rocket.spaceTime += (1 / 60);
+
+                    if (rocket.isThrusting && rocket.fuel > 0) {
+                        let thrustX = Math.cos(rocket.launchAngle) * rocket.thrustPower;
+                        let thrustY = -Math.sin(rocket.launchAngle) * rocket.thrustPower; 
+                        rocket.vy += thrustY; rocket.vx += thrustX; rocket.fuel -= 0.5;
+                        
+                        let flameDirX = -Math.cos(rocket.launchAngle);
+                        let flameDirY = Math.sin(rocket.launchAngle);
+                        if (ts === 0) {
+                            for(let i=0; i<2; i++) {
+                                particles.push({
+                                    x: rocket.x + flameDirX * 10 + (Math.random() - 0.5) * 5,
+                                    y: rocket.y + flameDirY * 10 + (Math.random() - 0.5) * 5, 
+                                    vx: rocket.vx * 0.2 + flameDirX * (5 + Math.random() * 5), 
+                                    vy: rocket.vy * 0.2 + flameDirY * (5 + Math.random() * 5), 
+                                    life: 1.0, color: Math.random() > 0.5 ? '#0ff' : '#fff', size: Math.random() * 3 + 1
+                                });
+                            }
+                        }
+                    }
+
+                    if (rocket.flightState === 'flying' && !rocket.isParachuteOpen && !rocket.isEmergencyReturn) {
+                        if (rocket.isThrusting) {
+                            rocket.angle += (rocket.launchAngle - rocket.angle) * 0.2;
+                        } else {
+                            let targetAngle = Math.atan2(-rocket.vy, Math.max(0.1, rocket.vx));
+                            rocket.angle += (targetAngle - rocket.angle) * 0.1; 
+                        }
+                    }
+
+                    if (rocket.isEmergencyReturn) {
+                        rocket.vy = -300; 
+                        rocket.vx *= 0.9;
+                    } else {
+                        if (rocket.flightState !== 'ready') {
+                            rocket.vy -= currentGravity; 
+                            rocket.vx += parseFloat(weather.wind) * 0.01 * windEffect;
+                        }
+                        
+                        if (rocket.isParachuteOpen) {
+                            rocket.vy *= 0.92; rocket.vx *= 0.93; 
+                        } else if (rocket.flightState === 'flying') {
+                            rocket.vy *= 0.99 * weather.dragMod; 
+                            rocket.vx *= 0.995 * weather.dragMod;
+                        }
+                    }
+                    
+                    rocket.x += rocket.vx; rocket.y += rocket.vy;
+
+                    if (rocket.y > rocket.highestAltitude) { rocket.highestAltitude = rocket.y; }
+
+                    if (gameMode === 'mission' && !rocket.missionAchieved) {
+                        let m = missions[currentMissionIdx];
+                        if (m.type === 'altitude' && altMeters >= m.target) {
+                            rocket.missionAchieved = true;
+                            elHudStatus.innerText = `高度 ${(m.target/1000).toFixed(0)}km 到達！安全に帰還せよ`;
+                            elHudStatus.className = "text-[9px] sm:text-[11px] font-bold text-green-400 break-words leading-snug w-full sm:w-auto";
+                        } else if (m.type === 'distance' && distMeters >= m.target) {
+                            rocket.missionAchieved = true;
+                            elHudStatus.innerText = `飛距離 ${(m.target/1000).toFixed(0)}km 到達！安全に着陸せよ`;
+                            elHudStatus.className = "text-[9px] sm:text-[11px] font-bold text-green-400 break-words leading-snug w-full sm:w-auto";
+                        } else if (m.type === 'target_alt' && altMeters >= m.targetAlt) {
+                            rocket.missionAchieved = true;
+                            elHudStatus.innerText = `高度突破！距離 ${(m.targetMin/1000).toFixed(0)}〜${(m.targetMax/1000).toFixed(0)}km に精密着陸せよ`;
+                            elHudStatus.className = "text-[9px] sm:text-[11px] font-bold text-green-400 break-words leading-snug w-full sm:w-auto";
+                        }
+                    }
+
+                    if (gameMode !== 'free' && rocket.flightState === 'flying' && altMeters > 100000) {
+                        rocket.flightState = 'lost_in_space';
+                        rocket.lostInSpace = true;
+                        
+                        rocket.isThrusting = false;
+                        btnBoost.classList.remove('active-state');
+                        btnBoost.disabled = true;
+                        btnTurn.disabled = true;
+                        btnParachute.disabled = true;
+                        
+                        rocket.lostCameraX = rocket.x;
+                        rocket.lostCameraY = rocket.y;
+                        rocket.lostTimer = 0;
+                        rocket.timeScale = 1;
+                        elFastForward.classList.add('hidden');
+
+                        document.getElementById('hud-message').classList.remove('hidden');
+                        document.getElementById('hud-message').innerHTML = `
+                            <div class="relative inline-block">
+                                <div class="text-2xl sm:text-4xl cyber-text text-red-500 font-black tracking-[0.2em] animate-pulse relative z-10 px-6 py-2 bg-black/40 backdrop-blur-sm rounded-lg border border-red-500/30">SIGNAL LOST</div>
+                            </div>
+                            <div class="mt-8 text-[10px] sm:text-sm text-red-300 font-bold tracking-widest bg-black/70 inline-block px-4 py-1.5 rounded border border-red-800 shadow-[0_0_10px_rgba(255,0,0,0.2)]">通信途絶... 機体は宇宙の彼方へ...</div>
+                        `;
+                    }
+
+                    if (rocket.flightState === 'lost_in_space') {
+                        rocket.lostTimer += 1 / 60;
+                        if (rocket.lostTimer > 4.0) {
+                            endFlight(); break;
+                        }
+                    }
+
+                    if (rocket.isEmergencyReturn) {
+                        rocket.timeScale = 1;
+                        elFastForward.classList.remove('hidden');
+                        elFastForward.innerHTML = `<div class="text-xl sm:text-2xl cyber-digit text-yellow-400 font-bold tracking-widest animate-pulse-fast bg-black/60 px-4 py-1 rounded">⏬ EMERGENCY RETURN</div>`;
+                    } else if (rocket.isParachuteOpen && Math.abs(rocket.vx) < 1.0 && altMeters > 5000) {
+                        rocket.timeScale = 20; 
+                        elFastForward.classList.remove('hidden');
+                        elFastForward.innerHTML = `<div class="text-xl sm:text-2xl cyber-digit text-blue-400 font-bold tracking-widest animate-pulse-fast bg-black/60 px-4 py-1 rounded">⏩ TIME ACCEL</div>`;
+                    } else {
+                        rocket.timeScale = 1; elFastForward.classList.add('hidden');
+                    }
+
+                    if (rocket.flightState === 'ready') {
+                        if (rocket.y <= 0) { rocket.y = 0; rocket.vy = 0; rocket.vx = 0; }
+                    } else if (rocket.flightState === 'flying') {
+                        if (rocket.y <= 0) {
+                            if (rocket.highestAltitude > 3.0) {
+                                rocket.y = 0; rocket.flightState = 'landed';
+                                rocket.landingSpeed = rocket.vy; rocket.landingVx = rocket.vx;
+                                rocket.vx *= 0.7; rocket.vy = 0; rocket.timeScale = 1;
+                                elFastForward.classList.add('hidden');
+
+                                if (rocket.isEmergencyReturn) {
+                                    rocket.landingSpeed = -2.0; 
+                                    rocket.landingVx = 0;
+                                }
+
+                                let isCrash = false;
+                                if (!rocket.isEmergencyReturn) {
+                                    isCrash = rocket.landingSpeed <= -6.0 || Math.abs(rocket.landingVx) > 4.0;
+                                }
+                                
+                                let impactColor = isCrash ? '#f0f' : '#0ff';
+                                let pCount = isCrash ? 40 : 10;
+                                
+                                if (ts === 0) {
+                                    for(let i=0; i<pCount; i++) {
+                                        particles.push({
+                                            x: rocket.x + (Math.random() - 0.5) * 20, y: 0, 
+                                            vx: rocket.vx * 0.5 + (Math.random() - 0.5) * 15, vy: Math.random() * 10, 
+                                            life: 1.5, color: impactColor, size: 2
+                                        });
+                                    }
+                                }
+                                if (gameState === 'flight') endFlight();
+                                break; 
+                            } else {
+                                rocket.y = 0;
+                                if (rocket.vy < 0) rocket.vy = 0;
+                                rocket.vx *= 0.95;
+                            }
+                        }
+                    }
+                } 
+                updateHUD();
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            let altMetersForWeather = rocket.y * WORLD_SCALE;
+            if ((weather.type === 'rain' || weather.type === 'storm') && altMetersForWeather < 15000) {
+                if (Math.random() < (weather.type === 'storm' ? 0.8 : 0.3)) {
+                    weatherParticles.push({
+                        screenX: Math.random() * width * 1.5 - width * 0.2, screenY: -50,
+                        vx: parseFloat(weather.wind) * 2 + (Math.random() - 0.5), vy: (weather.type === 'storm' ? 20 : 15) + Math.random() * 5
+                    });
+                }
+            }
+            for (let i = weatherParticles.length - 1; i >= 0; i--) {
+                let wp = weatherParticles[i]; wp.screenX += wp.vx; wp.screenY += wp.vy;
+                let camVx = rocket.flightState === 'lost_in_space' ? 0 : rocket.vx;
+                let camVy = rocket.flightState === 'lost_in_space' ? 0 : rocket.vy;
+                if (gameState === 'flight') { wp.screenX -= camVx * 0.5 * currentZoom; wp.screenY += camVy * 0.1 * currentZoom; }
+                if (wp.screenY > height) weatherParticles.splice(i, 1);
+            }
+
+            draw();
+        }
+
+        // --- HUD更新 ---
+        function updateHUD() {
+            if (gameState !== 'flight') return;
+            
+            let altMeters = rocket.y * WORLD_SCALE;
+            let distMeters = rocket.x * WORLD_SCALE;
+            let displayVx = rocket.vx * WORLD_SCALE * 60;
+            let displayVy = rocket.vy * WORLD_SCALE * 60;
+            
+            document.getElementById('hud-distance').innerText = (distMeters / 1000).toFixed(2);
+            document.getElementById('hud-altitude').innerText = (altMeters / 1000).toFixed(2);
+            
+            document.getElementById('hud-vx').innerText = (displayVx >= 0 ? '+' : '') + displayVx.toFixed(0);
+            document.getElementById('hud-vy').innerText = (displayVy >= 0 ? '+' : '') + displayVy.toFixed(0);
+            
+            document.getElementById('hud-gravity').innerText = rocket.currentGFactor.toFixed(2) + 'G';
+            
+            let layerName = "対流圏";
+            let layerColor = "text-white";
+
+            if (gameMode === 'free' && altMeters >= EVENT_INTERVAL) {
+                let altPhase = Math.floor(altMeters / EVENT_INTERVAL);
+                if (altPhase === 1) { layerName = "彩星宙域 I"; layerColor = "text-blue-200"; }
+                else if (altPhase === 2) { layerName = "彩星宙域 II"; layerColor = "text-purple-200"; }
+                else if (altPhase === 3) { layerName = "暗黒星雲群"; layerColor = "text-indigo-300"; }
+                else if (altPhase === 4) { layerName = "散光星雲群"; layerColor = "text-pink-300"; }
+                else if (altPhase === 5) { layerName = "天の川銀河(MILKY WAY)"; layerColor = "text-white text-shadow-[0_0_5px_#fff]"; }
+                else if (altPhase === 6) { layerName = "巨大星雲帯"; layerColor = "text-teal-300"; }
+                else if (altPhase === 7) { layerName = "銀河中心部"; layerColor = "text-orange-300"; }
+                else if (altPhase === 8) { layerName = "特異点(BLACK HOLE)"; layerColor = "text-red-500 animate-pulse"; }
+                else if (altPhase === 9) { layerName = "絶対暗黒界(DARKNESS)"; layerColor = "text-gray-500"; }
+                else { layerName = "無(VOID)"; layerColor = "text-white animate-pulse"; }
+            } else if (altMeters >= 100000) {
+                layerName = "宇宙空間";
+                layerColor = "text-purple-400";
+            } else if (altMeters >= 80000) {
+                layerName = "熱圏";
+                layerColor = "text-red-400";
+            } else if (altMeters >= 50000) {
+                layerName = "中間圏";
+                layerColor = "text-yellow-300";
+            } else if (altMeters >= 15000) {
+                layerName = "成層圏";
+                layerColor = "text-cyan-300";
+            }
+            const elLayer = document.getElementById('hud-env-layer');
+            if (elLayer) {
+                elLayer.innerText = layerName;
+                elLayer.className = `text-[9px] sm:text-[10px] font-bold ${layerColor}`;
+            }
+
+            let windEffect = Math.max(0, 1.0 - (altMeters / 20000));
+            if (gameMode === 'free') windEffect = 1.0;
+            let currentWind = parseFloat(weather.wind) * windEffect;
+            let elWind = document.getElementById('hud-env-wind');
+            let elWindDir = document.getElementById('hud-env-wind-dir');
+            if (elWind && elWindDir) {
+                if (currentWind > 0.05) elWindDir.innerText = "▶";
+                else if (currentWind < -0.05) elWindDir.innerText = "◀";
+                else elWindDir.innerText = "−";
+
+                elWind.innerText = Math.abs(currentWind).toFixed(1);
+                if (currentWind > 0.05) { elWind.className = "font-mono text-[10px] sm:text-[11px] text-green-400 font-bold leading-none"; }
+                else if (currentWind < -0.05) { elWind.className = "font-mono text-[10px] sm:text-[11px] text-red-400 font-bold leading-none"; }
+                else { elWind.className = "font-mono text-[10px] sm:text-[11px] text-gray-400 font-bold leading-none"; }
+            }
+            
+            let deg = Math.floor(-rocket.angle * (180 / Math.PI));
+            if (rocket.isParachuteOpen || rocket.isEmergencyReturn) deg = 90; 
+            document.getElementById('hud-angle-val').innerText = deg + '°';
+
+            const fuelPercent = Math.max(0, (rocket.fuel / rocket.maxFuel) * 100);
+            const fuelBar = document.getElementById('fuel-bar');
+            const fuelText = document.getElementById('hud-fuel-text');
+            
+            if(fuelText) fuelText.innerText = Math.round(fuelPercent) + '%';
+            if (fuelBar) {
+                fuelBar.style.width = fuelPercent + '%';
+                if (fuelPercent < 20) {
+                    fuelBar.style.backgroundColor = '#f43f5e';
+                    fuelBar.style.boxShadow = '0 0 8px #f43f5e';
+                    if(fuelText) fuelText.className = "text-[8px] sm:text-[10px] font-mono text-red-400 font-bold min-w-[24px] text-right animate-pulse";
+                } else {
+                    fuelBar.style.backgroundColor = '#0ff';
+                    fuelBar.style.boxShadow = '0 0 5px #0ff';
+                    if(fuelText) fuelText.className = "text-[8px] sm:text-[10px] font-mono text-white font-bold min-w-[24px] text-right";
+                }
+            }
+            if(rocket.fuel <= 0 && rocket.isThrusting) {
+                rocket.isThrusting = false;
+                btnBoost.classList.remove('active-state');
+                btnBoost.disabled = true;
+            }
+        }
+
+        // --- 全体描画 ---
+        function draw() {
+            if (!width || !height) return; 
+            
+            let cx = rocket.flightState === 'lost_in_space' ? rocket.lostCameraX : rocket.x;
+            let cy = rocket.flightState === 'lost_in_space' ? rocket.lostCameraY : rocket.y;
+            let camVx = rocket.flightState === 'lost_in_space' ? 0 : rocket.vx;
+            let camVy = rocket.flightState === 'lost_in_space' ? 0 : rocket.vy;
+            let time = Date.now() * 0.001;
+            let altMeters = cy * WORLD_SCALE;
+            
+            let altPhase = Math.floor(altMeters / EVENT_INTERVAL);
+            let phaseProgress = (altMeters % EVENT_INTERVAL) / EVENT_INTERVAL;
+            let eventAlpha = Math.sin(phaseProgress * Math.PI); // 山なりフェード
+
+            // 1. 背景色 (スケール外)
+            let bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+            
+            if (gameState === 'menu') {
+                bgGrad.addColorStop(0, '#020205');
+                bgGrad.addColorStop(1, '#0a1020');
+            } else {
+                let bgProgress = Math.min(1.0, altMeters / 100000); 
+                let topR = Math.floor(2 + 8 * (1 - bgProgress));
+                let topG = Math.floor(2 + 18 * (1 - bgProgress));
+                let topB = Math.floor(5 + 45 * (1 - bgProgress));
+                let btmR = Math.floor(10 + 20 * (1 - bgProgress));
+                let btmG = Math.floor(16 + 44 * (1 - bgProgress));
+                let btmB = Math.floor(32 + 88 * (1 - bgProgress));
+
+                bgGrad.addColorStop(0, `rgb(${topR}, ${topG}, ${topB})`);
+                bgGrad.addColorStop(1, `rgb(${btmR}, ${btmG}, ${btmB})`);
+            }
+            ctx.fillStyle = bgGrad; 
+            ctx.fillRect(0, 0, width, height);
+
+            // 2. 星空 (スケール外)
+            let starBaseAlpha = Math.max(0, Math.min(1.0, (altMeters - 5000) / 35000));
+            if (gameMode === 'free' && altMeters > 100000) starBaseAlpha = 1.0;
+            if (gameState === 'menu') starBaseAlpha = 1.0; 
+
+            // 4500km以降（フェーズ9）で星が消え「闇」になる演出
+            if (gameMode === 'free' && altMeters >= 4500000) {
+                let fadeProgress = Math.min(1.0, (altMeters - 4500000) / 500000); 
+                starBaseAlpha *= (1.0 - fadeProgress);
+            }
+            
+            if (starBaseAlpha > 0) {
+                gridStars.forEach((g, i) => {
+                    if (gameState === 'flight') {
+                        g.screenX -= camVx * 0.05 * g.speed;
+                        g.screenY += camVy * 0.05 * g.speed; 
+                    } else if (gameState === 'menu') {
+                        g.screenX -= 0.05 * g.speed;
+                        g.screenY += 0.1 * g.speed;
+                    }
+                    
+                    while(g.screenX < 0) g.screenX += width;
+                    while(g.screenX > width) g.screenX -= width;
+                    while(g.screenY < 0) g.screenY += height;
+                    while(g.screenY > height) g.screenY -= height;
+                    
+                    let twinkle = 1.0;
+                    if (altMeters > 80000 || gameState === 'menu') {
+                        twinkle = Math.sin(time * 3 * g.speed + i) * 0.5 + 0.5;
+                    }
+
+                    // 星の色づけ演出 (500km〜4000km)
+                    let drawColor = g.color;
+                    if (gameMode === 'free' && altPhase >= 1 && altPhase < 8) {
+                        let colorTypes = ['#fff', '#facc15', '#60a5fa', '#f472b6', '#34d399', '#c084fc'];
+                        let colorIdx = (i * 7) % colorTypes.length;
+                        if(altPhase >= 2) {
+                            colorTypes = ['#fff', '#fde047', '#93c5fd', '#f9a8d4', '#6ee7b7', '#d8b4fe', '#fdba74'];
+                            colorIdx = (i * 11) % colorTypes.length;
+                        }
+                        drawColor = colorTypes[colorIdx];
+                    }
+                    
+                    ctx.fillStyle = drawColor;
+                    ctx.globalAlpha = starBaseAlpha * (0.3 + g.speed * 0.2 + twinkle * 0.5);
+                    let starSize = g.speed * 0.8 + (twinkle * 0.5);
+                    
+                    ctx.beginPath();
+                    ctx.arc(g.screenX, g.screenY, starSize, 0, Math.PI*2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1.0; // reset
+            }
+
+            // === 500km毎の美しい宇宙演出 ===
+            if (gameMode === 'free' && altMeters >= EVENT_INTERVAL && gameState !== 'menu') {
+                // ガタつきの原因だった % width / % height を削除し、滑らかにスクロールする値を使用
+                let bgScrollX = (rocket.x * WORLD_SCALE * -0.0005);
+                let bgScrollY = (altMeters * 0.0005);
+                
+                ctx.save();
+
+                if (altPhase === 1 || altPhase === 2) {
+                    // 彩星宙域
+                    ctx.globalAlpha = eventAlpha * (altPhase === 1 ? 0.3 : 0.6);
+                    ctx.globalCompositeOperation = 'screen';
+                    let grad = ctx.createLinearGradient(0, height, width, 0);
+                    grad.addColorStop(0, 'rgba(50, 50, 150, 0)');
+                    grad.addColorStop(0.5, altPhase === 1 ? 'rgba(50, 100, 200, 0.2)' : 'rgba(100, 50, 200, 0.3)');
+                    grad.addColorStop(1, 'rgba(50, 50, 150, 0)');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, width, height);
+                }
+                else if (altPhase === 3 || altPhase === 4 || altPhase === 6 || altPhase === 7) {
+                    // 星雲系
+                    ctx.globalAlpha = eventAlpha * 0.7;
+                    ctx.globalCompositeOperation = 'screen';
+                    let nebulas = [];
+                    
+                    if (altPhase === 3) { // 暗黒星雲
+                        nebulas = [
+                            {x: width*0.3, y: height*0.2, r: height*0.6, c1:'rgba(50,0,150,0.5)', c2:'rgba(0,0,50,0)'},
+                            {x: width*0.7, y: height*0.5, r: height*0.5, c1:'rgba(0,100,200,0.4)', c2:'rgba(0,0,50,0)'}
+                        ];
+                    } else if (altPhase === 4) { // 散光星雲
+                        nebulas = [
+                            {x: width*0.5, y: height*0.3, r: height*0.8, c1:'rgba(150,30,50,0.5)', c2:'rgba(50,0,0,0)'},
+                            {x: width*0.2, y: height*0.7, r: height*0.4, c1:'rgba(200,100,0,0.3)', c2:'rgba(0,0,0,0)'}
+                        ];
+                    } else if (altPhase === 6) { // 巨大星雲帯
+                        nebulas = [
+                            {x: width*0.5, y: height*0.2, r: height*0.6, c1:'rgba(200,0,150,0.4)', c2:'rgba(0,0,0,0)'},
+                            {x: width*0.2, y: height*0.6, r: height*0.5, c1:'rgba(150,150,0,0.3)', c2:'rgba(0,0,0,0)'},
+                            {x: width*0.8, y: height*0.7, r: height*0.5, c1:'rgba(0,150,200,0.3)', c2:'rgba(0,0,0,0)'}
+                        ];
+                    } else if (altPhase === 7) { // 銀河中心部
+                        nebulas = [
+                            {x: width*0.5, y: height*0.4, r: height, c1:'rgba(255,255,200,0.5)', c2:'rgba(255,150,50,0)'},
+                            {x: width*0.5, y: height*0.4, r: height*0.4, c1:'rgba(255,255,255,0.7)', c2:'rgba(255,200,100,0)'}
+                        ];
+                    }
+                    
+                    nebulas.forEach(n => {
+                        // bgScrollの影響でY座標が上にずれていくので、描画位置を調整
+                        // base Yにフェーズ開始時からの相対移動量を足す
+                        let phaseAlt = altMeters - altPhase * EVENT_INTERVAL; 
+                        let localScrollY = phaseAlt * 0.0005;
+                        let nx = n.x + bgScrollX;
+                        let ny = n.y + localScrollY; // 下にスクロールさせる
+                        
+                        let grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, n.r);
+                        grad.addColorStop(0, n.c1);
+                        grad.addColorStop(1, n.c2);
+                        ctx.fillStyle = grad;
+                        ctx.beginPath(); ctx.arc(nx, ny, n.r, 0, Math.PI*2); ctx.fill();
+                    });
+                }
+                else if (altPhase === 5) {
+                    // 天の川銀河 (Milky Way)
+                    ctx.globalAlpha = eventAlpha * 0.6;
+                    ctx.globalCompositeOperation = 'screen';
+                    
+                    let phaseAlt = altMeters - altPhase * EVENT_INTERVAL;
+                    let mwScrollX = -(rocket.x * WORLD_SCALE * 0.0002); // 天の川は遠いのでスクロールを遅く
+                    let mwScrollY = phaseAlt * 0.0002;
+                    
+                    ctx.save();
+                    ctx.translate(width/2 + mwScrollX, height/2 + mwScrollY);
+                    ctx.rotate(-Math.PI/4); // 斜めに配置
+                    
+                    // 帯のグラデーション
+                    let grad = ctx.createLinearGradient(0, -height*1.5, 0, height*1.5);
+                    grad.addColorStop(0, 'rgba(0,0,0,0)');
+                    grad.addColorStop(0.4, 'rgba(50, 0, 100, 0.2)');
+                    grad.addColorStop(0.48, 'rgba(100, 150, 255, 0.6)');
+                    grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)');
+                    grad.addColorStop(0.52, 'rgba(200, 100, 255, 0.6)');
+                    grad.addColorStop(0.6, 'rgba(50, 0, 100, 0.2)');
+                    grad.addColorStop(1, 'rgba(0,0,0,0)');
+                    
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(-width*2, -height*1.5, width*4, height*3);
+                    
+                    // 天の川の中の星くず
+                    for(let i=0; i<100; i++) {
+                        let px = (Math.sin(i * 123.45)) * width * 1.5;
+                        let py = (Math.cos(i * 678.90)) * height * 0.2; // 帯の中心付近に密集
+                        let pr = 0.5 + Math.abs(Math.sin(i)) * 2;
+                        ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + Math.abs(Math.cos(i+time))*0.5})`;
+                        ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI*2); ctx.fill();
+                    }
+                    ctx.restore();
+                }
+                else if (altPhase === 8) {
+                    // ブラックホール (4000km ~ 4500km)
+                    ctx.globalAlpha = eventAlpha;
+                    
+                    // ブラックホールは背景の奥にあるため、パララックス効果でスクロールを非常に遅くする
+                    let phaseAlt = altMeters - altPhase * EVENT_INTERVAL;
+                    let bhScrollX = -(rocket.x * WORLD_SCALE * 0.0001);
+                    let bhScrollY = phaseAlt * 0.0003; 
+                    
+                    let bx = width/2 + bhScrollX;
+                    let by = height*0.1 + bhScrollY;
+                    let bRadius = Math.min(width, height) * 0.2;
+
+                    // 降着円盤 (裏)
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.save();
+                    ctx.translate(bx, by);
+                    ctx.rotate(-Math.PI/8);
+                    let gradDisk = ctx.createRadialGradient(0, 0, bRadius, 0, 0, bRadius * 2.5);
+                    gradDisk.addColorStop(0, 'rgba(255, 100, 50, 0.9)');
+                    gradDisk.addColorStop(0.3, 'rgba(255, 150, 0, 0.6)');
+                    gradDisk.addColorStop(1, 'rgba(100, 0, 50, 0)');
+                    ctx.fillStyle = gradDisk;
+                    ctx.scale(1, 0.3);
+                    ctx.beginPath(); ctx.arc(0, 0, bRadius * 2.5, 0, Math.PI*2); ctx.fill();
+                    ctx.restore();
+
+                    // 歪曲光輪 (フォトンリング)
+                    ctx.save();
+                    ctx.translate(bx, by);
+                    let gradRing = ctx.createRadialGradient(0, 0, bRadius*0.9, 0, 0, bRadius*1.5);
+                    gradRing.addColorStop(0, 'rgba(255, 200, 100, 0)');
+                    gradRing.addColorStop(0.1, 'rgba(255, 200, 100, 0.8)');
+                    gradRing.addColorStop(0.5, 'rgba(255, 100, 50, 0.3)');
+                    gradRing.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = gradRing;
+                    ctx.beginPath(); ctx.arc(0, 0, bRadius*1.5, 0, Math.PI*2); ctx.fill();
+                    ctx.restore();
+
+                    // 特異点
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath(); ctx.arc(bx, by, bRadius, 0, Math.PI*2); ctx.fill();
+                }
+                else if (altPhase >= 10) {
+                    // 無の世界 (5000km ~) : 完全な暗黒に、デジタルなシアンの無限グリッド線だけが走るシミュレーションの果て
+                    let voidProg = Math.min(1.0, (altMeters - 5000000) / 100000);
+                    ctx.globalAlpha = voidProg;
+                    
+                    ctx.strokeStyle = 'rgba(0, 255, 255, 0.2)';
+                    ctx.lineWidth = 1;
+                    
+                    let camOffX = (cx * 0.5) % 100;
+                    let camOffY = -(cy * 0.5) % 100;
+                    
+                    ctx.beginPath();
+                    for(let wx = -100 - camOffX; wx < width + 100; wx += 100) { ctx.moveTo(wx, 0); ctx.lineTo(wx, height); }
+                    for(let wy = -100 - camOffY; wy < height + 100; wy += 100) { ctx.moveTo(0, wy); ctx.lineTo(width, wy); }
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // 3. 天候パーティクル (スケール外)
+            let weatherAlphaMod = Math.max(0, 1.0 - (altMeters / 15000));
+            if (gameMode === 'free') weatherAlphaMod = 1.0;
+            if (weatherAlphaMod > 0 && gameState !== 'menu') {
+                ctx.strokeStyle = weather.type === 'storm' ? `rgba(200, 200, 255, ${0.06 * weatherAlphaMod})` : `rgba(100, 150, 255, ${0.03 * weatherAlphaMod})`;
+                ctx.lineWidth = weather.type === 'storm' ? 2 : 1;
+                ctx.beginPath();
+                weatherParticles.forEach(wp => {
+                    ctx.moveTo(wp.screenX, wp.screenY);
+                    ctx.lineTo(wp.screenX - wp.vx * 2, wp.screenY - wp.vy * 2);
+                });
+                ctx.stroke();
+            }
+
+            // 4. スピード線 (スケール外)
+            let speed = Math.sqrt(rocket.vx*rocket.vx + rocket.vy*rocket.vy);
+            let speedLineAlphaMod = Math.max(0, 1.0 - (altMeters / 30000));
+            if (gameMode === 'free') speedLineAlphaMod = 1.0;
+            if (gameState === 'flight' && speed > 5 && !rocket.isParachuteOpen && !rocket.isEmergencyReturn && rocket.flightState !== 'lost_in_space' && speedLineAlphaMod > 0) {
+                ctx.save();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${0.03 * speedLineAlphaMod})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                let velAngle = Math.atan2(-rocket.vy, rocket.vx);
+                let lineLen = Math.min(speed, 50);
+                speedLines.forEach(sl => {
+                    sl.x -= camVx * 0.5 * currentZoom; 
+                    sl.y += camVy * 0.5 * currentZoom; 
+                    if (sl.y > height || sl.y < 0 || sl.x > width || sl.x < 0) {
+                        sl.x = Math.random() * width; sl.y = Math.random() * height;
+                    }
+                    ctx.moveTo(sl.x, sl.y);
+                    ctx.lineTo(sl.x - Math.cos(velAngle) * lineLen, sl.y - Math.sin(velAngle) * lineLen);
+                });
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // ==========================================
+            // ズーム（カメラ引き）レイヤー
+            // ==========================================
+            ctx.save();
+            let rocketScreenX = width / 4;
+            let cameraY = Math.max(0, cy - 200); 
+            let rocketScreenY = height - 100 - (cy - cameraY);
+            
+            ctx.translate(rocketScreenX, rocketScreenY);
+            ctx.scale(currentZoom, currentZoom);
+            ctx.translate(-rocketScreenX, -rocketScreenY);
+
+            let viewW = width / currentZoom;
+            let viewH = height / currentZoom;
+
+            // 5. グリッド
+            let gridAlpha = Math.max(0, 1.0 - (altMeters / 50000));
+            if (gridAlpha > 0) {
+                ctx.save(); ctx.strokeStyle = `rgba(0, 255, 255, ${0.05 * gridAlpha})`; ctx.lineWidth = 1 / currentZoom;
+                let startGridX = Math.floor((cx - viewW*1.5) / 100) * 100;
+                for(let wx = startGridX; wx < cx + viewW*1.5; wx += 100) {
+                    let sx = getScreenX(wx); ctx.beginPath(); ctx.moveTo(sx, -viewH); ctx.lineTo(sx, height + viewH*2); ctx.stroke();
+                }
+                let startGridY = Math.floor((cy - viewH*1.5) / 100) * 100;
+                for(let wy = startGridY; wy < cy + viewH*1.5; wy += 100) {
+                    let sy = getScreenY(wy); ctx.beginPath(); ctx.moveTo(-viewW, sy); ctx.lineTo(width + viewW*2, sy); ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // 6. 雲
+            ctx.save();
+            clouds.forEach(c => {
+                let sx = getScreenX(c.worldX);
+                let sy = getScreenY(c.worldY);
+                if (sx > -c.w - viewW && sx < width + c.w + viewW && sy > -c.h - viewH && sy < height + c.h + viewH) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${c.opacity})`;
+                    ctx.beginPath(); ctx.ellipse(sx, sy, c.w, c.h, 0, 0, Math.PI*2); ctx.fill();
+                }
+            });
+            ctx.restore();
+
+            // 7. 地面
+            let groundY = getScreenY(0);
+            if (groundY < height + viewH) {
+                let groundColor = gameState === 'menu' ? '#166534' : '#22c55e'; // メニュー時は暗め
+                ctx.save(); ctx.strokeStyle = groundColor; ctx.lineWidth = 2 / currentZoom; ctx.shadowBlur = 10; ctx.shadowColor = groundColor;
+                ctx.beginPath(); ctx.moveTo(-viewW, groundY); ctx.lineTo(width + viewW*2, groundY); ctx.stroke();
+                let startFloorX = Math.floor((cx - viewW) / 50) * 50;
+                for(let wx = startFloorX; wx < cx + viewW*2; wx += 50) {
+                    let sx = getScreenX(wx);
+                    ctx.beginPath(); ctx.moveTo(sx, groundY); ctx.lineTo(sx - 20, groundY + 40); ctx.stroke();
+                }
+                ctx.restore();
+
+                if (gameMode === 'mission' && gameState === 'flight') {
+                    let m = missions[currentMissionIdx];
+                    if (m.type === 'target' || m.type === 'target_alt') {
+                        let tMinWorldX = m.targetMin / WORLD_SCALE;
+                        let tMaxWorldX = m.targetMax / WORLD_SCALE;
+                        if (tMaxWorldX > cx - viewW && tMinWorldX < cx + viewW*2) {
+                            let tMinScreenX = getScreenX(tMinWorldX);
+                            let tMaxScreenX = getScreenX(tMaxWorldX);
+                            ctx.save();
+                            ctx.fillStyle = 'rgba(74, 222, 128, 0.2)'; ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 2 / currentZoom;
+                            ctx.fillRect(tMinScreenX, groundY - 5, tMaxScreenX - tMinScreenX, 5);
+                            ctx.strokeRect(tMinScreenX, groundY - 5, tMaxScreenX - tMinScreenX, 5);
+                            ctx.fillStyle = '#4ade80'; ctx.font = `bold ${Math.max(12, 16 * currentZoom)}px "Share Tech Mono"`; ctx.textAlign = 'center';
+                            ctx.fillText('▼ TARGET BASE ▼', (tMinScreenX + tMaxScreenX)/2, groundY - 15);
+                            ctx.restore();
+                        }
+                    }
+                }
+            }
+
+            // 8. ワールドパーティクル (爆発など)
+            particles.forEach(p => {
+                ctx.save(); ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10; ctx.shadowColor = p.color;
+                ctx.fillRect(getScreenX(p.x), getScreenY(p.y), p.size, p.size); ctx.restore();
+            });
+
+            // 9. 発射パッド
+            if (cx < viewW) {
+                let padSx = getScreenX(0); let padSy = getScreenY(0);
+                ctx.save(); 
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)'; 
+                ctx.lineWidth = 1 / currentZoom;
+                ctx.beginPath(); ctx.moveTo(padSx, padSy); ctx.lineTo(padSx, padSy - 300); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(padSx - 50, padSy); ctx.lineTo(padSx + 300, padSy); ctx.stroke();
+                ctx.restore();
+            }
+
+            // 10. ロケット本体
+            let sx = getScreenX(rocket.x); let sy = getScreenY(rocket.y);
+            ctx.save(); ctx.translate(sx, sy);
+            if (rocket.isThrusting && rocket.fuel > 0) ctx.translate((Math.random()-0.5)*4, (Math.random()-0.5)*4);
+
+            let angle = 0;
+            if (gameState === 'flight') {
+                if (rocket.isParachuteOpen || rocket.isEmergencyReturn) { angle = -Math.PI / 2; } 
+                else { angle = rocket.angle; }
+            }
+            ctx.rotate(angle);
+
+            // プラズマ
+            let isPlasma = false;
+            let plasmaLevel = 0;
+            if (gameState === 'flight' && !rocket.isParachuteOpen) {
+                if (rocket.isEmergencyReturn && altMeters > 5000) {
+                    isPlasma = true;
+                    plasmaLevel = 1.0;
+                } else if (speed > 10 && altMeters > 30000 && altMeters < 85000) {
+                    isPlasma = true;
+                    plasmaLevel = Math.min(1, (speed - 10) / 20) * Math.max(0, Math.sin((altMeters - 30000) / 55000 * Math.PI));
+                }
+            }
+            if (isPlasma && plasmaLevel > 0) {
+                ctx.save();
+                ctx.fillStyle = `rgba(255, 100, 0, ${plasmaLevel * 0.7})`;
+                ctx.shadowBlur = 20 * plasmaLevel; ctx.shadowColor = '#ff4500';
+                ctx.beginPath();
+                ctx.moveTo(35, 0); ctx.lineTo(10, 15); ctx.lineTo(-20, 20);
+                ctx.lineTo(-20, -20); ctx.lineTo(10, -15); ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // バーニアの炎
+            if (rocket.isThrusting && rocket.fuel > 0) {
+                ctx.fillStyle = '#0ff'; ctx.shadowBlur = 15; ctx.shadowColor = '#0ff';
+                ctx.beginPath(); ctx.moveTo(-15, -5); ctx.lineTo(-35 - Math.random() * 20, 0); ctx.lineTo(-15, 5); ctx.fill();
+            }
+
+            // 機体
+            ctx.strokeStyle = '#fff'; ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+            ctx.lineWidth = 2; 
+            ctx.shadowBlur = 10; ctx.shadowColor = '#0ff';
+            ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-15, 10); ctx.lineTo(-10, 0); ctx.lineTo(-15, -10); ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            // パラシュート
+            if (rocket.isParachuteOpen) {
+                ctx.restore(); ctx.save(); ctx.translate(sx, sy);
+                ctx.strokeStyle = '#facc15'; ctx.lineWidth = 2; ctx.shadowBlur = 15; ctx.shadowColor = '#facc15';
+                ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-20, -50); ctx.moveTo(0, 0); ctx.lineTo(20, -50); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, -50, 30, Math.PI, 0); ctx.stroke();
+                ctx.fillStyle = 'rgba(250, 204, 21, 0.15)'; ctx.fill();
+            }
+            
+            ctx.restore(); // ロケットリストア
+            ctx.restore(); // ズームレイヤーリストア
+        }
+
+        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } 
+        else { initApp(); }
+    </script>
+</body>
+</html>
