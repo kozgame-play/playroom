@@ -543,6 +543,7 @@
             try {
                 if (isAuthReady && authUser) {
                     await addDoc(collection(db, "leaderboard_04"), {
+                        userId: authUser.uid,
                         name: name,
                         score: calculatedFinalScore,
                         timestamp: Date.now()
