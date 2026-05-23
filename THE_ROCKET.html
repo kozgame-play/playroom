@@ -376,7 +376,7 @@
                     </div>
                 </div>
 
-                <div class="border border-cyan-500/50 p-4 bg-black/80 rounded mt-2">
+                <div id="result-score-details" class="border border-cyan-500/50 p-4 bg-black/80 rounded mt-2">
                     <div class="flex justify-between text-xs sm:text-sm mb-2 text-gray-300 font-bold">
                         <span>飛距離スコア</span><span class="font-mono"><span id="score-dist">0</span> pt</span>
                     </div>
@@ -1094,10 +1094,17 @@
             document.getElementById('result-total-score').innerText = totalScore;
 
             // --- スコア登録ボタンの表示判定 ---
-            if (calculatedFinalScore > 0) {
+            if (gameMode === 'score' && calculatedFinalScore > 0) {
                 document.getElementById('btn-register-score').classList.remove('hidden');
             } else {
                 document.getElementById('btn-register-score').classList.add('hidden');
+            }
+            
+            // --- スコア詳細エリアの表示判定 ---
+            if (gameMode === 'score') {
+                document.getElementById('result-score-details').classList.remove('hidden');
+            } else {
+                document.getElementById('result-score-details').classList.add('hidden');
             }
         }
 
