@@ -20,10 +20,11 @@
             --text-light: #ffffff;
             
             /* 各ゲームのテーマカラー */
+            --color-rocket: #f97316;   /* オレンジ（THE ROCKET用新色） */
+            --color-sky: #0ea5e9;      /* スカイブルー */
             --color-spe: #3b82f6;      /* 青 */
             --color-2430: #22c55e;     /* 緑 */
             --color-dan: #ef4444;      /* 赤 */
-            --color-sky: #0ea5e9;      /* スカイブルー（新色） */
             
             --shadow-dark: #1a0426;
         }
@@ -73,7 +74,7 @@
         .button-container {
             display: flex;
             flex-direction: column;
-            gap: 1.2rem; /* ボタンが増えたので間隔を少し調整 */
+            gap: 1.2rem;
         }
 
         .play-button {
@@ -89,10 +90,11 @@
         }
 
         /* ボタンごとの背景色 */
+        .btn-rocket { background-color: var(--color-rocket); }
+        .btn-sky { background-color: var(--color-sky); }
         .btn-spe { background-color: var(--color-spe); }
         .btn-2430 { background-color: var(--color-2430); }
         .btn-dan { background-color: var(--color-dan); }
-        .btn-sky { background-color: var(--color-sky); }
 
         .play-button:hover {
             transform: translate(-2px, -2px);
@@ -146,8 +148,15 @@
         <div class="subtitle">▶ SELECT GAME</div>
         
         <div class="button-container">
-            <a href="SKYDRIFT.html" class="play-button btn-sky">
+            <!-- 新しく追加した THE ROCKET -->
+            <a href="THEROCKET.html" class="play-button btn-rocket">
                 <span class="badge">NEW!!</span>
+                <span class="game-title">THE ROCKET</span>
+                <span class="game-desc">ロケットシミュレーション</span>
+            </a>
+
+            <!-- 既存のゲーム一覧 -->
+            <a href="SKYDRIFT.html" class="play-button btn-sky">
                 <span class="game-title">SKYDRIFT</span>
                 <span class="game-desc">爽快ドリフトレース</span>
             </a>
