@@ -488,7 +488,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
         // スマホ連打によるズーム・イベント伝播の防止
@@ -519,9 +519,18 @@
         // ==========================================
         // Firebase 初期化
         // ==========================================
-        // ご提供いただいたFirebase Configはドメイン制限(リファラーブロック)により弾かれてしまうため、
-        // この環境で安全に動作する組み込みのFirebase環境と認証を使用するように書き換えます。
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // Canvasプレビュー環境か、外部(ご自身の)サーバー環境かを自動判定します
+        const isCanvasEnv = typeof __firebase_config !== 'undefined';
+        
+        const firebaseConfig = isCanvasEnv ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyB5esz6oPFT7YI9VBFnitFmNzLNvKs6RBE",
+            authDomain: "kozgame.firebaseapp.com",
+            projectId: "kozgame",
+            storageBucket: "kozgame.firebasestorage.app",
+            messagingSenderId: "613372363405",
+            appId: "1:613372363405:web:8e68ca71c1b2e97db418c4",
+            measurementId: "G-MGP9LN5C6K"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -530,11 +539,16 @@
 
         let currentUser = null;
         
+        // 認証の初期化 (Canvas環境用と外部環境用を分岐)
         const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token).catch(console.error);
-            } else {
-                await signInAnonymously(auth).catch(console.error);
+            try {
+                if (isCanvasEnv && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth Error:", error);
             }
         };
         initAuth();
@@ -543,11 +557,21 @@
             currentUser = user;
         });
 
+        // コレクションの参照パスを環境に合わせて取得する関数
+        function getCollectionRef(mode) {
+            if (isCanvasEnv) {
+                // Canvasプレビュー環境用のデータパス
+                return collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard_04_' + mode);
+            } else {
+                // ご自身のFirebase上のデータパス
+                return collection(db, "leaderboard_04", "ranking_" + mode, "entries");
+            }
+        }
+
         async function saveScore(mode, playerName, score) {
             if (!currentUser) return false;
             try {
-                // 環境ルールに従ったFirestoreパスに変更
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard_04_' + mode);
+                const colRef = getCollectionRef(mode);
                 await addDoc(colRef, {
                     playerName: playerName || "GUEST",
                     score: score,
@@ -563,13 +587,13 @@
 
         async function fetchTopScores(mode) {
             try {
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard_04_' + mode);
+                const colRef = getCollectionRef(mode);
                 const querySnapshot = await getDocs(colRef);
                 let scores = [];
                 querySnapshot.forEach((doc) => {
                     scores.push(doc.data());
                 });
-                // Javascript側でソートとトップ10の抽出を行う (インデックスエラー回避)
+                // Javascript側でソートとトップ10の抽出を行う (Firestoreのインデックスエラー回避)
                 scores.sort((a, b) => b.score - a.score);
                 return scores.slice(0, 10);
             } catch (e) {
