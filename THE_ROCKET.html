@@ -476,6 +476,118 @@
             bgm.pause();
         });
         
+        // ---------------- BGM・サウンドオブジェクトの準備 ----------------
+        const bgm = new Audio('THE_ROCKET_BGM.mp3');
+        bgm.loop = true; // ループ再生を有効化
+
+        // ---------------- サウンドマネージャー (Web Audio API) ----------------
+        class SoundManager {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.3; // 全体の音量
+                this.masterGain.connect(this.ctx.destination);
+                this.thrustOsc = null;
+                this.thrustGain = null;
+            }
+
+            resume() { if (this.ctx.state === 'suspended') this.ctx.resume(); }
+
+            playTone(freq, type, duration, vol) {
+                this.resume();
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, t);
+                gain.gain.setValueAtTime(vol, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + duration);
+                osc.connect(gain); gain.connect(this.masterGain);
+                osc.start(t); osc.stop(t + duration);
+            }
+
+            playNoise(duration, vol, freq = 100) {
+                this.resume();
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, t);
+                osc.frequency.exponentialRampToValueAtTime(10, t + duration);
+                gain.gain.setValueAtTime(vol, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + duration);
+                osc.connect(gain); gain.connect(this.masterGain);
+                osc.start(t); osc.stop(t + duration);
+            }
+
+            seClick() { this.playTone(880, 'sine', 0.05, 0.1); }
+            
+            seParachute() {
+                this.resume();
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, t);
+                osc.frequency.exponentialRampToValueAtTime(100, t + 0.4);
+                gain.gain.setValueAtTime(0.3, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+                osc.connect(gain); gain.connect(this.masterGain);
+                osc.start(t); osc.stop(t + 0.4);
+            }
+
+            seCrash() {
+                this.playNoise(1.5, 0.4, 150);
+                this.playTone(60, 'square', 1.0, 0.5);
+            }
+
+            seClear() {
+                this.resume();
+                const t = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.2, t + i * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.1 + 0.3);
+                    osc.connect(gain); gain.connect(this.masterGain);
+                    osc.start(t + i * 0.1); osc.stop(t + i * 0.1 + 0.3);
+                });
+            }
+
+            startThrust() {
+                this.resume();
+                if (this.thrustOsc) return;
+                this.thrustOsc = this.ctx.createOscillator();
+                this.thrustGain = this.ctx.createGain();
+                this.thrustOsc.type = 'sawtooth';
+                this.thrustOsc.frequency.value = 40; // 重低音のエンジン音
+                this.thrustGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                this.thrustOsc.connect(this.thrustGain);
+                this.thrustGain.connect(this.masterGain);
+                this.thrustOsc.start();
+            }
+
+            stopThrust() {
+                if (this.thrustOsc && this.thrustGain) {
+                    this.thrustGain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                    this.thrustOsc.stop(this.ctx.currentTime + 0.1);
+                    this.thrustOsc = null;
+                    this.thrustGain = null;
+                }
+            }
+        }
+        const sound = new SoundManager();
+
+        // 画面内の全ボタンにクリック音を自動適用
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (btn && !btn.disabled) sound.seClick();
+        });
+
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -679,10 +791,6 @@
         let width = 800; let height = 600;
         let particles = []; let weatherParticles = []; let gridStars = [];
         let clouds = []; let speedLines = []; let meteors = []; let asteroids = [];
-
-        // BGMオブジェクトの準備
-        const bgm = new Audio('THE_ROCKET_BGM.mp3');
-        bgm.loop = true; // ループ再生を有効化
 
         const uiMode = document.getElementById('mode-screen');
         const uiGarage = document.getElementById('garage-screen');
@@ -1021,6 +1129,8 @@
         function endFlight() {
             gameState = 'result';
             rocket.isThrusting = false;
+            sound.stopThrust(); // エンジン音を念のため停止
+
             uiHudContainer.classList.add('hidden');
             uiResult.classList.remove('hidden');
 
@@ -1113,6 +1223,15 @@
             // --- スコアをグローバル変数に記録 ---
             calculatedFinalScore = totalScore;
 
+            // --- SEの再生処理 ---
+            if (rocket.lostInSpace) {
+                // 宇宙の彼方へ消えた場合はSEなし（無音の演出）
+            } else if (!isSafelyLanded || (rocket.stalledInAir && !rocket.isEmergencyReturn)) {
+                sound.seCrash(); // クラッシュ・大破音
+            } else if (statusText === "ミッションクリア！" || statusText === "完璧な着陸！") {
+                sound.seClear(); // クリア・成功音
+            }
+
             document.getElementById('result-title').innerText = statusText;
             document.getElementById('result-title').className = `text-3xl sm:text-4xl font-black tracking-widest border-b pb-3 cyber-text mt-2 ${statusClass}`;
             document.getElementById('result-reason').innerText = reason;
@@ -1175,6 +1294,7 @@
             if (gameState === 'flight') {
                 gameState = 'garage';
                 rocket.isThrusting = false; 
+                sound.stopThrust(); // ABORT時もエンジン音停止
                 uiHudContainer.classList.add('hidden');
                 uiGarage.classList.remove('hidden');
                 if (gameMode === 'mission') loadMission(currentMissionIdx);
@@ -1193,12 +1313,14 @@
                 document.getElementById('hud-message').classList.add('hidden');
             }
             rocket.isThrusting = true; 
+            sound.startThrust(); // エンジン音開始
             btnBoost.classList.add('active-state'); 
         };
 
         const handleBoostEnd = (e) => { 
             e.preventDefault(); 
             rocket.isThrusting = false; 
+            sound.stopThrust(); // エンジン音停止
             btnBoost.classList.remove('active-state'); 
         };
         
@@ -1219,6 +1341,8 @@
         btnParachute.addEventListener('touchstart', handleParachute, {passive: false});
 
         function executeParachute() {
+            sound.seParachute(); // パラシュート展開音
+            
             if (gameMode === 'free') {
                 rocket.isEmergencyReturn = true;
                 rocket.isThrusting = false; 
@@ -1560,6 +1684,7 @@
             }
             if(rocket.fuel <= 0 && rocket.isThrusting) {
                 rocket.isThrusting = false;
+                sound.stopThrust(); // ガス欠時もエンジン音停止
                 btnBoost.classList.remove('active-state');
                 btnBoost.disabled = true;
             }
